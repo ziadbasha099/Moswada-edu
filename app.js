@@ -25,23 +25,11 @@ document.getElementById('showcaseShot').src = placeholderThumb('clutterfree-show
    this signed-in user; folders scope links, per the schema
    rules: URL, Title, Thumbnail, Notes, Tags, Folder)
    ============================================================ */
-let folders = [
-  { id:'recipes', name:'Recipes', color:'#e07a5f' },
-  { id:'coding', name:'Coding', color:'#226864' },
-  { id:'work', name:'Work', color:'#3e6563' },
-  { id:'reading', name:'Reading', color:'#9c6644' },
-];
+let folders = [];
 
-let links = [
-  { id:1, url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title:'Design systems in 10 minutes', folder:'coding', tags:['design','tutorial'], notes:'Good refresher on token naming before the redesign. Revisit the elevation section.', type:'video', domain:'youtube.com', timeNotes:[ {time:18, text:'Naming convention starts here'}, {time:96, text:'Elevation tokens — the part I needed'} ] },
-  { id:2, url:'https://example.com/sourdough-guide', title:'The patient baker\'s sourdough guide', folder:'recipes', tags:['baking','weekend'], notes:'Try the 48-hour cold ferment version next time — crust looked better.', type:'article', domain:'example.com' },
-  { id:3, url:'https://example.com/deep-work-notes', title:'Notes on Deep Work scheduling', folder:'work', tags:['focus','planning'], notes:'Block 90-minute sessions, no notifications. Pair with the Pomodoro variant for admin tasks.', type:'article', domain:'example.com' },
-  { id:4, url:'https://www.youtube.com/watch?v=jNQXAC9IVRw', title:'Why CSS grid finally clicked for me', folder:'coding', tags:['css','frontend'], notes:'The subgrid explanation at 4:30 is the clearest I\'ve seen.', type:'video', domain:'youtube.com', timeNotes:[ {time:270, text:'Subgrid explanation — clearest one yet'} ] },
-  { id:5, url:'https://example.com/atomic-habits-summary', title:'Atomic Habits — chapter summaries', folder:'reading', tags:['habits','books'], notes:'Habit stacking examples are useful for the morning routine rebuild.', type:'article', domain:'example.com' },
-  { id:6, url:'https://example.com/weeknight-pasta', title:'Five 20-minute weeknight pastas', folder:'recipes', tags:['quick','dinner'], notes:'The lemon-anchovy one was better than expected — repeat.', type:'article', domain:'example.com' },
-];
+let links = [];
 
-let nextId = 7;
+let nextId = 1;
 let activeFolder = 'all';
 let searchQuery = '';
 let activeTag = null;
@@ -70,7 +58,6 @@ const I18N = {
     editLink: 'Edit link',
     untitledFrom: host => `Untitled link from ${host}`,
     addUrlToast: 'Add a URL to save this link',
-    invalidUrlToast: 'Enter a valid http:// or https:// link',
     linkSavedToast: 'Link saved',
     giveFolderNameToast: 'Give the folder a name',
     folderCreatedToast: name => `Folder "${name}" created`,
@@ -113,7 +100,6 @@ const I18N = {
     editLink: 'تعديل الرابط',
     untitledFrom: host => `رابط بلا عنوان من ${host}`,
     addUrlToast: 'أضف رابطاً لحفظه',
-    invalidUrlToast: 'أدخل رابطاً صحيحاً يبدأ بـ http:// أو https://',
     linkSavedToast: 'تم حفظ الرابط',
     giveFolderNameToast: 'أعطِ المجلد اسماً',
     folderCreatedToast: name => `تم إنشاء مجلد "${name}"`,
@@ -403,17 +389,6 @@ function detectType(url){
 function domainOf(url){
   try{ return new URL(url).hostname.replace('www.',''); }catch(e){ return url; }
 }
-/* Security: only allow http/https URLs to be saved. Without this check,
-   someone could save a link like "javascript:alert(1)" and have it run
-   the moment another user clicks "Open original" on the detail modal. */
-function isSafeUrl(url){
-  try{
-    const u = new URL(url);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  }catch(e){
-    return false;
-  }
-}
 
 /* ============================================================
    ADD / EDIT LINK MODAL
@@ -482,7 +457,6 @@ function renderTagRow(){
 function saveLink(){
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
-  if(!isSafeUrl(url)){ showToast(t('invalidUrlToast')); return; }
   let title = document.getElementById('fTitle').value.trim();
   const folder = document.getElementById('fFolder').value;
   const notes = document.getElementById('fNotes').value.trim();
