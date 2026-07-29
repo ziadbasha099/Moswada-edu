@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Moswada</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="../photos/moswada-logo.png">
+<link rel="stylesheet" href="../CSS/downloads-admin.css">
+</head>
+<body data-theme="light">
+
+<div class="admin-shell">
+
+  <!-- ============== LOGIN ============== -->
+  <div id="loginView">
+    <div class="admin-card">
+      <h1 id="loginTitle">Admin sign in</h1>
+      <p class="sub" id="loginSub">Sign in with the admin account to manage download links.</p>
+      <div class="admin-error hidden" id="loginError"></div>
+      <form id="loginForm">
+        <div class="admin-field">
+          <label id="emailLabel" for="email">Email</label>
+          <input type="email" id="email" autocomplete="username" required>
+        </div>
+        <div class="admin-field">
+          <label id="passLabel" for="password">Password</label>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="admin-btn" id="loginBtn">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============== DASHBOARD ============== -->
+  <div id="dashView" class="hidden">
+    <div class="admin-toprow">
+      <h1 id="dashTitle" style="font-size:20px;margin:0;">Manage downloads</h1>
+      <button class="admin-btn secondary small" id="logoutBtn">Sign out</button>
+    </div>
+
+    <div class="admin-card">
+      <h1 id="addTitle" style="font-size:17px;">Add a download</h1>
+      <p class="sub" id="addSub">Give it a title and paste the MediaFire link — it appears on the downloads page instantly.</p>
+      <div class="admin-error hidden" id="addError"></div>
+      <form id="addForm">
+        <div class="admin-field">
+          <label id="fileTitleLabel" for="fileTitle">File title</label>
+          <input type="text" id="fileTitle" placeholder="e.g. Project Template Pack" required>
+        </div>
+        <div class="admin-field">
+          <label id="folderLabel" for="folderSelect">Folder</label>
+          <select id="folderSelect">
+            <option value="__new__" id="newFolderOption">+ New folder</option>
+          </select>
+          <input type="text" id="newFolderInput" placeholder="e.g. Templates" style="margin-top:8px;">
+        </div>
+        <div class="admin-field">
+          <label id="urlLabel" for="fileUrl">MediaFire link</label>
+          <input type="url" id="fileUrl" placeholder="https://www.mediafire.com/file/..." required>
+          <p class="admin-hint" id="urlHint">Only MediaFire links are accepted.</p>
+        </div>
+        <button type="submit" class="admin-btn" id="addBtn">Add download</button>
+      </form>
+    </div>
+
+    <div class="admin-list" id="list"></div>
+  </div>
+
+</div>
+
+<div class="admin-toast" id="toast"></div>
+
+<script type="module" 
+src="../JavaScript/admin.js"></script>
+</body>
+</html>

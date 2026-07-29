@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moswada  — Save Everything. Distraction-Free.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="../photos/moswada-logo.png">
+ 
+<!-- ربط ملف الـ CSS الخارجي -->
+<link rel="stylesheet" href="../CSS/style.css">
+
+</head>
+<body data-theme="light">
+
+<!-- ======================================================================
+     LANDING PAGE
+     ====================================================================== -->
+<div id="landing">
+  <header class="landing-header">
+    <div class="container">
+      <div class="logo">
+        <span class="logo-mark">
+          <img src="../photos/moswada-logo.png" alt="Moswada logo">
+        </span>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">
+            <p data-en="Features" data-ar="المزايا"></p></a>
+        <a href="#showcase">
+            <p data-en="How it works" data-ar="كيف يعمل"></p></a>
+        <a href="#footer">
+           <p data-en="About" data-ar="حول"></p></a>
+      </nav>
+      <div class="header-actions">
+
+         <!-- language -->
+         <!-- زر التبديل بين اللغات -->
+        <button id="lang-btn" aria-label="Switch language">
+          <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>
+          </svg>
+          <span class="lang-btn-label">العربية</span>
+        </button>
+
+        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started" data-ar="ابدأ الآن"></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <span class="eyebrow">
+        <span class="dot"></span>
+        <span data-en="Now with an in-app, distraction-free player" data-ar="الآن مع مشغل داخلي بلا تشتيت"></span>
+      </span>
+      <h1 data-en="Save everything. Stay focused." data-ar="احفظ كل شيء. حافظ على تركيزك."></h1>
+      <p data-en="Moswada is the calm home for every link, video, and idea you don't want to lose — organized into folders, tagged for recall, and free of the feeds that pull you away." data-ar="مسودة هو المكان الهادئ لكل رابط وفيديو وفكرة لا تريد أن تفقدها — منظّمة في مجلدات، موسومة لسهولة التذكر، وخالية من الخلاصات التي تشتت انتباهك."></p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="ابدأ مجاناً"></button>
+        <button class="btn btn-outline" onclick="location.href='downloads.html'" data-en="Books and PDFs" 
+data-ar="الكتب والملخصات"></button>
+      </div>
+      <p class="hero-note" data-en="No credit card needed · Set up a folder in under a minute" data-ar="لا حاجة لبطاقة ائتمان · أنشئ مجلدك في أقل من دقيقة"></p>
+
+<!-- TODO: replace VIDEO_ID below with your real demo video's YouTube ID before launch —
+     right now this embed points at a placeholder and will show an error to visitors. -->
+<iframe 
+    width="560" 
+    height="315" 
+    src="https://www.youtube.com/embed/VIDEO_ID" 
+    title="YouTube video player" 
+    frameborder="0" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+    allowfullscreen>
+</iframe>
+
+
+  </section>
+
+  <section class="section" id="features">
+    <div class="container">
+        
+      <div class="section-head">
+        <span class="eyebrow"><span class="dot"></span><span data-en="Why Moswada" data-ar="لماذا مسودة"></span></span>
+        <h2 data-en="Built to hold your attention, not steal it" data-ar="مصمم ليحافظ على انتباهك، لا ليسرقه"></h2>
+        <p data-en="Every choice — from the muted palette to the in-app player — is designed to keep saved content useful instead of overwhelming." data-ar="كل تفصيلة — من الألوان الهادئة إلى المشغل الداخلي — صُممت لتبقي المحتوى المحفوظ مفيداً بدلاً من أن يكون مرهقاً."></p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></div>
+          <h3 data-en="Folders that make sense" data-ar="مجلدات منطقية"></h3>
+          <p data-en="Group links by project or topic — Recipes, Coding, Work — so nothing gets buried in one giant list." data-ar="جمّع الروابط حسب المشروع أو الموضوع — وصفات، برمجة، عمل — حتى لا يضيع شيء في قائمة واحدة ضخمة."></p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+          <h3 data-en="Videos, without the rabbit hole" data-ar="فيديوهات بلا تشتت"></h3>
+          <p data-en="Saved videos play right inside Moswada . No autoplay suggestions, no comments — just the video you meant to watch." data-ar="الفيديوهات المحفوظة تُشغَّل مباشرة داخل مسودة. بلا اقتراحات تشغيل تلقائي، وبلا تعليقات — فقط الفيديو الذي أردت مشاهدته."></p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20l-7-4V8l7-4 7 4v8z"/><path d="M12 12l7-4M12 12v8M12 12L5 8"/></svg></div>
+          <h3 data-en="Notes that capture the takeaway" data-ar="ملاحظات تلخّص الفكرة"></h3>
+          <p data-en="Attach a quick note to any link so future-you remembers why you saved it in the first place." data-ar="أضف ملاحظة سريعة لأي رابط ليتذكر «أنت المستقبلي» لماذا حفظته أساساً."></p>
+        </div>
+    
+     
+              <div class="feature-card">
+          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20l-7-4V8l7-4 7 4v8z"/><path d="M12 12l7-4M12 12v8M12 12L5 8"/></svg></div>
+        <h3 data-en="Books , Summaries and Mind maps" 
+        data-ar="كتب وملخصات وخرائط ذهنية"></h3>
+        <p data-en="Looking for books, educational summaries, or mind maps? You'll find them here."
+         data-ar="تبحث عن كتب أو ملخصات تعليمية أو خرائط ذهنية سوف تجدها هنا"></p>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+
+  <section class="section showcase" id="showcase">
+    <div class="container showcase-inner">
+      <div class="showcase-copy">
+        <span class="eyebrow"><span class="dot"></span><span data-en="Your dashboard" data-ar="لوحتك الخاصة"></span></span>
+        <h2 data-en="One calm view of everything you've saved" 
+        data-ar="عرض هادئ واحد لكل ما حفظته"></h2>
+        <p data-en="A single sidebar for folders, a clean grid for links, and a search bar that actually finds things. No ads, no algorithmic feed." data-ar="شريط جانبي واحد للمجلدات، وشبكة واضحة للروابط، وشريط بحث يجد ما تريده فعلاً. بلا إعلانات، وبلا خلاصة تعتمد على خوارزميات."></p>
+        <ul class="check-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-en="Auto-fetched titles and thumbnails" data-ar="عناوين وصور مصغّرة تُجلب تلقائياً"></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-en="Tags and folders for fast recall" data-ar="وسوم ومجلدات لاسترجاع سريع"></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-en="Private by default — every link belongs only to you" data-ar="خاص افتراضياً — كل رابط يخصك أنت فقط"></span></li>
+        </ul>
+      </div>
+      <div class="showcase-visual">
+        <img id="showcaseShot" src="" alt="Moswada  link cards">
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="cta-band">
+      <h2 data-en="Give your links a calmer home" data-ar="امنح روابطك بيتاً أكثر هدوءاً"></h2>
+      <p data-en="Free to start. Your first folder is one click away." data-ar="مجاني للبدء. مجلدك الأول على بُعد نقرة واحدة."></p>
+      <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="ابدأ مجاناً"></button>
+    </div>
+  </section>
+
+  <footer class="landing-footer" id="footer">
+    <div class="container">
+      <div class="logo"><span class="logo-mark"><img src="../photos/moswada-logo.png" alt="Moswada logo"></span>
+       </div>
+      <p class="footer-muted" data-en="© 2026 Moswada . Built for distraction-free saving." data-ar="© 2026 مسودة. صُمم للحفظ بلا تشتيت."></p>
+    </div>
+  </footer>
+</div>
+
+<!-- ======================================================================
+     APP (DASHBOARD)
+     ====================================================================== -->
+<div id="app" class="hidden">
+  <div class="sidebar-scrim" id="scrim" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo-mark"><img src="../photos/moswada-logo.png" alt="Moswada logo"></span>
+      <button class="btn-icon sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="sidebar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="sidebarSearch" data-en-placeholder="Quick search..." data-ar-placeholder="بحث سريع..." placeholder="Quick search..." oninput="handleSearch(this.value)">
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label" data-en="Library" data-ar="المكتبة"></div>
+      <div class="nav-item active" data-folder="all" onclick="selectFolder('all')">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+        <span data-en="All Links" data-ar="كل الروابط"></span> <span class="count" id="countAll">0</span>
+      </div>
+      <div class="nav-item" data-folder="videos" onclick="selectFolder('videos')">
+        <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span data-en="Videos" data-ar="الفيديوهات"></span> <span class="count" id="countVideos">0</span>
+      </div>
+    </div>
+
+    <div class="nav-group" style="flex:1;">
+      <div class="nav-group-label" data-en="Folders" data-ar="المجلدات"></div>
+      <div id="folderNav"></div>
+      <button class="add-folder-btn" onclick="openFolderModal()" style="margin-top:6px;">
+        <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-en="New folder" data-ar="مجلد جديد"></span>
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="theme-toggle-row">
+        <span data-en="Dark mode" data-ar="الوضع الداكن"></span>
+        <button class="switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+      </div>
+      <div class="user-row">
+        <span class="avatar">JD</span>
+        <div>
+          <div class="name">Jordan Diaz</div>
+          <div class="email">jordan@example.com</div>
+        </div>
+        <button class="btn-icon" style="margin-left:auto; width:32px; height:32px;" onclick="exitApp()" data-en-title="Sign out" data-ar-title="تسجيل الخروج" title="Sign out">
+          <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="btn-icon hamburger" onclick="openSidebar()" aria-label="Open menu">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h1 id="topbarTitle">All Links</h1>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="topbarSearch" data-en-placeholder="Search your links..." data-ar-placeholder="ابحث في روابطك..." placeholder="Search your links..." oninput="handleSearch(this.value)">
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm" onclick="openLinkModal()">
+          <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span data-en="Add link" data-ar="إضافة رابط"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-head">
+        <div>
+          <p id="resultCount">0 saved links</p>
+        </div>
+      </div>
+      <div class="filter-chips" id="tagChips"></div>
+      <div class="link-grid" id="linkGrid"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+        <h3 data-en="Nothing here yet" data-ar="لا يوجد شيء هنا بعد"></h3>
+        <p data-en="Try a different folder, or add your first link to get started." data-ar="جرّب مجلداً آخر، أو أضف رابطك الأول للبدء."></p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================================================================
+     AUTH PAGE — Email sign-in / sign-up
+     ====================================================================== -->
+<div id="auth" class="auth-page hidden">
+  <div class="auth-topbar">
+    <div class="container">
+      <div class="logo" onclick="backToLanding()">
+        <span class="logo-mark">
+          <img src="../photos/moswada-logo.png" alt="Moswada logo">
+        </span>
+      </div>
+      <button class="btn btn-ghost" onclick="backToLanding()" data-en="Back to home" data-ar="العودة للرئيسية"></button>
+    </div>
+  </div>
+
+  <div class="auth-shell">
+    <div class="auth-card">
+      <h1 id="authTitle">Welcome back</h1>
+      <p class="auth-sub" id="authSub">Sign in to pick up where you left off.</p>
+
+      <div class="auth-error hidden" id="authError" role="alert"></div>
+
+      <form class="auth-form" id="authForm" onsubmit="handleAuthSubmit(event)" novalidate>
+        <div class="field hidden" id="authNameField">
+          <label for="authName" data-en="Name" data-ar="الاسم"></label>
+          <input id="authName" name="name" type="text" autocomplete="name">
+        </div>
+
+        <div class="field">
+          <label for="authEmail" data-en="Email" data-ar="البريد الإلكتروني"></label>
+          <input id="authEmail" name="email" type="email" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="authPassword" data-en="Password" data-ar="كلمة المرور"></label>
+          <input id="authPassword" name="password" type="password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="authSubmitBtn">Sign In</button>
+      </form>
+
+      <div class="auth-divider" data-en="or" data-ar="أو"></div>
+
+      <button type="button" class="auth-google-btn" onclick="showToastOnAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.1A11.99 11.99 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28v-3.1H1.26A11.99 11.99 0 0 0 0 12c0 1.94.46 3.77 1.26 5.38l4.01-3.1z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.26 6.62l4.01 3.1C6.22 6.86 8.87 4.75 12 4.75z"/></svg>
+        <span data-en="Continue with Google" data-ar="المتابعة عبر جوجل"></span>
+      </button>
+
+      <p class="auth-switch" id="authSwitch">
+        Don't have an account? <button type="button" onclick="switchAuthMode('signup')">Sign up</button>
+      </p>
+      <p class="auth-note" data-en="By continuing you agree to keep your links, notes, and tags private to your account." data-ar="بالمتابعة، أنت توافق على إبقاء روابطك وملاحظاتك ووسومك خاصة بحسابك."></p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     ADD / EDIT LINK MODAL
+     ====================================================================== -->
+<div class="modal-backdrop" id="linkModalBackdrop" onclick="if(event.target===this) closeLinkModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="linkModalTitle">Add a link</h2>
+      <button class="btn-icon" onclick="closeLinkModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fUrl" data-en="URL" data-ar="الرابط"></label>
+        <input type="url" id="fUrl" data-en-placeholder="https://example.com/article" data-ar-placeholder="https://example.com/article" placeholder="https://example.com/article" oninput="autoFillTitle()">
+        <span class="hint" data-en="Paste any link — articles, videos, or pages. YouTube links play in-app." data-ar="الصق أي رابط — مقالات أو فيديوهات أو صفحات. روابط يوتيوب تُشغَّل داخل التطبيق."></span>
+      </div>
+      <div class="field">
+        <label for="fTitle" data-en="Title" data-ar="العنوان"></label>
+        <input type="text" id="fTitle" data-en-placeholder="Give it a clear title" data-ar-placeholder="اكتب عنواناً واضحاً" placeholder="Give it a clear title">
+      </div>
+      <div class="field">
+        <label for="fFolder" data-en="Folder" data-ar="المجلد"></label>
+        <select id="fFolder"></select>
+      </div>
+      <div class="field">
+        <label for="fTagInput" data-en="Tags" data-ar="الوسوم"></label>
+        <div class="tag-input-row" id="tagRow">
+          <input type="text" id="fTagInput" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handleTagKey(event)">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fNotes" data-en="Notes" data-ar="الملاحظات"></label>
+        <textarea id="fNotes" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟" placeholder="Why did you save this? What's the takeaway?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLinkModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn btn-primary" onclick="saveLink()" data-en="Save link" data-ar="حفظ الرابط"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     NEW FOLDER MODAL
+     ====================================================================== -->
+<div class="modal-backdrop" id="folderModalBackdrop" onclick="if(event.target===this) closeFolderModal()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h2 data-en="New folder" data-ar="مجلد جديد"></h2>
+      <button class="btn-icon" onclick="closeFolderModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fFolderName" data-en="Folder name" data-ar="اسم المجلد"></label>
+        <input type="text" id="fFolderName" data-en-placeholder="e.g. Recipes" data-ar-placeholder="مثال: وصفات" placeholder="e.g. Recipes" onkeydown="if(event.key==='Enter') createFolder()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFolderModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn btn-primary" onclick="createFolder()" data-en="Create folder" data-ar="إنشاء المجلد"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     LINK DETAIL / NOTES MODAL (non-video)
+     ====================================================================== -->
+<div class="modal-backdrop" id="detailModalBackdrop" onclick="if(event.target===this) closeDetailModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailTitle">Link</h2>
+      <button class="btn-icon" onclick="closeDetailModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="thumb" style="border-radius:var(--r-md);">
+        <img id="detailThumb" src="" alt="">
+      </div>
+      <p class="card-domain" id="detailDomain"></p>
+      <div class="card-tags" id="detailTags"></div>
+      <div class="field">
+        <label data-en="Notes" data-ar="الملاحظات"></label>
+        <p id="detailNotes" style="font-size:14px; color:var(--on-surface-variant); line-height:22px;"></p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="deleteLinkBtn" data-en="Remove" data-ar="إزالة"></button>
+      <a class="btn btn-primary" id="detailOpenBtn" href="#" target="_blank" rel="noopener" data-en="Open original" data-ar="فتح الأصلي"></a>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     VIDEO PLAYER MODAL (in-app, never redirects out)
+     ====================================================================== -->
+<div class="modal-backdrop" id="playerModalBackdrop" onclick="if(event.target===this) closePlayerModal()">
+  <div class="modal player-modal">
+    <div class="player-video-container" id="playerVideoContainer">
+      <div class="player-wrap" id="playerWrap"></div>
+      <button type="button" class="player-zoom-btn" id="playerZoomBtn" onclick="toggleVideoZoom()" data-en-title="Fullscreen" data-ar-title="ملء الشاشة" title="Fullscreen" aria-label="Toggle fullscreen">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="player-info">
+      <h2 id="playerTitle">Video</h2>
+      <p class="card-domain" id="playerDomain"></p>
+      <div class="card-tags" id="playerTags" style="margin-bottom:14px;"></div>
+      <span class="player-notes-label" data-en="Notes" data-ar="الملاحظات"></span>
+      <p class="player-notes" id="playerNotes"></p>
+
+      <div class="time-notes-section">
+        <span class="player-notes-label" data-en="Timestamped notes" data-ar="ملاحظات موقوتة"></span>
+        <p class="hint" id="timeNotesHint" data-en="Pin a note to a moment in the video, like on a course site." data-ar="ثبّت ملاحظة عند لحظة معينة في الفيديو، كما في المواقع التعليمية."></p>
+        <div class="time-note-add-row">
+          <input type="text" id="timeNoteTime" class="time-note-time-input" data-en-placeholder="0:00" data-ar-placeholder="0:00" placeholder="0:00" inputmode="numeric" aria-label="Timestamp">
+          <button type="button" class="btn btn-ghost btn-sm" id="useCurrentTimeBtn" onclick="useCurrentTime()" data-en="Use current time" data-ar="استخدام الوقت الحالي"></button>
+        </div>
+        <div class="time-note-add-row">
+          <input type="text" id="timeNoteText" data-en-placeholder="Add a note at this moment..." data-ar-placeholder="أضف ملاحظة عند هذه اللحظة..." placeholder="Add a note at this moment..." onkeydown="if(event.key==='Enter') addTimeNote()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="addTimeNote()" data-en="Add" data-ar="إضافة"></button>
+        </div>
+        <div class="time-notes-list" id="timeNotesList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="deleteVideoBtn" data-en="Remove" data-ar="إزالة"></button>
+      <button class="btn btn-primary" onclick="closePlayerModal()" data-en="Done" data-ar="تم"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<!--  تغيير اللغة -->
+
+    
+ <!-- YouTube IFrame API — needed to seek to a timestamp and read the current playback time -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+ <!-- ربط ملف الـ JavaScript الخارجي -->   
+<script src="../JavaScript/app.js"></script>
+
+<!-- أضف هذه السطور في الـ head أو قبل كود الـ script الخاص بك -->
+<script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-analytics-compat.js"></script>
+
+
+<script>
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAMp9O6tStKSXr3fLfY944ic2kYHk1o3Ew",
+  authDomain: "moswada-10955.firebaseapp.com",
+  projectId: "moswada-10955",
+  storageBucket: "moswada-10955.firebasestorage.app",
+  messagingSenderId: "304820382713",
+  appId: "1:304820382713:web:a8ba37a0b579da23beab28",
+  measurementId: "G-6DK191VFN4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+</script>
+
+</body>
+</html>
