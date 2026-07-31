@@ -784,19 +784,3 @@ function escapeAttr(str){ return escapeHtml(str).replace(/`/g,'&#96;'); }
 /* Init */
 populateFolderSelect();
 
-
-// استبدل القيم المكتوبة بين التنصيص بالقيم الخاصة بمشروعك
-const SUPABASE_URL = 'https://azbzmpbcwjjhrsiagxht.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6YnptcGJjd2pqaHJzaWFneGh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MDYxNTAsImV4cCI6MjEwMTA4MjE1MH0.nGp5N6Whnw3qjyxD-9Y52HmuQmRl4jnYiZdJfBW2CW0';
-
-// إنشاء عميل Supabase
-const supabase = supabase.createClient(https://azbzmpbcwjjhrsiagxht.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6YnptcGJjd2pqaHJzaWFneGh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MDYxNTAsImV4cCI6MjEwMTA4MjE1MH0.nGp5N6Whnw3qjyxD-9Y52HmuQmRl4jnYiZdJfBW2CW0);
-
-// تجربة جلب البيانات لتأكيد الاتصال
-async function testConnection() {
-  const { data, error } = await supabase.from('users').select('*');
-  if (error) console.error('خطأ في الاتصال:', error);
-  else console.log('تم الاتصال بنجاح! البيانات:', data);
-}
-
-testConnection();
