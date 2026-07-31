@@ -15,21 +15,41 @@ function placeholderThumb(seedText, hue){
 }
 function hashCode(str){ let hash=0; for(let i=0;i<str.length;i++){ hash = str.charCodeAt(i) + ((hash<<5)-hash); } return hash; }
 
-/*
-document.getElementById('heroShot').src = placeholderThumb('clutterfree-hero-dashboard', 172);
-document.getElementById('showcaseShot').src = placeholderThumb('clutterfree-showcase-grid', 190);
-*/
+/* ============================================================
+   FIREBASE — Auth + Firestore
+   Every signed-in user gets their own private data:
+     users/{uid}/folders/{folderId}
+     users/{uid}/links/{linkId}
+   Firestore security rules (paste in Firebase console) must
+   restrict users/{uid}/** to request.auth.uid == uid — see
+   README notes shared alongside this file.
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+  onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+let currentUser = null;
+let unsubFolders = null;
+let unsubLinks = null;
 
 /* ============================================================
-   IN-MEMORY DATA STORE (mock backend — every link belongs to
-   this signed-in user; folders scope links, per the schema
-   rules: URL, Title, Thumbnail, Notes, Tags, Folder)
+   IN-MEMORY CACHE (mirrors Firestore in realtime via onSnapshot —
+   folders/links scoped to whichever user is signed in)
    ============================================================ */
 let folders = [];
-
 let links = [];
 
-let nextId = 1;
 let activeFolder = 'all';
 let searchQuery = '';
 let activeTag = null;
@@ -45,7 +65,7 @@ let currentLang = 'en';
 
 const I18N = {
   en: {
-    welcomeToast: 'Welcome back, Jordan',
+    welcomeToast: name => `Welcome back, ${name}`,
     allLinks: 'All Links',
     videosTitle: 'Videos',
     resultCount: n => `${n} saved link${n===1?'':'s'}`,
@@ -85,9 +105,14 @@ const I18N = {
     timeNoteRemovedToast: 'Timestamped note removed',
     currentTimeUnavailable: "Can't read the current time for this video yet",
     deleteTimeNoteTitle: 'Remove note',
+    authEmailInUse: 'An account with this email already exists.',
+    authBadCreds: 'Incorrect email or password.',
+    authTooMany: 'Too many attempts. Try again in a bit.',
+    authWeakPassword: 'Choose a stronger password.',
+    authGeneric: 'Something went wrong. Please try again.',
   },
   ar: {
-    welcomeToast: 'أهلاً بعودتك يا جوردان',
+    welcomeToast: name => `أهلاً بعودتك يا ${name}`,
     allLinks: 'كل الروابط',
     videosTitle: 'الفيديوهات',
     resultCount: n => `${n} رابط محفوظ`,
@@ -127,32 +152,109 @@ const I18N = {
     timeNoteRemovedToast: 'تمت إزالة الملاحظة الموقوتة',
     currentTimeUnavailable: 'تعذّرت قراءة الوقت الحالي لهذا الفيديو',
     deleteTimeNoteTitle: 'إزالة الملاحظة',
+    authEmailInUse: 'يوجد حساب بهذا البريد الإلكتروني بالفعل.',
+    authBadCreds: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+    authTooMany: 'محاولات كثيرة جداً. حاول بعد قليل.',
+    authWeakPassword: 'اختر كلمة مرور أقوى.',
+    authGeneric: 'حدث خطأ ما. حاول مرة أخرى.',
   }
 };
 function t(key){ return I18N[currentLang][key]; }
 
-/* ============================================================
-   LANDING <-> APP TRANSITIONS
-   ============================================================ */
-function enterApp(){
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  window.scrollTo(0,0);
-  renderFolderNav();
-  renderLinks();
-  updateTopbarTitle();
-  showToast(t('welcomeToast'));
-}
-function exitApp(){
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('landing').classList.remove('hidden');
-  window.scrollTo(0,0);
+function mapAuthError(code){
+  switch(code){
+    case 'auth/email-already-in-use': return t('authEmailInUse');
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found': return t('authBadCreds');
+    case 'auth/too-many-requests': return t('authTooMany');
+    case 'auth/weak-password': return t('authWeakPassword');
+    default: return t('authGeneric');
+  }
 }
 
 /* ============================================================
-   AUTH PAGE — email sign-in / sign-up
-   (Front-end only demo: swap handleAuthSubmit's body for a real
-   fetch('/api/auth/...') call once wired up to a backend.)
+   AUTH STATE — this is the single source of truth for whether
+   the app view or the landing/auth view is shown. Persisted
+   Firebase sessions mean a returning signed-in user lands
+   straight in the app on page load.
+   ============================================================ */
+function getInitials(name, email){
+  const source = (name && name.trim()) || (email ? email.split('@')[0] : '') || '';
+  const parts = source.trim().split(/\s+/).filter(Boolean);
+  if(parts.length === 0) return '?';
+  if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function updateUserRow(user){
+  const avatar = document.getElementById('userAvatar');
+  const name = document.getElementById('userName');
+  const email = document.getElementById('userEmail');
+  if(!avatar || !name || !email) return; // index.html not yet updated with these ids
+  avatar.textContent = getInitials(user.displayName, user.email);
+  name.textContent = user.displayName || (user.email ? user.email.split('@')[0] : '');
+  email.textContent = user.email || '';
+}
+
+function startListening(uid){
+  const foldersQ = query(collection(db, 'users', uid, 'folders'), orderBy('createdAt', 'asc'));
+  unsubFolders = onSnapshot(foldersQ, snap => {
+    folders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFolderNav();
+    populateFolderSelect();
+  }, err => console.error('folders listener:', err));
+
+  const linksQ = query(collection(db, 'users', uid, 'links'), orderBy('createdAt', 'desc'));
+  unsubLinks = onSnapshot(linksQ, snap => {
+    links = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderLinks();
+  }, err => console.error('links listener:', err));
+}
+
+function stopListening(){
+  if(unsubFolders){ unsubFolders(); unsubFolders = null; }
+  if(unsubLinks){ unsubLinks(); unsubLinks = null; }
+  folders = [];
+  links = [];
+  activeFolder = 'all';
+  activeTag = null;
+  searchQuery = '';
+}
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    currentUser = user;
+    updateUserRow(user);
+    startListening(user.uid);
+    if(document.getElementById('app').classList.contains('hidden')){
+      enterApp(user);
+    }
+  } else {
+    currentUser = null;
+    stopListening();
+    if(!document.getElementById('app').classList.contains('hidden')){
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('landing').classList.remove('hidden');
+      window.scrollTo(0,0);
+    }
+  }
+});
+
+/* ============================================================
+   LANDING <-> APP TRANSITIONS
+   ============================================================ */
+function enterApp(user){
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  window.scrollTo(0,0);
+  updateTopbarTitle();
+  showToast(t('welcomeToast')(user.displayName || (user.email ? user.email.split('@')[0] : '')));
+}
+
+/* ============================================================
+   AUTH PAGE — email sign-in / sign-up (real Firebase Authentication)
    ============================================================ */
 let authMode = 'signin';
 
@@ -205,7 +307,7 @@ function hideAuthError(){
   document.getElementById('authError').classList.add('hidden');
 }
 
-function handleAuthSubmit(e){
+async function handleAuthSubmit(e){
   e.preventDefault();
   hideAuthError();
 
@@ -214,23 +316,27 @@ function handleAuthSubmit(e){
   const password = document.getElementById('authPassword').value;
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if(!emailPattern.test(email)){
-    showAuthError(t('validEmail'));
-    return;
-  }
-  if(password.length < 8){
-    showAuthError(t('passwordLen'));
-    return;
-  }
-  if(authMode === 'signup' && !name){
-    showAuthError(t('enterName'));
-    return;
-  }
+  if(!emailPattern.test(email)){ showAuthError(t('validEmail')); return; }
+  if(password.length < 8){ showAuthError(t('passwordLen')); return; }
+  if(authMode === 'signup' && !name){ showAuthError(t('enterName')); return; }
 
-  // Demo only — no backend wired up here, so any valid-looking
-  // email/password combination signs the user straight into the app.
-  document.getElementById('auth').classList.add('hidden');
-  enterApp();
+  const submitBtn = document.getElementById('authSubmitBtn');
+  submitBtn.disabled = true;
+
+  try{
+    if(authMode === 'signup'){
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
+    // onAuthStateChanged() picks this up and calls enterApp() automatically
+  } catch(err){
+    console.error(err);
+    showAuthError(mapAuthError(err.code));
+  } finally {
+    submitBtn.disabled = false;
+  }
 }
 
 function showToastOnAuth(){
@@ -312,15 +418,15 @@ function currentList(){
   if(searchQuery){
     list = list.filter(l =>
       l.title.toLowerCase().includes(searchQuery) ||
-      l.notes.toLowerCase().includes(searchQuery) ||
-      l.tags.some(t => t.toLowerCase().includes(searchQuery))
+      (l.notes||'').toLowerCase().includes(searchQuery) ||
+      (l.tags||[]).some(tg => tg.toLowerCase().includes(searchQuery))
     );
   }
   return list;
 }
 
 function renderTagChips(){
-  const allTags = [...new Set(links.flatMap(l => l.tags))].sort();
+  const allTags = [...new Set(links.flatMap(l => l.tags || []))].sort();
   const chips = document.getElementById('tagChips');
   if(allTags.length === 0){ chips.innerHTML = ''; return; }
   chips.innerHTML = allTags.map(tag =>
@@ -352,7 +458,7 @@ function renderLinks(){
     const playBadge = l.type === 'video'
       ? `<div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>`
       : '';
-    return `<div class="link-card" onclick="openCard(${l.id})">
+    return `<div class="link-card" onclick="openCard('${l.id}')">
       <div class="thumb"><img src="${l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}" alt="">${playBadge}</div>
       <div class="card-body">
         <div class="card-top">
@@ -362,7 +468,7 @@ function renderLinks(){
           </div>
         </div>
         <p class="card-notes">${escapeHtml(l.notes || t('noNotesYet'))}</p>
-        <div class="card-tags">${l.tags.map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('')}</div>
+        <div class="card-tags">${(l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('')}</div>
         <div class="card-meta"><span>${folderObj ? escapeHtml(folderObj.name) : ''}</span><span>${l.type==='video'?t('playsInApp'):t('article')}</span></div>
       </div>
     </div>`;
@@ -395,7 +501,10 @@ function domainOf(url){
    ============================================================ */
 function populateFolderSelect(){
   const sel = document.getElementById('fFolder');
+  if(!sel) return;
+  const current = sel.value;
   sel.innerHTML = folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+  if([...sel.options].some(o => o.value === current)) sel.value = current;
 }
 function openLinkModal(){
   editingLinkId = null;
@@ -454,7 +563,8 @@ function renderTagRow(){
   });
 }
 
-function saveLink(){
+async function saveLink(){
+  if(!currentUser) return;
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
   let title = document.getElementById('fTitle').value.trim();
@@ -464,15 +574,23 @@ function saveLink(){
   const domain = domainOf(url);
   if(!title){ title = t('untitledFrom')(domain); }
 
-  if(editingLinkId){
-    const l = links.find(x => x.id === editingLinkId);
-    Object.assign(l, { url, title, folder, notes, tags:[...composingTags], type, domain });
-  } else {
-    links.unshift({ id: nextId++, url, title, folder, notes, tags:[...composingTags], type, domain });
+  const data = { url, title, folder, notes, tags:[...composingTags], type, domain };
+  const saveBtn = document.querySelector('#linkModalBackdrop .btn-primary');
+  if(saveBtn) saveBtn.disabled = true;
+
+  try{
+    if(editingLinkId){
+      await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
+    } else {
+      await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], createdAt: serverTimestamp() });
+    }
+    closeLinkModal();
+    showToast(t('linkSavedToast'));
+  }catch(err){
+    console.error(err);
+  }finally{
+    if(saveBtn) saveBtn.disabled = false;
   }
-  closeLinkModal();
-  renderLinks();
-  showToast(t('linkSavedToast'));
 }
 
 /* ============================================================
@@ -484,16 +602,20 @@ function openFolderModal(){
   setTimeout(()=>document.getElementById('fFolderName').focus(), 50);
 }
 function closeFolderModal(){ document.getElementById('folderModalBackdrop').classList.remove('show'); }
-function createFolder(){
+async function createFolder(){
+  if(!currentUser) return;
   const name = document.getElementById('fFolderName').value.trim();
   if(!name){ showToast(t('giveFolderNameToast')); return; }
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + '-' + Date.now().toString(36).slice(-4);
   const palette = ['#226864','#e07a5f','#9c6644','#3e6563','#5f7161','#8d6a9f'];
   const color = palette[folders.length % palette.length];
-  folders.push({ id, name, color });
-  closeFolderModal();
-  renderFolderNav();
-  showToast(t('folderCreatedToast')(name));
+
+  try{
+    await addDoc(collection(db, 'users', currentUser.uid, 'folders'), { name, color, createdAt: serverTimestamp() });
+    closeFolderModal();
+    showToast(t('folderCreatedToast')(name));
+  }catch(err){
+    console.error(err);
+  }
 }
 
 /* ============================================================
@@ -530,7 +652,7 @@ function openPlayerModal(l){
 
   document.getElementById('playerTitle').textContent = l.title;
   document.getElementById('playerDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)}`;
-  document.getElementById('playerTags').innerHTML = l.tags.map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('');
+  document.getElementById('playerTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('');
   document.getElementById('playerNotes').textContent = l.notes || t('noNotesYetClick');
   document.getElementById('deleteVideoBtn').onclick = () => { deleteLink(l.id); closePlayerModal(); };
   document.getElementById('timeNoteTime').value = '';
@@ -592,7 +714,8 @@ document.addEventListener('webkitfullscreenchange', updateZoomBtnState);
 
 /* ------------------------------------------------------------
    TIMESTAMPED NOTES — pin a note to a moment in the video,
-   the same pattern used by course/e-learning sites.
+   the same pattern used by course/e-learning sites. Persisted
+   to Firestore so they survive a refresh.
    ------------------------------------------------------------ */
 function formatTime(totalSeconds){
   const s = Math.max(0, Math.round(totalSeconds));
@@ -620,8 +743,8 @@ function useCurrentTime(){
   document.getElementById('timeNoteTime').value = formatTime(seconds);
 }
 
-function addTimeNote(){
-  if(!activePlayerLink) return;
+async function addTimeNote(){
+  if(!activePlayerLink || !currentUser) return;
   const timeStr = document.getElementById('timeNoteTime').value;
   const text = document.getElementById('timeNoteText').value.trim();
   const seconds = parseTime(timeStr);
@@ -629,21 +752,32 @@ function addTimeNote(){
   if(seconds === null){ showToast(t('invalidTimeToast')); return; }
   if(!text){ showToast(t('emptyTimeNoteToast')); return; }
 
-  if(!activePlayerLink.timeNotes) activePlayerLink.timeNotes = [];
-  activePlayerLink.timeNotes.push({ time: seconds, text });
-  activePlayerLink.timeNotes.sort((a,b) => a.time - b.time);
+  const updated = [...(activePlayerLink.timeNotes || []), { time: seconds, text }].sort((a,b) => a.time - b.time);
 
-  document.getElementById('timeNoteTime').value = '';
-  document.getElementById('timeNoteText').value = '';
-  renderTimeNotes(activePlayerLink);
-  showToast(t('timeNoteAddedToast'));
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { timeNotes: updated });
+    activePlayerLink.timeNotes = updated;
+    document.getElementById('timeNoteTime').value = '';
+    document.getElementById('timeNoteText').value = '';
+    renderTimeNotes(activePlayerLink);
+    showToast(t('timeNoteAddedToast'));
+  }catch(err){
+    console.error(err);
+  }
 }
 
-function deleteTimeNote(index){
-  if(!activePlayerLink || !activePlayerLink.timeNotes) return;
-  activePlayerLink.timeNotes.splice(index, 1);
-  renderTimeNotes(activePlayerLink);
-  showToast(t('timeNoteRemovedToast'));
+async function deleteTimeNote(index){
+  if(!activePlayerLink || !activePlayerLink.timeNotes || !currentUser) return;
+  const updated = activePlayerLink.timeNotes.filter((_, i) => i !== index);
+
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { timeNotes: updated });
+    activePlayerLink.timeNotes = updated;
+    renderTimeNotes(activePlayerLink);
+    showToast(t('timeNoteRemovedToast'));
+  }catch(err){
+    console.error(err);
+  }
 }
 
 function seekToTime(seconds){
@@ -679,7 +813,7 @@ function openDetailModal(l){
   document.getElementById('detailTitle').textContent = l.title;
   document.getElementById('detailThumb').src = l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
   document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
-  document.getElementById('detailTags').innerHTML = l.tags.map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
+  document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
   document.getElementById('detailNotes').textContent = l.notes || t('noNotesYet');
   document.getElementById('detailOpenBtn').href = l.url;
   document.getElementById('deleteLinkBtn').onclick = () => { deleteLink(l.id); closeDetailModal(); };
@@ -687,10 +821,14 @@ function openDetailModal(l){
 }
 function closeDetailModal(){ document.getElementById('detailModalBackdrop').classList.remove('show'); }
 
-function deleteLink(id){
-  links = links.filter(l => l.id !== id);
-  renderLinks();
-  showToast(t('linkRemovedToast'));
+async function deleteLink(id){
+  if(!currentUser) return;
+  try{
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'links', id));
+    showToast(t('linkRemovedToast'));
+  }catch(err){
+    console.error(err);
+  }
 }
 
 /* ============================================================
@@ -738,6 +876,7 @@ function refreshDynamicTranslations(){
   if(!document.getElementById('auth').classList.contains('hidden')){
     switchAuthMode(authMode);
   }
+  if(currentUser){ updateUserRow(currentUser); }
   if(activePlayerLink){
     renderTimeNotes(activePlayerLink);
     updateZoomBtnState();
@@ -774,6 +913,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
+   SIGN OUT — Firestore listeners are torn down and the landing
+   page is shown automatically by the onAuthStateChanged handler
+   above once Firebase confirms the session ended.
+   ============================================================ */
+async function exitApp(){
+  try{
+    await signOut(auth);
+  }catch(err){
+    console.error(err);
+  }
+}
+
+/* ============================================================
    UTIL
    ============================================================ */
 function escapeHtml(str){
@@ -781,6 +933,17 @@ function escapeHtml(str){
 }
 function escapeAttr(str){ return escapeHtml(str).replace(/`/g,'&#96;'); }
 
-/* Init */
-populateFolderSelect();
-
+/* ============================================================
+   Expose functions used as inline HTML event handlers (onclick=...)
+   Required because this file is loaded as an ES module — module
+   scope is not global scope, so inline handlers can't see these
+   otherwise.
+   ============================================================ */
+Object.assign(window, {
+  showAuth, backToLanding, switchAuthMode, handleAuthSubmit, showToastOnAuth,
+  toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
+  openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
+  saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
+  useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
+  closePlayerModal, exitApp,
+});
