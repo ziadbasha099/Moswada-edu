@@ -190,10 +190,6 @@ data-ar="الكتب والملخصات"></button>
         <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span data-en="Videos" data-ar="الفيديوهات"></span> <span class="count" id="countVideos">0</span>
       </div>
-      <a class="nav-item" href="downloads.html">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-        <span data-en="Books &amp; Downloads" data-ar="الكتب والملفات"></span>
-      </a>
     </div>
 
     <div class="nav-group" style="flex:1;">
@@ -211,10 +207,11 @@ data-ar="الكتب والملخصات"></button>
         <button class="switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
       </div>
       <div class="user-row">
-        <span class="avatar">JD</span>
-        <div>
-          <div class="name">Jordan Diaz</div>
-          <div class="email">jordan@example.com</div>
+       <span class="avatar" id="userAvatar"></span>
+<div>
+  <div class="name" id="userName"></div>
+  <div class="email" id="userEmail"></div>
+</div>
         </div>
         <button class="btn-icon" style="margin-left:auto; width:32px; height:32px;" onclick="exitApp()" data-en-title="Sign out" data-ar-title="تسجيل الخروج" title="Sign out">
           <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -461,7 +458,7 @@ data-ar="الكتب والملخصات"></button>
 <script src="https://www.youtube.com/iframe_api"></script>
 
  <!-- ربط ملف الـ JavaScript الخارجي -->   
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 
 
 </body>
