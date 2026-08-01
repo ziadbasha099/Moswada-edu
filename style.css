@@ -50,6 +50,7 @@ body{
   font-family:var(--font-body); background:var(--background); color:var(--on-background);
   transition:background var(--transition), color var(--transition);
   -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
 img{max-width:100%; display:block;}
 button{font-family:inherit; cursor:pointer;}
@@ -458,8 +459,21 @@ html[dir="rtl"] .topbar-actions{ margin-left:0; margin-right:auto; }
 html[dir="rtl"] .card-domain .favicon-dot{ margin-left:0; }
 html[dir="rtl"] .check-list li{ text-align:right; }
 
-#info-img{
-    width: 560px; height: 315; }
+/* FIX: this selector used to target #info-img (an id) while the element in
+   index.html only has class="info-img" — the rule never matched, so the
+   hero image rendered at its native (often huge) pixel size and pushed the
+   "Get started" / "Books and PDFs" buttons far down the page on first load.
+   Targeting the class and constraining width/height fixes that. */
+.info-img{
+  max-width:560px;
+  width:100%;
+  height:auto;
+  display:block;
+  margin:40px auto 0;
+  border-radius:var(--r-xl);
+  border:1px solid var(--outline-variant);
+  box-shadow:var(--shadow-2);
+}
 
 /* ==================================================================
    RESPONSIVE
@@ -497,7 +511,11 @@ html[dir="rtl"] .check-list li{ text-align:right; }
   .content{ padding:20px 16px 64px; }
   .link-grid{ grid-template-columns:1fr; }
   .modal{ max-width:100%; }
+  .info-img{ margin-top:24px; }
 }
+
+html[dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(100%); }
+html[dir="rtl"] .sidebar.open{ transform:translateX(0); }
 
 /* logo zzzz*/
 @media (max-width: 768px) {
