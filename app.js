@@ -947,3 +947,20 @@ Object.assign(window, {
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   closePlayerModal, exitApp,
 });
+
+/* New */
+function navigateTo(pageId) {
+    // 1. إخفاء جميع الصفحات والأقسام
+    document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+
+    // 2. إظهار الصفحة المطلوبة فقط
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.classList.add('active');
+        targetPage.style.display = 'block'; // أو flex
+    }
+}
+
