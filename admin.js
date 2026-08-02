@@ -191,7 +191,8 @@ document.getElementById("addForm").addEventListener("submit", async (e) => {
 
   if (!title) return showAddError(t("missingTitle"));
   if (!folder) return showAddError(t("missingFolder"));
-  if (!/^https?:\/\/(www\.)?mediafire\.com\//i.test(url)) return showAddError(t("onlyMediafire"));
+ /* if (!/^https?:\/\/(www\.)?mediafire\.com\//i.test(url)) return showAddError(t("onlyMediafire")); */
+  if (!/^https?:\/\/.+/i.test(url)) return showAddError(t("onlyMediafire"));
 
   await addDoc(collection(db, DOWNLOADS_COLLECTION), {
     title, url, folder, createdAt: serverTimestamp()
