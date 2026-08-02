@@ -951,16 +951,16 @@ Object.assign(window, {
 /* New */
 function navigateTo(pageId) {
     // 1. إخفاء جميع الصفحات والأقسام
-    document.querySelectorAll('.page-section').forEach(section => {
+    document.querySelectorAll('.landing-page').forEach(section => {
         section.classList.remove('active');
         section.style.display = 'none';
     });
 
     // 2. إظهار الصفحة المطلوبة فقط
     const targetPage = document.getElementById(pageId);
-    if (targetPage) {
-        targetPage.classList.add('active');
-        targetPage.style.display = 'block'; // أو flex
+    if (.app) {
+        app.classList.add('active');
+        app.style.display = 'block'; // أو flex
     }
 }
 
