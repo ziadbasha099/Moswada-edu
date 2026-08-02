@@ -27,7 +27,8 @@ function hashCode(str){ let hash=0; for(let i=0;i<str.length;i++){ hash = str.ch
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  onAuthStateChanged, signOut, updateProfile
+  onAuthStateChanged, signOut, updateProfile,
+  GoogleAuthProvider, signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
@@ -38,6 +39,7 @@ import { firebaseConfig } from "./firebase-config.js";
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getFirestore(fbApp);
+const googleProvider = new GoogleAuthProvider();
 
 let currentUser = null;
 let unsubFolders = null;
@@ -95,7 +97,8 @@ const I18N = {
     validEmail: 'Enter a valid email address.',
     passwordLen: 'Password must be at least 8 characters.',
     enterName: 'Enter your name to create an account.',
-    googleNotWired: "Google sign-in isn't wired up in this demo yet",
+    authAccountExists: 'An account already exists with this email using a different sign-in method.',
+    authPopupBlocked: 'Your browser blocked the sign-in popup. Please allow popups and try again.',
     enterFullscreen: 'Fullscreen',
     exitFullscreen: 'Exit fullscreen',
     noTimeNotesYet: 'No timestamped notes yet — add one at your favorite moment.',
@@ -142,7 +145,8 @@ const I18N = {
     validEmail: 'أدخل بريداً إلكترونياً صحيحاً.',
     passwordLen: 'يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.',
     enterName: 'أدخل اسمك لإنشاء حساب.',
-    googleNotWired: 'تسجيل الدخول عبر جوجل غير مفعّل في هذا العرض التجريبي',
+    authAccountExists: 'يوجد حساب بهذا البريد الإلكتروني بالفعل عبر طريقة تسجيل دخول مختلفة.',
+    authPopupBlocked: 'قام المتصفح بحظر نافذة تسجيل الدخول. يرجى السماح بالنوافذ المنبثقة والمحاولة مرة أخرى.',
     enterFullscreen: 'ملء الشاشة',
     exitFullscreen: 'إنهاء ملء الشاشة',
     noTimeNotesYet: 'لا توجد ملاحظات موقوتة بعد — أضف ملاحظة عند لحظتك المفضلة.',
@@ -169,6 +173,9 @@ function mapAuthError(code){
     case 'auth/user-not-found': return t('authBadCreds');
     case 'auth/too-many-requests': return t('authTooMany');
     case 'auth/weak-password': return t('authWeakPassword');
+    case 'auth/account-exists-with-different-credential':
+      return t('authAccountExists');
+    case 'auth/popup-blocked': return t('authPopupBlocked');
     default: return t('authGeneric');
   }
 }
@@ -339,8 +346,26 @@ async function handleAuthSubmit(e){
   }
 }
 
-function showToastOnAuth(){
-  showToast(t('googleNotWired'));
+/* ------------------------------------------------------------
+   Google sign-in via a popup. Works for both sign-in and sign-up
+   — Firebase automatically creates the user on first sign-in.
+   onAuthStateChanged() (registered above) detects the new session
+   and calls enterApp() for us, so there's nothing else to do here
+   besides surfacing errors if the popup fails or is dismissed.
+   ------------------------------------------------------------ */
+async function handleGoogleSignIn(){
+  hideAuthError();
+  try{
+    await signInWithPopup(auth, googleProvider);
+  } catch(err){
+    // The user closing the popup themselves isn't a real error —
+    // no need to show a scary message for that.
+    if(err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request'){
+      return;
+    }
+    console.error(err);
+    showAuthError(mapAuthError(err.code));
+  }
 }
 
 /* ============================================================
@@ -940,12 +965,10 @@ function escapeAttr(str){ return escapeHtml(str).replace(/`/g,'&#96;'); }
    otherwise.
    ============================================================ */
 Object.assign(window, {
-  showAuth, backToLanding, switchAuthMode, handleAuthSubmit, showToastOnAuth,
+  showAuth, backToLanding, switchAuthMode, handleAuthSubmit, handleGoogleSignIn,
   toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
   openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   closePlayerModal, exitApp,
 });
-
-

@@ -6,12 +6,11 @@
 <title>Moswada  — Save Everything. Distraction-Free.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="moswada-logo.png">
- 
-<link rel="icon" type="image/png" href="moswada-logo.png">
-<link rel="apple-touch-icon" sizes="180x180" href="moswada-logo/apple-touch-icon.png">
+<!-- Favicon: a self-contained inline SVG data URI, so the site never
+     depends on an external logo file that may be missing from the repo -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23226864'/%3E%3Cpath d='M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23226864'/%3E%3Cpath d='M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z' fill='%23fff'/%3E%3C/svg%3E">
 
- 
 <!-- ربط ملف الـ CSS الخارجي -->
 <link rel="stylesheet" href="style.css">
 
@@ -25,9 +24,13 @@
   <header class="landing-header">
     <div class="container">
       <div class="logo">
-        <span class="logo-mark">
-          <img src="moswada-logo.png" alt="Moswada logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+            <path d="M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z" fill="var(--on-primary)"/>
+          </svg>
         </span>
+        <span>Moswada</span>
       </div>
       <nav class="nav-links">
         <a href="#features">
@@ -69,21 +72,11 @@ data-ar="الكتب والملخصات"></button>
       </div>
       <p class="hero-note" data-en="No credit card needed · Set up a folder in under a minute" data-ar="لا حاجة لبطاقة ائتمان · أنشئ مجلدك في أقل من دقيقة"></p>
 
-<!-- TODO: replace VIDEO_ID below with your real demo video's YouTube ID before launch —
-     right now this embed points at a placeholder and will show an error to visitors. -->
-     <!--
-<iframe 
-    width="560" 
-    height="315" 
-    src="https://youtu.be/vpcNLQ2mtag?si=amPUrq7xXVZ8NxBm/embed/VIDEO_ID" 
-    title="YouTube video player" 
-    frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen>
-</iframe>
--->
- <img class="info-img"
- src="info-photo.png" alt="information photo">
+<!-- Hero visual. Swap this data-URI placeholder for a real product
+     screenshot or demo-video embed whenever one is ready. -->
+<img class="info-img"
+ src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1040 585'%3E%3Crect width='1040' height='585' fill='%23eceeee'/%3E%3Crect x='40' y='40' width='220' height='505' rx='16' fill='%23f2f4f4'/%3E%3Crect x='300' y='40' width='700' height='90' rx='12' fill='%23f2f4f4'/%3E%3Crect x='300' y='150' width='330' height='190' rx='12' fill='%23f2f4f4'/%3E%3Crect x='650' y='150' width='350' height='190' rx='12' fill='%23f2f4f4'/%3E%3Crect x='300' y='360' width='330' height='185' rx='12' fill='%23f2f4f4'/%3E%3Crect x='650' y='360' width='350' height='185' rx='12' fill='%23f2f4f4'/%3E%3C/svg%3E"
+ alt="Moswada dashboard preview">
 
   </section>
 
@@ -140,7 +133,9 @@ data-ar="الكتب والملخصات"></button>
         </ul>
       </div>
       <div class="showcase-visual">
-        <img id="showcaseShot" src="" alt="Moswada  link cards">
+        <img id="showcaseShot"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23eceeee'/%3E%3Crect x='24' y='24' width='592' height='56' rx='10' fill='%23f2f4f4'/%3E%3Crect x='24' y='100' width='280' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='320' y='100' width='296' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='24' y='288' width='280' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='320' y='288' width='296' height='170' rx='10' fill='%23f2f4f4'/%3E%3C/svg%3E"
+          alt="Moswada link cards">
       </div>
     </div>
   </section>
@@ -155,8 +150,15 @@ data-ar="الكتب والملخصات"></button>
 
   <footer class="landing-footer" id="footer">
     <div class="container">
-      <div class="logo"><span class="logo-mark"><img src="moswada-logo.png" alt="Moswada logo"></span>
-       </div>
+      <div class="logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+            <path d="M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z" fill="var(--on-primary)"/>
+          </svg>
+        </span>
+        <span>Moswada</span>
+      </div>
       <p class="footer-muted" data-en="© 2026 Moswada . Built for distraction-free saving." data-ar="© 2026 مسودة. صُمم للحفظ بلا تشتيت."></p>
     </div>
   </footer>
@@ -169,7 +171,13 @@ data-ar="الكتب والملخصات"></button>
   <div class="sidebar-scrim" id="scrim" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <span class="logo-mark"><img src="moswada-logo.png" alt="Moswada logo"></span>
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+          <path d="M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z" fill="var(--on-primary)"/>
+        </svg>
+      </span>
+      <span class="logo">Moswada</span>
       <button class="btn-icon sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
@@ -262,9 +270,13 @@ data-ar="الكتب والملخصات"></button>
   <div class="auth-topbar">
     <div class="container">
       <div class="logo" onclick="backToLanding()">
-        <span class="logo-mark">
-          <img src="moswada-logo.png" alt="Moswada logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+            <path d="M10 8h12a1 1 0 011 1v15l-7-4-7 4V9a1 1 0 011-1z" fill="var(--on-primary)"/>
+          </svg>
         </span>
+        <span>Moswada</span>
       </div>
       <button class="btn btn-ghost" onclick="backToLanding()" data-en="Back to home" data-ar="العودة للرئيسية"></button>
     </div>
@@ -298,7 +310,7 @@ data-ar="الكتب والملخصات"></button>
 
       <div class="auth-divider" data-en="or" data-ar="أو"></div>
 
-      <button type="button" class="auth-google-btn" onclick="showToastOnAuth()">
+      <button type="button" class="auth-google-btn" onclick="handleGoogleSignIn()">
         <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.1A11.99 11.99 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28v-3.1H1.26A11.99 11.99 0 0 0 0 12c0 1.94.46 3.77 1.26 5.38l4.01-3.1z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.26 6.62l4.01 3.1C6.22 6.86 8.87 4.75 12 4.75z"/></svg>
         <span data-en="Continue with Google" data-ar="المتابعة عبر جوجل"></span>
       </button>
