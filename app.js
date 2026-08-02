@@ -948,19 +948,4 @@ Object.assign(window, {
   closePlayerModal, exitApp,
 });
 
-/* New */
-function navigateTo(pageId) {
-    // 1. إخفاء جميع الصفحات والأقسام
-    document.querySelectorAll('.landing-page').forEach(section => {
-        section.classList.remove('active');
-        section.style.display = 'none';
-    });
-
-    // 2. إظهار الصفحة المطلوبة فقط
-    const targetPage = document.getElementById(pageId);
-    if (.app) {
-        app.classList.add('active');
-        app.style.display = 'block'; // أو flex
-    }
-}
 
