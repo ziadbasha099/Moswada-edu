@@ -27,7 +27,7 @@ import {
   getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, DOWNLOADS_COLLECTION } from "./firebase-config.js";
+import { firebaseConfig, DOWNLOADS_COLLECTION } from "firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
