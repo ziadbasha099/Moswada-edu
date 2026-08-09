@@ -76,6 +76,8 @@ const I18N = {
     authTooMany: 'Too many attempts. Try again in a bit.',
     authWeakPassword: 'Choose a stronger password.',
     authGeneric: 'Something went wrong. Please try again.',
+    linkRemovedToast: 'Link removed',
+    notesSavedToast: 'Notes saved', 
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -124,6 +126,8 @@ const I18N = {
     authTooMany: 'محاولات كثيرة جداً. حاول بعد قليل.',
     authWeakPassword: 'اختر كلمة مرور أقوى.',
     authGeneric: 'حدث خطأ ما. حاول مرة أخرى.',
+    linkRemovedToast: 'تمت إزالة الرابط',
+    notesSavedToast: 'تم حفظ الملاحظات', 
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
