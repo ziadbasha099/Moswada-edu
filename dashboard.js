@@ -589,6 +589,7 @@ function renderTimeNotes(l){
 /* ============================================================
    DETAIL / NOTES MODAL (non-video links)
    ============================================================ */
+/*
 function openDetailModal(l){
   const folderObj = folders.find(f => f.id === l.folder);
   document.getElementById('detailTitle').textContent = l.title;
@@ -611,7 +612,38 @@ async function deleteLink(id){
     console.error(err);
   }
 }
+*/
+function openDetailModal(l){
+  const folderObj = folders.find(f => f.id === l.folder);
+  currentDetailLinkId = l.id;
+  document.getElementById('detailTitle').textContent = l.title;
+  document.getElementById('detailThumb').src = l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
+  document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
+  document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
+  document.getElementById('detailNotes').value = l.notes || '';
+  document.getElementById('detailOpenBtn').href = l.url;
+  document.getElementById('deleteLinkBtn').onclick = () => { currentDetailLinkId = null; deleteLink(l.id); closeDetailModal(); };
+  document.getElementById('detailModalBackdrop').classList.add('show');
+}
+function closeDetailModal(){
+  saveDetailNotes();
+  document.getElementById('detailModalBackdrop').classList.remove('show');
+  currentDetailLinkId = null;
+}
 
+async function saveDetailNotes(){
+  if(!currentUser || !currentDetailLinkId) return;
+  const notes = document.getElementById('detailNotes').value.trim();
+  const link = links.find(x => x.id === currentDetailLinkId);
+  if(link && (link.notes || '') === notes) return;
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', currentDetailLinkId), { notes });
+    if(link) link.notes = notes;
+    showToast(t('notesSavedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}
 /* ============================================================
    SIGN OUT — Firestore listeners are torn down and the redirect
    to index.html happens automatically via the route guard above
