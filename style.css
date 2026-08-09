@@ -371,6 +371,26 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .player-notes-label{ font-size:13px; font-weight:700; margin-bottom:6px; display:block; }
 .player-notes{ font-size:14px; color:var(--on-surface-variant); line-height:22px; }
 
+/* Editable notes textarea in the video player modal — same visual
+   language as the other form fields (.field textarea) so it reads
+   as an editable control rather than static text. */
+textarea.player-notes{
+  display:block;
+  width:100%;
+  font-family:var(--font-body);
+  color:var(--on-surface);
+  padding:10px 12px;
+  border-radius:var(--r-md);
+  border:1px solid var(--outline-variant);
+  background:var(--surface-low);
+  resize:vertical;
+  min-height:64px;
+  outline:none;
+  transition:border-color var(--transition), background var(--transition);
+}
+textarea.player-notes:focus{ border-color:var(--primary); background:var(--surface-lowest); }
+.player-info .hint{ display:block; margin-top:6px; margin-bottom:14px; }
+
 /* Zoom / fullscreen toggle, overlaid on the video */
 .player-zoom-btn{
   position:absolute; top:12px; inset-inline-end:12px; z-index:2;
