@@ -54,9 +54,6 @@ let searchQuery = '';
 let activeTag = null;
 let editingLinkId = null;
 let composingTags = [];
-
-let editingLinkId = null;
-let composingTags = [];
 let currentDetailLinkId = null;
 
 function getInitials(name, email){
@@ -589,20 +586,6 @@ function renderTimeNotes(l){
 /* ============================================================
    DETAIL / NOTES MODAL (non-video links)
    ============================================================ */
-/*
-function openDetailModal(l){
-  const folderObj = folders.find(f => f.id === l.folder);
-  document.getElementById('detailTitle').textContent = l.title;
-  document.getElementById('detailThumb').src = l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
-  document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
-  document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
-  document.getElementById('detailNotes').textContent = l.notes || t('noNotesYet');
-  document.getElementById('detailOpenBtn').href = l.url;
-  document.getElementById('deleteLinkBtn').onclick = () => { deleteLink(l.id); closeDetailModal(); };
-  document.getElementById('detailModalBackdrop').classList.add('show');
-}
-function closeDetailModal(){ document.getElementById('detailModalBackdrop').classList.remove('show'); }
-
 async function deleteLink(id){
   if(!currentUser) return;
   try{
@@ -612,7 +595,7 @@ async function deleteLink(id){
     console.error(err);
   }
 }
-*/
+
 function openDetailModal(l){
   const folderObj = folders.find(f => f.id === l.folder);
   currentDetailLinkId = l.id;
@@ -678,15 +661,6 @@ setDynamicTranslationHook(() => {
    scope is not global scope, so inline handlers can't see these
    otherwise.
    ============================================================ */
-/*
-Object.assign(window, {
-  toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
-  openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
-  saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
-  useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
-  closePlayerModal, exitApp,
-});
-*/
 Object.assign(window, {
   toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
   openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
