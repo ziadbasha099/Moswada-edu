@@ -55,6 +55,10 @@ let activeTag = null;
 let editingLinkId = null;
 let composingTags = [];
 
+let editingLinkId = null;
+let composingTags = [];
+let currentDetailLinkId = null;
+
 function getInitials(name, email){
   const source = (name && name.trim()) || (email ? email.split('@')[0] : '') || '';
   const parts = source.trim().split(/\s+/).filter(Boolean);
