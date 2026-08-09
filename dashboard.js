@@ -678,10 +678,19 @@ setDynamicTranslationHook(() => {
    scope is not global scope, so inline handlers can't see these
    otherwise.
    ============================================================ */
+/*
 Object.assign(window, {
   toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
   openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   closePlayerModal, exitApp,
+});
+*/
+Object.assign(window, {
+  toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
+  openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
+  saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
+  useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
+  saveDetailNotes, closePlayerModal, exitApp,
 });
