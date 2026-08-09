@@ -162,10 +162,17 @@
           <input type="text" id="fTagInput" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handleTagKey(event)">
         </div>
       </div>
+         <!--
       <div class="field">
         <label for="fNotes" data-en="Notes" data-ar="الملاحظات"></label>
         <textarea id="fNotes" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟" placeholder="Why did you save this? What's the takeaway?"></textarea>
       </div>
+         -->
+        <div class="field">
+        <label data-en="Notes" data-ar="الملاحظات"></label>
+        <textarea id="detailNotes" rows="4" onblur="saveDetailNotes()" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟"></textarea>
+        <span class="hint" data-en="Saves automatically when you click away." data-ar="تُحفظ تلقائياً عند الخروج من الحقل."></span>
+        </div> 
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeLinkModal()" data-en="Cancel" data-ar="إلغاء"></button>
