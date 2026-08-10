@@ -138,7 +138,7 @@ async function loadDownloads(){
     const [{ initializeApp }, { getFirestore, collection, onSnapshot, query, orderBy }, { firebaseConfig, DOWNLOADS_COLLECTION }] = await Promise.all([
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"),
-      import("./firebase-config.js"),
+      import("firebase-config.js"),
     ]);
 
     const app = initializeApp(firebaseConfig);
