@@ -12,7 +12,8 @@ import {
   collection, getDocs, deleteDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  auth, db, t, showToast, setDynamicTranslationHook, getStoredTheme, setTheme
+  auth, db, t, showToast, setDynamicTranslationHook, getStoredTheme, setTheme,
+  setLanguage, currentLang
 } from "./shared.js";
 
 let currentUser = null;
@@ -60,17 +61,30 @@ document.getElementById('saveProfileBtn').addEventListener('click', async () => 
    ============================================================ */
 function renderThemeOptions(){
   const active = getStoredTheme();
-  document.querySelectorAll('.theme-option').forEach(btn => {
+  document.querySelectorAll('#themeOptions .theme-option').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.themeChoice === active);
   });
 }
-document.querySelectorAll('.theme-option').forEach(btn => {
+document.querySelectorAll('#themeOptions .theme-option').forEach(btn => {
   btn.addEventListener('click', () => {
     setTheme(btn.dataset.themeChoice);
     renderThemeOptions();
   });
 });
 renderThemeOptions();
+
+/* ============================================================
+   LANGUAGE — English / العربية, shared with the topbar toggle
+   ============================================================ */
+function renderLangOptions(){
+  document.querySelectorAll('#langOptions .theme-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.langChoice === currentLang);
+  });
+}
+document.querySelectorAll('#langOptions .theme-option').forEach(btn => {
+  btn.addEventListener('click', () => setLanguage(btn.dataset.langChoice));
+});
+renderLangOptions();
 
 /* ============================================================
    SIGN OUT — the route guard above redirects to index.html
@@ -135,6 +149,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
    ============================================================ */
 setDynamicTranslationHook(() => {
   renderThemeOptions();
+  renderLangOptions();
 });
 
 /* ============================================================

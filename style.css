@@ -481,6 +481,7 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .theme-option .icon{ width:22px; height:22px; }
 .theme-option:hover{ border-color:var(--primary); color:var(--on-surface); }
 .theme-option.active{ border-color:var(--primary); background:var(--secondary-container); color:var(--on-secondary-container); }
+.settings-two-col{ grid-template-columns:1fr 1fr; }
 
 .settings-row{ display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .settings-row-title{ font-weight:700; font-size:14.5px; margin-bottom:3px; }
