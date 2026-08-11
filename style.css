@@ -71,6 +71,7 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .btn:active{transform:scale(0.97);}
 .btn-primary{ background:var(--primary); color:var(--on-primary); border-radius:var(--r-full); padding:12px 28px;}
 .btn-primary:hover{box-shadow:var(--shadow-1);}
+.btn-primary:disabled{ opacity:.6; cursor:not-allowed; box-shadow:none; }
 .btn-outline{ background:transparent; color:var(--primary); border:1.5px solid var(--primary); border-radius:var(--r-full); padding:10.5px 26px;}
 .btn-ghost{ background:transparent; color:var(--on-surface-variant); padding:10px 14px; border-radius:var(--r-md);}
 .btn-ghost:hover{ background:var(--surface-high); color:var(--on-surface);}
@@ -225,10 +226,22 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .switch::after{ content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--surface-lowest); box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform var(--transition); }
 .switch.on{ background:var(--primary); }
 .switch.on::after{ transform:translateX(18px); background:var(--on-primary); }
-.user-row{ display:flex; align-items:center; gap:10px; padding:10px; border-radius:var(--r-md); }
+.user-row{ display:flex; align-items:center; gap:6px; padding:4px; border-radius:var(--r-md); }
 .avatar{ width:32px; height:32px; border-radius:50%; background:var(--primary-container); color:var(--on-primary-container); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
 .user-row .name{ font-size:13px; font-weight:700; }
 .user-row .email{ font-size:12px; color:var(--on-surface-variant); }
+
+/* Whole name/avatar area is a button that opens Settings; the
+   sign-out icon button next to it stays a quick one-tap shortcut. */
+.user-row-link{
+  display:flex; align-items:center; gap:10px; flex:1; min-width:0;
+  background:none; border:none; padding:6px; border-radius:var(--r-md);
+  text-align:start; transition:background var(--transition);
+}
+.user-row-link:hover{ background:var(--surface-low); }
+.user-row-meta{ display:flex; flex-direction:column; min-width:0; gap:1px; }
+.user-row-meta .name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-row-meta .email{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .sidebar-scrim{ display:none; }
 
@@ -314,12 +327,18 @@ input, textarea, select{font-family:inherit; color:inherit;}
   font-size:14px; outline:none; transition:border-color var(--transition), background var(--transition);
 }
 .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--primary); background:var(--surface-lowest); }
+.field input:disabled{ opacity:.65; cursor:not-allowed; }
 .field textarea{ resize:vertical; min-height:88px; font-family:var(--font-body); }
 .tag-input-row{ display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; border-radius:var(--r-md); border:1px solid var(--outline-variant); background:var(--surface-low); }
 .tag-input-row input{ border:none; background:transparent; outline:none; flex:1; min-width:80px; font-size:13px; padding:2px;}
 .tag-pill{ display:flex; align-items:center; gap:6px; padding:4px 10px; border-radius:var(--r-full); background:var(--secondary-container); color:var(--on-secondary-container); font-size:12px; font-weight:700;}
 .tag-pill button{ background:none; border:none; color:inherit; font-size:14px; line-height:1; opacity:.7; }
 .modal-footer{ display:flex; justify-content:flex-end; gap:10px; padding:18px 24px; border-top:1px solid var(--outline-variant); }
+.admin-error{
+  background:color-mix(in srgb, var(--error) 14%, transparent);
+  color:var(--error); border:1px solid color-mix(in srgb, var(--error) 40%, transparent);
+  padding:10px 14px; border-radius:var(--r-md); font-size:13.5px;
+}
 
 /* ==================================================================
    AUTH PAGE (Email sign-in / sign-up)
@@ -370,26 +389,6 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .player-info .card-domain{ margin-bottom:14px; }
 .player-notes-label{ font-size:13px; font-weight:700; margin-bottom:6px; display:block; }
 .player-notes{ font-size:14px; color:var(--on-surface-variant); line-height:22px; }
-
-/* Editable notes textarea in the video player modal — same visual
-   language as the other form fields (.field textarea) so it reads
-   as an editable control rather than static text. */
-textarea.player-notes{
-  display:block;
-  width:100%;
-  font-family:var(--font-body);
-  color:var(--on-surface);
-  padding:10px 12px;
-  border-radius:var(--r-md);
-  border:1px solid var(--outline-variant);
-  background:var(--surface-low);
-  resize:vertical;
-  min-height:64px;
-  outline:none;
-  transition:border-color var(--transition), background var(--transition);
-}
-textarea.player-notes:focus{ border-color:var(--primary); background:var(--surface-lowest); }
-.player-info .hint{ display:block; margin-top:6px; margin-bottom:14px; }
 
 /* Zoom / fullscreen toggle, overlaid on the video */
 .player-zoom-btn{
@@ -445,6 +444,58 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ==================================================================
+   SETTINGS PAGE
+   ================================================================== */
+.settings-logo{ display:flex; }
+.settings-back-btn{ white-space:nowrap; }
+
+.settings-shell{ padding:40px 24px 96px; max-width:760px; }
+.settings-heading{ margin-bottom:28px; }
+.settings-heading h1{ font-family:var(--font-display); font-weight:800; font-size:32px; letter-spacing:-0.01em; margin-bottom:8px; }
+.settings-heading p{ color:var(--on-surface-variant); font-size:15px; line-height:24px; }
+
+.settings-card{
+  background:var(--surface-lowest); border:1px solid var(--outline-variant); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-1); padding:28px; margin-bottom:20px;
+}
+.settings-card-head{ display:flex; align-items:flex-start; gap:14px; margin-bottom:22px; }
+.settings-icon{
+  flex:none; width:40px; height:40px; border-radius:var(--r-md); background:var(--secondary-container);
+  color:var(--secondary); display:flex; align-items:center; justify-content:center;
+}
+.settings-icon .icon{ width:20px; height:20px; }
+.settings-card-head h2{ font-family:var(--font-display); font-weight:700; font-size:17px; margin-bottom:3px; }
+.settings-card-head p{ font-size:13.5px; color:var(--on-surface-variant); line-height:20px; }
+
+.settings-field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.settings-save-btn{ align-self:flex-start; }
+
+.theme-options{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+.theme-option{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:18px 12px; border-radius:var(--r-md); border:1.5px solid var(--outline-variant);
+  background:var(--surface-low); color:var(--on-surface-variant);
+  font-family:var(--font-label); font-weight:600; font-size:13px;
+  transition:border-color var(--transition), color var(--transition), background var(--transition);
+}
+.theme-option .icon{ width:22px; height:22px; }
+.theme-option:hover{ border-color:var(--primary); color:var(--on-surface); }
+.theme-option.active{ border-color:var(--primary); background:var(--secondary-container); color:var(--on-secondary-container); }
+
+.settings-row{ display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.settings-row-title{ font-weight:700; font-size:14.5px; margin-bottom:3px; }
+.settings-row-sub{ font-size:13px; color:var(--on-surface-variant); line-height:19px; }
+
+.settings-danger{ border-color:color-mix(in srgb, var(--error) 35%, var(--outline-variant)); }
+.settings-danger .settings-row-title{ color:var(--error); }
+.settings-delete-btn{
+  background:var(--error); color:var(--on-error); border-radius:var(--r-full); padding:11px 22px;
+  flex-shrink:0;
+}
+.settings-delete-btn:hover{ filter:brightness(0.95); }
+.settings-delete-btn:disabled{ opacity:.65; cursor:not-allowed; }
+
+/* ==================================================================
    LANGUAGE SWITCHING (English / العربية)
    ================================================================== */
 
@@ -452,7 +503,8 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
 html[dir="rtl"] body{ font-family:var(--font-arabic); }
 html[dir="rtl"] .hero h1, html[dir="rtl"] .section-head h2, html[dir="rtl"] .showcase-copy h2,
 html[dir="rtl"] .cta-band h2, html[dir="rtl"] .feature-card h3, html[dir="rtl"] .auth-card h1,
-html[dir="rtl"] .logo, html[dir="rtl"] .modal-header h2{ font-family:var(--font-arabic); }
+html[dir="rtl"] .logo, html[dir="rtl"] .modal-header h2, html[dir="rtl"] .settings-heading h1,
+html[dir="rtl"] .settings-card-head h2{ font-family:var(--font-arabic); }
 
 /* Language toggle button — matches the outline/ghost button language of the header */
 #lang-btn{
@@ -477,6 +529,7 @@ html[dir="rtl"] .nav-item.active::before{ left:auto; right:-16px; }
 html[dir="rtl"] .topbar-actions{ margin-left:0; margin-right:auto; }
 html[dir="rtl"] .card-domain .favicon-dot{ margin-left:0; }
 html[dir="rtl"] .check-list li{ text-align:right; }
+html[dir="rtl"] .user-row-link{ text-align:right; }
 
 .info-img{
   width:100%;
@@ -525,6 +578,15 @@ html[dir="rtl"] .check-list li{ text-align:right; }
   .content{ padding:20px 16px 64px; }
   .link-grid{ grid-template-columns:1fr; }
   .modal{ max-width:100%; }
+
+  .settings-topbar{ padding:14px 16px; }
+  .settings-shell{ padding:28px 16px 72px; }
+  .settings-heading h1{ font-size:26px; }
+  .settings-card{ padding:20px; }
+  .settings-field-row{ grid-template-columns:1fr; }
+  .theme-options{ grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .settings-row{ flex-direction:column; align-items:flex-start; gap:14px; }
+  .settings-row .btn{ width:100%; }
 }
 
 /* Shrink the wordmark text slightly on small screens so it never wraps */
