@@ -246,7 +246,7 @@ function renderLinks(){
       ? `<div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>`
       : '';
     return `<div class="link-card" onclick="openCard('${l.id}')">
-      <div class="thumb"><img src="${l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}" alt="">${playBadge}</div>
+      <div class="thumb"><img src="${thumbFor(l, folderObj)}" onerror="this.onerror=null;this.src='${placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}'" alt="">${playBadge}</div>
       <div class="card-body">
         <div class="card-top">
           <div>
@@ -276,6 +276,25 @@ function extractYouTubeId(url){
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
   return m ? m[1] : null;
 }
+
+/* ------------------------------------------------------------
+   YOUTUBE THUMBNAIL — real video thumbnail straight from
+   YouTube's public image CDN, no API key needed. Falls back to
+   the generated placeholder if the video has no thumbnail or
+   isn't a YouTube link.
+   ------------------------------------------------------------ */
+function youTubeThumbUrl(url){
+  const id = extractYouTubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+}
+function thumbFor(l, folderObj){
+  if(l.type === 'video'){
+    const yt = youTubeThumbUrl(l.url);
+    if(yt) return yt;
+  }
+  return l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
+}
+
 function detectType(url){
   return /youtube\.com|youtu\.be|vimeo\.com/.test(url) ? 'video' : 'article';
 }
@@ -623,7 +642,11 @@ function openDetailModal(l){
   const folderObj = folders.find(f => f.id === l.folder);
   currentDetailLinkId = l.id;
   document.getElementById('detailTitle').textContent = l.title;
-  document.getElementById('detailThumb').src = l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
+  document.getElementById('detailThumb').src = thumbFor(l, folderObj);
+  document.getElementById('detailThumb').onerror = function(){
+    this.onerror = null;
+    this.src = placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
+  };
   document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
   document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
   document.getElementById('detailNotes').value = l.notes || '';
