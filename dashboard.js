@@ -246,7 +246,7 @@ function renderLinks(){
       ? `<div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>`
       : '';
     return `<div class="link-card" onclick="openCard('${l.id}')">
-      <div class="thumb"><img src="${thumbFor(l, folderObj)}" onerror="this.onerror=null;this.src='${placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}'" alt="">${playBadge}</div>
+      <div class="thumb"><img src="${thumbFor(l, folderObj)}" onerror="handleThumbError(this, '${extractYouTubeId(l.url) || ''}', '${placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}')" alt="">${playBadge}</div>
       <div class="card-body">
         <div class="card-top">
           <div>
@@ -283,9 +283,9 @@ function extractYouTubeId(url){
    the generated placeholder if the video has no thumbnail or
    isn't a YouTube link.
    ------------------------------------------------------------ */
-function youTubeThumbUrl(url){
+function youTubeThumbUrl(url, quality){
   const id = extractYouTubeId(url);
-  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+  return id ? `https://i.ytimg.com/vi/${id}/${quality || 'hqdefault'}.jpg` : null;
 }
 function thumbFor(l, folderObj){
   if(l.type === 'video'){
@@ -294,6 +294,20 @@ function thumbFor(l, folderObj){
   }
   return l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
 }
+/* Multi-step fallback for <img onerror="...">: hqdefault → mqdefault →
+   default → the generated color placeholder. Attached to window since
+   it's referenced from inline HTML built via template strings. */
+window.handleThumbError = function(img, videoId, fallbackSrc){
+  const step = Number(img.dataset.thumbStep || 0);
+  const chain = ['hqdefault', 'mqdefault', 'default'];
+  if(videoId && step < chain.length - 1){
+    img.dataset.thumbStep = step + 1;
+    img.src = `https://i.ytimg.com/vi/${videoId}/${chain[step + 1]}.jpg`;
+  } else {
+    img.onerror = null;
+    img.src = fallbackSrc;
+  }
+};
 
 function detectType(url){
   return /youtube\.com|youtu\.be|vimeo\.com/.test(url) ? 'video' : 'article';
@@ -643,9 +657,9 @@ function openDetailModal(l){
   currentDetailLinkId = l.id;
   document.getElementById('detailTitle').textContent = l.title;
   document.getElementById('detailThumb').src = thumbFor(l, folderObj);
+  document.getElementById('detailThumb').dataset.thumbStep = '0';
   document.getElementById('detailThumb').onerror = function(){
-    this.onerror = null;
-    this.src = placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
+    handleThumbError(this, extractYouTubeId(l.url), placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined));
   };
   document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
   document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
