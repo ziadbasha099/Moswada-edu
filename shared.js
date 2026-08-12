@@ -1,17 +1,15 @@
 /* ============================================================
    SHARED MODULE
    ------------------------------------------------------------
-   Loaded by index.html (landing + auth), app.html (dashboard),
-   and settings.html. Holds everything pages need so it lives in
+   Loaded by BOTH index.html (landing + auth) and app.html
+   (dashboard). Holds everything both pages need so it lives in
    exactly one place:
      - Firebase app / auth / Firestore instances
      - The i18n dictionary + language switcher
-     - The theme (light/dark/system) switcher, persisted
      - The toast helper
      - Small string-escaping utilities
-   Page-specific logic (auth forms, folders/links/videos,
-   account settings) lives in auth.js, dashboard.js and
-   settings.js instead.
+   Page-specific logic (auth forms, folders/links/videos) lives
+   in auth.js and dashboard.js instead.
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -80,6 +78,7 @@ const I18N = {
     giveFolderNameToast: 'Give the folder a name',
     folderCreatedToast: name => `Folder "${name}" created`,
     linkRemovedToast: 'Link removed',
+    notesSavedToast: 'Notes saved',
     welcomeBackTitle: 'Welcome back',
     createAccountTitle: 'Create your account',
     signInSub: 'Sign in to pick up where you left off.',
@@ -133,6 +132,7 @@ const I18N = {
     giveFolderNameToast: 'أعطِ المجلد اسماً',
     folderCreatedToast: name => `تم إنشاء مجلد "${name}"`,
     linkRemovedToast: 'تمت إزالة الرابط',
+    notesSavedToast: 'تم حفظ الملاحظات',
     welcomeBackTitle: 'أهلاً بعودتك',
     createAccountTitle: 'أنشئ حسابك',
     signInSub: 'سجّل الدخول لتكمل من حيث توقفت.',
@@ -176,8 +176,8 @@ export function t(key){ return I18N[currentLang][key]; }
    Each page registers its own "dynamic refresh" callback (things
    that need to be redrawn in JS, like the topbar title or link
    grid on the dashboard, or the auth form copy on the auth page)
-   via setDynamicTranslationHook(), since pages don't share the
-   same dynamic content.
+   via setDynamicTranslationHook(), since the two pages don't
+   share the same dynamic content.
    ============================================================ */
 let dynamicTranslationHook = null;
 export function setDynamicTranslationHook(fn){ dynamicTranslationHook = fn; }
@@ -193,7 +193,7 @@ function applyStaticTranslations(lang){
   });
   document.querySelectorAll('[data-en-title]').forEach(el => {
     const val = el.getAttribute(`data-${lang}-title`);
-    if(val !== null){ el.title = val; el.setAttribute('aria-label', val); }
+    if(val !== null) el.title = val;
   });
 }
 

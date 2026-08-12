@@ -54,6 +54,10 @@
         <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span data-en="Videos" data-ar="الفيديوهات"></span> <span class="count" id="countVideos">0</span>
       </div>
+      <a class="nav-item" href="downloads.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span data-en="Downloads" data-ar="التنزيلات"></span>
+      </a>
     </div>
 
     <div class="nav-group" style="flex:1;">
@@ -96,6 +100,9 @@
         <input type="text" id="topbarSearch" data-en-placeholder="Search your links..." data-ar-placeholder="ابحث في روابطك..." placeholder="Search your links..." oninput="handleSearch(this.value)">
       </div>
       <div class="topbar-actions">
+        <a class="btn-icon" href="downloads.html" data-en-title="Downloads" data-ar-title="التنزيلات" title="Downloads" aria-label="Downloads">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </a>
         <!-- زر التبديل بين اللغات، متاح من داخل لوحة التحكم أيضاً -->
         <button id="lang-btn" aria-label="Switch language">
           <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -213,7 +220,8 @@
       <div class="card-tags" id="detailTags"></div>
       <div class="field">
         <label data-en="Notes" data-ar="الملاحظات"></label>
-        <p id="detailNotes" style="font-size:14px; color:var(--on-surface-variant); line-height:22px;"></p>
+        <textarea id="detailNotes" rows="4" onblur="saveDetailNotes()" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟"></textarea>
+        <span class="hint" data-en="Saves automatically when you click away." data-ar="تُحفظ تلقائياً عند الخروج من الحقل."></span>
       </div>
     </div>
     <div class="modal-footer">
@@ -241,7 +249,8 @@
       <p class="card-domain" id="playerDomain"></p>
       <div class="card-tags" id="playerTags" style="margin-bottom:14px;"></div>
       <span class="player-notes-label" data-en="Notes" data-ar="الملاحظات"></span>
-      <p class="player-notes" id="playerNotes"></p>
+      <textarea class="player-notes" id="playerNotes" rows="3" onblur="savePlayerNotes()" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟"></textarea>
+      <span class="hint" data-en="Saves automatically when you click away." data-ar="تُحفظ تلقائياً عند الخروج من الحقل."></span>
 
       <div class="time-notes-section">
         <span class="player-notes-label" data-en="Timestamped notes" data-ar="ملاحظات موقوتة"></span>
@@ -269,7 +278,7 @@
 <!-- YouTube IFrame API — needed to seek to a timestamp and read the current playback time -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
-<!-- shared.js first (Firebase init, i18n, theme, toast) — dashboard.js depends on it -->
+<!-- shared.js first (Firebase init, i18n, toast) — dashboard.js depends on it -->
 <script type="module" src="shared.js"></script>
 <script type="module" src="dashboard.js"></script>
 

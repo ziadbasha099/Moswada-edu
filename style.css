@@ -71,7 +71,6 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .btn:active{transform:scale(0.97);}
 .btn-primary{ background:var(--primary); color:var(--on-primary); border-radius:var(--r-full); padding:12px 28px;}
 .btn-primary:hover{box-shadow:var(--shadow-1);}
-.btn-primary:disabled{ opacity:.6; cursor:not-allowed; box-shadow:none; }
 .btn-outline{ background:transparent; color:var(--primary); border:1.5px solid var(--primary); border-radius:var(--r-full); padding:10.5px 26px;}
 .btn-ghost{ background:transparent; color:var(--on-surface-variant); padding:10px 14px; border-radius:var(--r-md);}
 .btn-ghost:hover{ background:var(--surface-high); color:var(--on-surface);}
@@ -327,7 +326,6 @@ input, textarea, select{font-family:inherit; color:inherit;}
   font-size:14px; outline:none; transition:border-color var(--transition), background var(--transition);
 }
 .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--primary); background:var(--surface-lowest); }
-.field input:disabled{ opacity:.65; cursor:not-allowed; }
 .field textarea{ resize:vertical; min-height:88px; font-family:var(--font-body); }
 .tag-input-row{ display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; border-radius:var(--r-md); border:1px solid var(--outline-variant); background:var(--surface-low); }
 .tag-input-row input{ border:none; background:transparent; outline:none; flex:1; min-width:80px; font-size:13px; padding:2px;}
@@ -339,6 +337,8 @@ input, textarea, select{font-family:inherit; color:inherit;}
   color:var(--error); border:1px solid color-mix(in srgb, var(--error) 40%, transparent);
   padding:10px 14px; border-radius:var(--r-md); font-size:13.5px;
 }
+.btn:disabled{ opacity:.6; cursor:not-allowed; box-shadow:none; }
+.field input:disabled{ opacity:.65; cursor:not-allowed; }
 
 /* ==================================================================
    AUTH PAGE (Email sign-in / sign-up)
@@ -389,6 +389,26 @@ input, textarea, select{font-family:inherit; color:inherit;}
 .player-info .card-domain{ margin-bottom:14px; }
 .player-notes-label{ font-size:13px; font-weight:700; margin-bottom:6px; display:block; }
 .player-notes{ font-size:14px; color:var(--on-surface-variant); line-height:22px; }
+
+/* Editable notes textarea in the video player modal — same visual
+   language as the other form fields (.field textarea) so it reads
+   as an editable control rather than static text. */
+textarea.player-notes{
+  display:block;
+  width:100%;
+  font-family:var(--font-body);
+  color:var(--on-surface);
+  padding:10px 12px;
+  border-radius:var(--r-md);
+  border:1px solid var(--outline-variant);
+  background:var(--surface-low);
+  resize:vertical;
+  min-height:64px;
+  outline:none;
+  transition:border-color var(--transition), background var(--transition);
+}
+textarea.player-notes:focus{ border-color:var(--primary); background:var(--surface-lowest); }
+.player-info .hint{ display:block; margin-top:6px; margin-bottom:14px; }
 
 /* Zoom / fullscreen toggle, overlaid on the video */
 .player-zoom-btn{
@@ -580,7 +600,6 @@ html[dir="rtl"] .user-row-link{ text-align:right; }
   .link-grid{ grid-template-columns:1fr; }
   .modal{ max-width:100%; }
 
-  .settings-topbar{ padding:14px 16px; }
   .settings-shell{ padding:28px 16px 72px; }
   .settings-heading h1{ font-size:26px; }
   .settings-card{ padding:20px; }

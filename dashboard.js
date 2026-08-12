@@ -5,9 +5,6 @@
    lives here. Sign-in itself happens on index.html (auth.js);
    by the time this file's route guard lets someone stay on this
    page, Firebase has already confirmed they're signed in.
-   Account-level actions (name, theme, sign out, delete account,
-   contact us) live on settings.html / settings.js instead — the
-   sidebar user row links there.
 
    Data model — every signed-in user gets their own private data:
      users/{uid}/folders/{folderId}
@@ -23,10 +20,7 @@ import {
   collection, addDoc, updateDoc, deleteDoc, doc,
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook,
-  getStoredTheme, setTheme
-} from "./shared.js";
+import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 
 /* ============================================================
    MOCK IMAGE HELPERS (generates a lightweight branded SVG
@@ -60,6 +54,7 @@ let searchQuery = '';
 let activeTag = null;
 let editingLinkId = null;
 let composingTags = [];
+let currentDetailLinkId = null;
 
 function getInitials(name, email){
   const source = (name && name.trim()) || (email ? email.split('@')[0] : '') || '';
@@ -445,8 +440,8 @@ function openPlayerModal(l){
   document.getElementById('playerTitle').textContent = l.title;
   document.getElementById('playerDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)}`;
   document.getElementById('playerTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('');
-  document.getElementById('playerNotes').textContent = l.notes || t('noNotesYetClick');
-  document.getElementById('deleteVideoBtn').onclick = () => { deleteLink(l.id); closePlayerModal(); };
+  document.getElementById('playerNotes').value = l.notes || '';
+  document.getElementById('deleteVideoBtn').onclick = () => { const id = l.id; activePlayerLink = null; deleteLink(id); closePlayerModal(); };
   document.getElementById('timeNoteTime').value = '';
   document.getElementById('timeNoteText').value = '';
   document.getElementById('useCurrentTimeBtn').disabled = !vid;
@@ -473,6 +468,7 @@ function destroyYtPlayer(){
 }
 
 function closePlayerModal(){
+  savePlayerNotes();
   if(document.fullscreenElement){ document.exitFullscreen(); }
   document.getElementById('playerModalBackdrop').classList.remove('show');
   destroyYtPlayer();
@@ -503,6 +499,29 @@ function updateZoomBtnState(){
 }
 document.addEventListener('fullscreenchange', updateZoomBtnState);
 document.addEventListener('webkitfullscreenchange', updateZoomBtnState);
+
+/* ------------------------------------------------------------
+   VIDEO NOTES — free-text notes on the video link itself,
+   editable directly in the player modal. Auto-saves to
+   Firestore whenever the textarea loses focus (blur), and
+   again automatically when the modal is closed.
+   ------------------------------------------------------------ */
+async function savePlayerNotes(){
+  if(!currentUser || !activePlayerLink) return;
+  const textarea = document.getElementById('playerNotes');
+  if(!textarea) return;
+  const notes = textarea.value.trim();
+  if((activePlayerLink.notes || '') === notes) return;
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { notes });
+    activePlayerLink.notes = notes;
+    const link = links.find(x => x.id === activePlayerLink.id);
+    if(link) link.notes = notes;
+    showToast(t('notesSavedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}
 
 /* ------------------------------------------------------------
    TIMESTAMPED NOTES — pin a note to a moment in the video,
@@ -602,16 +621,43 @@ function renderTimeNotes(l){
    ============================================================ */
 function openDetailModal(l){
   const folderObj = folders.find(f => f.id === l.folder);
+  currentDetailLinkId = l.id;
   document.getElementById('detailTitle').textContent = l.title;
   document.getElementById('detailThumb').src = l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
   document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
   document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
-  document.getElementById('detailNotes').textContent = l.notes || t('noNotesYet');
+  document.getElementById('detailNotes').value = l.notes || '';
   document.getElementById('detailOpenBtn').href = l.url;
-  document.getElementById('deleteLinkBtn').onclick = () => { deleteLink(l.id); closeDetailModal(); };
+  document.getElementById('deleteLinkBtn').onclick = () => { currentDetailLinkId = null; deleteLink(l.id); closeDetailModal(); };
   document.getElementById('detailModalBackdrop').classList.add('show');
 }
-function closeDetailModal(){ document.getElementById('detailModalBackdrop').classList.remove('show'); }
+function closeDetailModal(){
+  saveDetailNotes();
+  document.getElementById('detailModalBackdrop').classList.remove('show');
+  currentDetailLinkId = null;
+}
+
+/* ------------------------------------------------------------
+   DETAIL NOTES — free-text notes on a regular (non-video) link,
+   editable directly in the detail modal. Auto-saves to Firestore
+   whenever the textarea loses focus (blur), and again
+   automatically when the modal is closed.
+   ------------------------------------------------------------ */
+async function saveDetailNotes(){
+  if(!currentUser || !currentDetailLinkId) return;
+  const textarea = document.getElementById('detailNotes');
+  if(!textarea) return;
+  const notes = textarea.value.trim();
+  const link = links.find(x => x.id === currentDetailLinkId);
+  if(link && (link.notes || '') === notes) return;
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', currentDetailLinkId), { notes });
+    if(link) link.notes = notes;
+    showToast(t('notesSavedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}
 
 async function deleteLink(id){
   if(!currentUser) return;
@@ -626,8 +672,7 @@ async function deleteLink(id){
 /* ============================================================
    SIGN OUT — Firestore listeners are torn down and the redirect
    to index.html happens automatically via the route guard above
-   once Firebase confirms the session ended. Kept here as a quick
-   shortcut button; full account management lives on settings.html.
+   once Firebase confirms the session ended.
    ============================================================ */
 async function exitApp(){
   try{
@@ -663,5 +708,5 @@ Object.assign(window, {
   openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
-  closePlayerModal, exitApp,
+  saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
 });
