@@ -614,20 +614,42 @@ html[dir="rtl"] .user-row-link{ text-align:right; }
   .logo{ font-size:16px; }
 }
 
+
 /* ==================================================================
    REAL LOGO (image) — used instead of the placeholder .logo-mark SVG
    on index.html header/auth/footer and app.html sidebar. The image
    already contains the wordmark, so no separate text is shown next
    to it (same pattern already used on downloads.html).
    ================================================================== */
-.logo-image-only{ gap:0; }
-.logo-image-only .logo-mark{ height:34px; }
-.logo-image-only .logo-mark img{ height:100%; width:auto; object-fit:contain; }
+.logo-image-only{ gap:0; min-width:0; flex-shrink:1; }
+.logo-image-only .logo-mark{
+  flex-shrink:1;
+  min-width:0;
+  max-width:150px;
+  height:34px;
+}
+.logo-image-only .logo-mark img{
+  height:auto;
+  max-height:100%;
+  width:auto;
+  max-width:100%;
+  object-fit:contain;
+}
 
 .sidebar-brand .logo-mark-lg{ height:32px; }
 .sidebar-brand .logo-mark-lg img{ height:100%; width:auto; object-fit:contain; }
 
 @media (max-width: 768px){
-  .logo-image-only .logo-mark{ height:28px; }
+  .logo-image-only .logo-mark{ height:28px; max-width:120px; }
   .sidebar-brand .logo-mark-lg{ height:26px; }
+}
+
+/* على الشاشات الضيقة جداً: نقلل الزحمة في الهيدر بدل ما نخلي العناصر تتزاحم */
+@media (max-width: 420px){
+  .landing-header .container{ gap:8px; }
+  .logo-image-only .logo-mark{ max-width:96px; height:24px; }
+  .header-actions{ gap:8px; }
+  #lang-btn .lang-btn-label{ display:none; }
+  #lang-btn{ padding:9px; }
+  .header-actions .btn-primary{ padding:9px 16px; font-size:13px; }
 }
