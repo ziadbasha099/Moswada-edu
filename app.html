@@ -272,8 +272,9 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- YouTube IFrame API — needed to seek to a timestamp and read the current playback time -->
-<script src="https://www.youtube.com/iframe_api"></script>
+<!-- YouTube IFrame API is now loaded from inside dashboard.js, right after
+     window.onYouTubeIframeAPIReady is defined, so there's no race between
+     this script and the deferred module scripts below. -->
 
 <!-- shared.js first (Firebase init, i18n, toast) — dashboard.js depends on it -->
 <script type="module" src="shared.js"></script>

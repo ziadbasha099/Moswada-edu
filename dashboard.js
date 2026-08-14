@@ -455,6 +455,40 @@ window.onYouTubeIframeAPIReady = function(){
   if(activePlayerLink){ mountYouTubePlayer(activePlayerLink); }
 };
 
+/* ------------------------------------------------------------
+   Load the IFrame API script ourselves, right here, right after
+   the callback above is defined. Previously this <script> tag
+   lived in app.html and loaded in parallel with the deferred
+   module scripts (shared.js/dashboard.js) — depending on network
+   timing, the API could finish loading and fire
+   onYouTubeIframeAPIReady() BEFORE this module ran and defined
+   it, silently dropping the callback and leaving ytApiReady
+   stuck at false forever (black screen, no error). Loading it
+   from inside the module guarantees the callback always exists
+   first.
+   ------------------------------------------------------------ */
+(function loadYouTubeIframeAPI(){
+  if(window.YT && window.YT.Player){ ytApiReady = true; return; }
+  if(document.getElementById('yt-iframe-api-script')) return;
+  const tag = document.createElement('script');
+  tag.id = 'yt-iframe-api-script';
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+/* Safety-net fallback: if for any reason onYouTubeIframeAPIReady never
+   fires (e.g. the callback got overwritten by something else, or the
+   API loaded before this file ran in some edge case), poll briefly for
+   window.YT so the player still mounts instead of staying a black box. */
+function waitForYouTubeAPI(l){
+  if(window.YT && window.YT.Player){
+    ytApiReady = true;
+    if(activePlayerLink === l) mountYouTubePlayer(l);
+    return;
+  }
+  setTimeout(() => { if(activePlayerLink === l) waitForYouTubeAPI(l); }, 200);
+}
+
 function openPlayerModal(l){
   activePlayerLink = l;
   if(!l.timeNotes) l.timeNotes = [];
@@ -464,8 +498,14 @@ function openPlayerModal(l){
   const wrap = document.getElementById('playerWrap');
   if(vid){
     wrap.innerHTML = `<div id="ytPlayerEl" style="position:absolute; inset:0; width:100%; height:100%;"></div>`;
-    if(ytApiReady && window.YT && YT.Player){ mountYouTubePlayer(l); }
-    // else: onYouTubeIframeAPIReady() will mount it once the script finishes loading
+    if(ytApiReady && window.YT && YT.Player){
+      mountYouTubePlayer(l);
+    } else {
+      // onYouTubeIframeAPIReady() will normally mount it once the script
+      // finishes loading; this polling fallback covers the rare case where
+      // that callback doesn't fire for some reason.
+      waitForYouTubeAPI(l);
+    }
   } else {
     wrap.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">${t('previewUnavailable')}</div>`;
   }
@@ -490,6 +530,17 @@ function mountYouTubePlayer(l){
   ytPlayer = new YT.Player('ytPlayerEl', {
     videoId: vid,
     playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+    events: {
+      // Fires for real playback failures (video removed, or the owner
+      // disabled embedding) — without this the player area just stays
+      // black with no explanation.
+      onError: function(){
+        const w = document.getElementById('playerWrap');
+        if(w){
+          w.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;text-align:center;padding:20px;">${t('previewUnavailable')}</div>`;
+        }
+      }
+    }
   });
 }
 
