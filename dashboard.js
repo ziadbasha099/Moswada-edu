@@ -402,7 +402,7 @@ async function saveLink(){
     if(editingLinkId){
       await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
     } else {
-      await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
     }
     closeLinkModal();
     showToast(t('linkSavedToast'));
@@ -447,6 +447,7 @@ async function createFolder(){
 let ytPlayer = null;          // current YT.Player instance (YouTube videos only)
 let ytApiReady = false;       // becomes true once the IFrame API script has loaded
 let activePlayerLink = null;  // the link object currently open in the player modal
+let progressSaveInterval = null; // periodic autosave timer while a video plays
 
 // Called automatically by the YouTube IFrame API script once it finishes loading.
 window.onYouTubeIframeAPIReady = function(){
@@ -527,14 +528,30 @@ function mountYouTubePlayer(l){
   const vid = extractYouTubeId(l.url);
   const el = document.getElementById('ytPlayerEl');
   if(!vid || !el) return;
+  const playerVars = { rel: 0, modestbranding: 1, playsinline: 1 };
+  // Resume from the last saved position (skip the very start so we don't
+  // "resume" a video that only ever got a couple seconds in).
+  if(l.progress && l.progress > 3){ playerVars.start = Math.floor(l.progress); }
+
   ytPlayer = new YT.Player('ytPlayerEl', {
     videoId: vid,
-    playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+    playerVars,
     events: {
+      onReady: function(){
+        startProgressAutosave();
+      },
+      onStateChange: function(e){
+        // YT.PlayerState.ENDED === 0
+        if(e.data === 0){
+          stopProgressAutosave();
+          resetPlaybackProgress();
+        }
+      },
       // Fires for real playback failures (video removed, or the owner
       // disabled embedding) — without this the player area just stays
       // black with no explanation.
       onError: function(){
+        stopProgressAutosave();
         const w = document.getElementById('playerWrap');
         if(w){
           w.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;text-align:center;padding:20px;">${t('previewUnavailable')}</div>`;
@@ -545,6 +562,7 @@ function mountYouTubePlayer(l){
 }
 
 function destroyYtPlayer(){
+  stopProgressAutosave();
   if(ytPlayer && typeof ytPlayer.destroy === 'function'){
     try{ ytPlayer.destroy(); } catch(e){ /* no-op */ }
   }
@@ -553,6 +571,8 @@ function destroyYtPlayer(){
 
 function closePlayerModal(){
   savePlayerNotes();
+  savePlaybackProgress();   // capture the current position before we tear the player down
+  stopProgressAutosave();
   if(document.fullscreenElement){ document.exitFullscreen(); }
   document.getElementById('playerModalBackdrop').classList.remove('show');
   destroyYtPlayer();
@@ -602,6 +622,58 @@ async function savePlayerNotes(){
     const link = links.find(x => x.id === activePlayerLink.id);
     if(link) link.notes = notes;
     showToast(t('notesSavedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}
+
+/* ------------------------------------------------------------
+   PLAYBACK PROGRESS — remembers where the user left off in a
+   video so it resumes there next time, instead of always
+   restarting from 0:00. Saved to Firestore on the link doc as
+   `progress` (seconds). Skips saving in the first few seconds so
+   we never "resume" a video that was barely started, and resets
+   to 0 once the video actually finishes so a rewatch starts over.
+   ------------------------------------------------------------ */
+async function savePlaybackProgress(){
+  if(!currentUser || !activePlayerLink || !ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+  const progress = Math.floor(ytPlayer.getCurrentTime());
+  if(!progress || progress < 3) return;
+  if(activePlayerLink.progress === progress) return;
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { progress });
+    activePlayerLink.progress = progress;
+    const link = links.find(x => x.id === activePlayerLink.id);
+    if(link) link.progress = progress;
+  }catch(err){
+    console.error(err);
+  }
+}
+
+/* Periodic autosave while the video is actually playing, so progress
+   survives a hard refresh/tab close, not just a clean modal close. */
+function startProgressAutosave(){
+  stopProgressAutosave();
+  progressSaveInterval = setInterval(() => {
+    if(ytPlayer && typeof ytPlayer.getPlayerState === 'function' && ytPlayer.getPlayerState() === 1 /* YT.PlayerState.PLAYING */){
+      savePlaybackProgress();
+    }
+  }, 5000);
+}
+function stopProgressAutosave(){
+  if(progressSaveInterval){ clearInterval(progressSaveInterval); progressSaveInterval = null; }
+}
+
+/* Called when the video reaches the end — clears the saved position
+   so the next open starts fresh from 0:00 instead of the last second. */
+async function resetPlaybackProgress(){
+  if(!currentUser || !activePlayerLink) return;
+  if(!activePlayerLink.progress) return; // already 0, nothing to do
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { progress: 0 });
+    activePlayerLink.progress = 0;
+    const link = links.find(x => x.id === activePlayerLink.id);
+    if(link) link.progress = 0;
   }catch(err){
     console.error(err);
   }
