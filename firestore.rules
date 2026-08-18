@@ -1,0 +1,39 @@
+/* ============================================================
+   FIRESTORE SECURITY RULES — Moswada
+   ------------------------------------------------------------
+   هذا الملف نسخة موثّقة (نفس القواعد المنشورة حالياً على
+   Firebase Console → Firestore Database → Rules) عشان تبقى
+   محفوظة في الكود وتحت git، مش بس في الكونسول.
+
+   ⚠️ هذا الملف لا يُطبَّق تلقائياً بمجرد رفعه على GitHub. لازم
+   واحد من الاثنين:
+     أ) تنسخ محتواه وتلصقه يدوياً في Firebase Console → Firestore
+        Database → Rules → Publish (زي ما بتعمل دلوقتي).
+     ب) أو تستخدم Firebase CLI: `firebase deploy --only firestore:rules`
+        (المشروع فيه firebase.json بيشاور على الملف ده).
+
+   downloads/{docId}:
+     - القراءة مفتوحة للجميع (صفحة التنزيلات عامة).
+     - الكتابة مسموحة فقط لحساب بريد إلكتروني محدد (الأدمن).
+       ملحوظة: لو غيّرت بريد الأدمن، لازم تحدّث القيمة هنا وفي
+       الكونسول معاً.
+
+   users/{userId}/**:
+     - كل مستخدم يقرأ/يكتب بياناته الخاصة فقط (folders/links).
+   ============================================================ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /downloads/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email == "ziadbasha099@gmail.com";
+    }
+
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                          && request.auth.uid == userId;
+    }
+  }
+}

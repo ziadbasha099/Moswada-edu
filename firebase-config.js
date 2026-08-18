@@ -47,3 +47,32 @@ export const firebaseConfig = {
 /* اسم مجموعة (collection) الروابط في Firestore — لا تغيّره إلا إذا
    غيّرته في القاعدة أيضاً */
 export const DOWNLOADS_COLLECTION = "downloads";
+
+/* ============================================================
+   FIREBASE APP CHECK — reCAPTCHA v3 (حماية من البوتات)
+   ------------------------------------------------------------
+   هذا هو "الـ reCAPTCHA" اللي بيحمي تسجيل الدخول/التسجيل وكل
+   كتابة على Firestore (Auth + Firestore + Storage) من البوتات
+   والسكريبتات الآلية، من غير ما يطلب من المستخدم الحقيقي يعمل
+   أي حاجة إضافية (يشتغل في الخلفية تلقائياً).
+
+   خطوات التفعيل (لازم تتعمل قبل ما القيمة دي تشتغل):
+   1) Firebase Console → مشروعك → App Check (من القائمة الجانبية،
+      تحت Build).
+   2) "Get started" → اختر تطبيق الويب بتاعك → المزوّد
+      "reCAPTCHA v3" → اضغط Save. فايربيز هيولّد مفتاح reCAPTCHA
+      تلقائياً ويوريك الـ Site Key.
+   3) انسخ الـ Site Key والصقه بدل القيمة تحت.
+   4) بعد ما تتأكد إن الموقع شغال تمام بالمفتاح الجديد، ارجع لتبويب
+      App Check → لكل من Firestore و Authentication → فعّل
+      "Enforce" (بدون تفعيل enforce، Firebase بس بيراقب من غير
+      ما يمنع حد فعلياً — التفعيل هو اللي بيحوّلها لحماية حقيقية).
+
+   ملاحظة للتطوير المحلي (localhost): App Check بيرفض localhost
+   افتراضياً. عشان تجرب محلياً بس، حط السطر ده في الـ console قبل
+   تحميل الصفحة (Debug Token)، وسجّله في Firebase Console →
+   App Check → Manage debug tokens:
+     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+   لا تسيب السطر ده في كود الإنتاج أبداً.
+   ============================================================ */
+export const RECAPTCHA_V3_SITE_KEY = "PASTE_YOUR_RECAPTCHA_V3_SITE_KEY_HERE";

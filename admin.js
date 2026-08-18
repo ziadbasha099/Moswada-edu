@@ -27,9 +27,26 @@ import {
   getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, DOWNLOADS_COLLECTION } from "./firebase-config.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+import { firebaseConfig, DOWNLOADS_COLLECTION, RECAPTCHA_V3_SITE_KEY } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
+
+/* App Check (reCAPTCHA v3) — نفس الحماية المستخدمة في shared.js.
+   لوحة الأدمن أهم صفحة على الإطلاق لتفعيل الحماية دي عليها، لأنها
+   البوابة الوحيدة اللي بتكتب على مجموعة downloads العامة. راجع
+   التعليق في firebase-config.js لخطوات التفعيل من الـ Console. */
+if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (err) {
+    console.error("App Check init failed:", err);
+  }
+}
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 

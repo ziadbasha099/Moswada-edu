@@ -135,13 +135,29 @@ document.getElementById("loadingState").classList.remove("hidden");
 
 async function loadDownloads(){
   try {
-    const [{ initializeApp }, { getFirestore, collection, onSnapshot, query, orderBy }, { firebaseConfig, DOWNLOADS_COLLECTION }] = await Promise.all([
+    const [{ initializeApp }, { getFirestore, collection, onSnapshot, query, orderBy }, { initializeAppCheck, ReCaptchaV3Provider }, { firebaseConfig, DOWNLOADS_COLLECTION, RECAPTCHA_V3_SITE_KEY }] = await Promise.all([
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js"),
       import("./firebase-config.js"),
     ]);
 
     const app = initializeApp(firebaseConfig);
+
+    /* App Check (reCAPTCHA v3) — نفس الحماية المستخدمة في باقي
+       الصفحات، تمنع سكريبتات آلية من قراءة/استنزاف هذه الصفحة
+       العامة بكثافة غير طبيعية. راجع firebase-config.js للتفعيل. */
+    if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
+      try {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+          isTokenAutoRefreshEnabled: true,
+        });
+      } catch (err) {
+        console.error("App Check init failed:", err);
+      }
+    }
+
     const db = getFirestore(app);
 
     const q = query(collection(db, DOWNLOADS_COLLECTION), orderBy("createdAt", "desc"));

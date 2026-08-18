@@ -14,9 +14,27 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+import { firebaseConfig, RECAPTCHA_V3_SITE_KEY } from "./firebase-config.js";
 
 const fbApp = initializeApp(firebaseConfig);
+
+/* App Check (reCAPTCHA v3) — يحمي Auth/Firestore من طلبات البوتات
+   والسكريبتات الآلية. يعمل فقط لو حطيت مفتاح حقيقي في
+   firebase-config.js وفعّلت Enforce من الـ Console (راجع التعليق
+   هناك). لو المفتاح لسه القيمة الافتراضية، بنتجاهل التفعيل بدل ما
+   نكسر الموقع بخطأ في الـ console. */
+if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
+  try {
+    initializeAppCheck(fbApp, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (err) {
+    console.error("App Check init failed:", err);
+  }
+}
+
 export const auth = getAuth(fbApp);
 export const db = getFirestore(fbApp);
 export const googleProvider = new GoogleAuthProvider();
