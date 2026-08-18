@@ -28,7 +28,7 @@ import {
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
-import { firebaseConfig, DOWNLOADS_COLLECTION, RECAPTCHA_V3_SITE_KEY } from "./firebase-config.js";
+import { firebaseConfig, DOWNLOADS_COLLECTION, RECAPTCHA_V3_SITE_KEY, ADMIN_EMAIL } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 
@@ -124,7 +124,18 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    /* التحقق الحقيقي من عدم تسريب البيانات لغير الأدمن بيتم في
+       Firestore rules (write مرفوض لغير هذا البريد). لكن من غير
+       هذا الفحص هنا، أي حساب عادي في الموقع كان هيقدر "يسجّل
+       دخول" هنا ويشوف واجهة لوحة الأدمن (القائمة، الأزرار...)
+       حتى لو مش هيقدر يحفظ حاجة فعلياً. الفحص ده بيمنع الدخول
+       من الأساس. */
+    if (cred.user.email !== ADMIN_EMAIL) {
+      await signOut(auth);
+      loginError.textContent = t("invalidLogin");
+      loginError.classList.remove("hidden");
+    }
   } catch (err) {
     console.error(err);
     loginError.textContent = t("invalidLogin");
@@ -135,13 +146,19 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
+  if (user && user.email === ADMIN_EMAIL) {
     loginView.classList.add("hidden");
     dashView.classList.remove("hidden");
     listenDownloads();
   } else {
     dashView.classList.add("hidden");
     loginView.classList.remove("hidden");
+    // حساب مسجّل دخول لكنه مش الأدمن (مثلاً لو دخل عبر تبويب تاني
+    // بحساب عادي، أو الجلسة قديمة) — نسجّل خروجه تلقائياً بدل ما
+    // نسيبه معلّق على شاشة تسجيل الدخول وهو فعلياً "مسجّل دخول".
+    if (user && user.email !== ADMIN_EMAIL) {
+      signOut(auth);
+    }
   }
 });
 

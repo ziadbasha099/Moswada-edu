@@ -48,6 +48,11 @@ export const firebaseConfig = {
    غيّرته في القاعدة أيضاً */
 export const DOWNLOADS_COLLECTION = "downloads";
 
+/* البريد الإلكتروني المسموح له بدخول لوحة الأدمن. لازم يكون
+   نفس القيمة المكتوبة في firestore.rules بالظبط (وإلا هتلاقي
+   نفسك عدّيت من شاشة الدخول بس الكتابة في Firestore هترفض). */
+export const ADMIN_EMAIL = "ziadbasha099@gmail.com";
+
 /* ============================================================
    FIREBASE APP CHECK — reCAPTCHA v3 (حماية من البوتات)
    ------------------------------------------------------------
@@ -75,4 +80,4 @@ export const DOWNLOADS_COLLECTION = "downloads";
      self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
    لا تسيب السطر ده في كود الإنتاج أبداً.
    ============================================================ */
-export const RECAPTCHA_V3_SITE_KEY = "6Lcg8ootAAAAAJ-Q58iOltqowG3dELsdv6DTLbe1";
+export const RECAPTCHA_V3_SITE_KEY = "PASTE_YOUR_RECAPTCHA_V3_SITE_KEY_HERE";
