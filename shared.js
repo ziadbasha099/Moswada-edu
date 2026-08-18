@@ -131,6 +131,10 @@ const I18N = {
     nameRequiredToast: 'Enter a name first',
     requiresRecentLoginToast: 'For your security, sign out and sign back in, then try deleting your account again.',
     accountDeletedToast: 'Account deleted',
+    forgotPassword: 'Forgot password?',
+    resetEmailPrompt: 'Enter your email above first, then tap "Forgot password?" again.',
+    resetEmailSent: "If an account exists for that email, we've sent a reset link.",
+    resetEmailSending: 'Sending…', 
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -185,6 +189,10 @@ const I18N = {
     nameRequiredToast: 'أدخل اسماً أولاً',
     requiresRecentLoginToast: 'لحماية حسابك، سجّل الخروج ثم أعد تسجيل الدخول، وحاول حذف حسابك مرة أخرى.',
     accountDeletedToast: 'تم حذف الحساب',
+    forgotPassword: 'نسيت كلمة المرور؟',
+    resetEmailPrompt: 'أدخل بريدك الإلكتروني أعلاه أولاً، ثم اضغط "نسيت كلمة المرور؟" مرة أخرى.',
+    resetEmailSent: 'إذا كان هناك حساب مرتبط بهذا البريد، فقد أرسلنا رابط إعادة التعيين إليه.',
+    resetEmailSending: 'جارٍ الإرسال…',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
