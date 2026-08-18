@@ -563,6 +563,18 @@ html[dir="rtl"] .user-row-link{ text-align:right; }
   background:var(--surface-lowest);
 }
 
+.forgot-password-row{ display:flex; justify-content:flex-end; margin-top:-6px; }
+.forgot-password-link{
+  background:none; border:none; padding:0; color:var(--primary);
+  font-family:var(--font-label); font-weight:600; font-size:13px; cursor:pointer;
+}
+.forgot-password-link:hover{ text-decoration:underline; }
+.forgot-password-link:disabled{ opacity:.6; cursor:not-allowed; }
+.auth-error.is-success{
+  background:var(--secondary-container); color:var(--on-secondary-container);
+  border-color:color-mix(in srgb, var(--secondary) 35%, transparent);
+}
+
 /* ==================================================================
    RESPONSIVE
    ================================================================== */
