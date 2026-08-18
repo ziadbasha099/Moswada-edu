@@ -75,4 +75,4 @@ export const DOWNLOADS_COLLECTION = "downloads";
      self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
    لا تسيب السطر ده في كود الإنتاج أبداً.
    ============================================================ */
-export const RECAPTCHA_V3_SITE_KEY = "PASTE_YOUR_RECAPTCHA_V3_SITE_KEY_HERE";
+export const RECAPTCHA_V3_SITE_KEY = "6Lcg8ootAAAAAJ-Q58iOltqowG3dELsdv6DTLbe1";
