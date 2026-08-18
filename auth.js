@@ -69,7 +69,8 @@ function switchAuthMode(mode){
   document.getElementById('authName').required = isSignUp;
   document.getElementById('authPassword').setAttribute('autocomplete', isSignUp ? 'new-password' : 'current-password');
   document.getElementById('authSubmitBtn').textContent = isSignUp ? t('signUpFree') : t('signIn');
-
+  document.getElementById('forgotPasswordRow').classList.toggle('hidden', isSignUp);
+   
   const switchEl = document.getElementById('authSwitch');
   switchEl.innerHTML = '';
   const label = document.createElement('span');
