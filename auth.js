@@ -130,6 +130,48 @@ async function handleAuthSubmit(e){
 }
 
 /* ------------------------------------------------------------
+   FORGOT PASSWORD — sends a Firebase password-reset email to
+   whatever address is currently typed in the sign-in form.
+   Deliberately shows the same success message whether or not an
+   account exists for that email (prevents account enumeration —
+   a real security concern, not just UX polish).
+   ------------------------------------------------------------ */
+async function handleForgotPassword(){
+  hideAuthError();
+  const email = document.getElementById('authEmail').value.trim();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if(!emailPattern.test(email)){
+    showAuthError(t('resetEmailPrompt'));
+    return;
+  }
+
+  const link = document.querySelector('#forgotPasswordRow .forgot-password-link');
+  const originalText = link.textContent;
+  link.disabled = true;
+  link.textContent = t('resetEmailSending');
+
+  try{
+    await sendPasswordResetEmail(auth, email);
+  } catch(err){
+    // auth/user-not-found is intentionally treated the same as success
+    // so the response never reveals whether the email is registered.
+    if(err.code !== 'auth/user-not-found'){
+      console.error(err);
+      showAuthError(mapAuthError(err.code));
+      link.disabled = false;
+      link.textContent = originalText;
+      return;
+    }
+  }
+
+  link.disabled = false;
+  link.textContent = originalText;
+  showAuthError(t('resetEmailSent'));
+  document.getElementById('authError').classList.remove('hidden');
+}
+
+/* ------------------------------------------------------------
    GOOGLE SIGN-IN via popup. Works for both sign-in and sign-up —
    Firebase creates the user automatically on first sign-in.
    ------------------------------------------------------------ */
