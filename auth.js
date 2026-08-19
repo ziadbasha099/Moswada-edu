@@ -170,6 +170,7 @@ async function handleForgotPassword(){
 
   link.disabled = false;
   link.textContent = originalText;
+  showAuthError(t('resetEmailSent')); 
 }
 
 /* ------------------------------------------------------------
