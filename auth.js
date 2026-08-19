@@ -86,9 +86,13 @@ function switchAuthMode(mode){
 }
 
 function showAuthError(msg){
-  const el = document.getElementById('authError');
-  el.textContent = msg;
-  el.classList.remove('hidden');
+
+  const errEl = document.getElementById('authError');
+  errEl.textContent = msg;
+  // اجعل كلاس النجاح يظهر فقط إذا كانت الرسالة هي رسالة نجاح إعادة تعيين كلمة المرور:
+  errEl.classList.toggle('is-success', msg === t('resetEmailSent'));
+  errEl.classList.remove('hidden');
+ 
 }
 function hideAuthError(){
   document.getElementById('authError').classList.add('hidden');
@@ -167,8 +171,6 @@ async function handleForgotPassword(){
 
   link.disabled = false;
   link.textContent = originalText;
-  showAuthError(t('resetEmailSent'));
-  document.getElementById('authError').classList.remove('hidden');
 }
 
 /* ------------------------------------------------------------
