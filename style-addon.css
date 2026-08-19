@@ -1,0 +1,11 @@
+
+/* ==================================================================
+   ABOUT SECTION ("مَن نحن") — SEO/GEO content block
+   ================================================================== */
+.about-grid{ grid-template-columns:repeat(2, 1fr); }
+.about-grid .feature-card h3{ margin-bottom:10px; }
+.about-grid .feature-card p{ line-height:26px; }
+
+@media (max-width: 980px){
+  .about-grid{ grid-template-columns:1fr; }
+}

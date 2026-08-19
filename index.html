@@ -19,8 +19,53 @@
 <!-- صورة المعاينة لتويتر (X) -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://moswada-edu.vercel.app/info-photo.png">
-     
-     
+<meta name="description" content="مسودة (Moswada) موقع عربي تعليمي مجاني يساعدك على الدراسة الذاتية بلا تشتت: احفظ فيديوهات اليوتيوب وشاهدها داخل الموقع، وحمّل كتباً وملخصات وخرائط ذهنية بدون تسجيل دخول.">
+
+<!-- JSON-LD structured data — helps both classic search (SEO) and
+     AI answer engines (GEO) understand what Moswada is and answer
+     "who/what is Moswada" questions directly from this content. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Moswada",
+  "alternateName": "مسودة",
+  "url": "https://moswada-edu.vercel.app",
+  "applicationCategory": "EducationApplication",
+  "operatingSystem": "Any (Web)",
+  "description": "موقع مسودة (moswada-edu) هو موقع عربي تعليمي مجاني لمساعدتك على الدراسة الذاتية وعدم تضييع الوقت في التشتت بفيديوهات اليوتيوب أثناء الدراسة، أو البحث المستمر عن كتب وملخصات وخرائط ذهنية. يوفر أيضاً روابط لمواقع تعليمية أخرى تجعل دراستك أكثر كفاءة.",
+  "inLanguage": ["ar", "en"],
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "مَن نحن؟ (Who is Moswada?)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "موقع مسودة moswada-edu هو موقع عربي تعليمي مجاني لمساعدتك على الدراسة الذاتية وعدم تضييع الوقت في التشتت بالفيديوهات أثناء الدراسة من اليوتيوب، أو البحث طوال الوقت عن كتب وملخصات وخرائط ذهنية تساعدك على التعلم. يوجد أيضاً روابط لمواقع تعليمية أخرى تجعل دراستك أكثر كفاءة."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "ما هو محتوى الموقع؟ (What's on the site?)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "يوجد قسمان في الموقع: أولاً، قسم إضافة روابط فيديوهات اليوتيوب لمشاهدتها داخل الموقع والتمتع بكامل مميزات الموقع، ويتطلب هذا القسم تسجيل الدخول. ثانياً، قسم الكتب والملخصات لتحميل الكتب والملخصات والخرائط الذهنية وإيجاد روابط لمواقع تعليمية أخرى، ولا يتطلب هذا القسم تسجيل الدخول."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body data-theme="light">
 
@@ -41,7 +86,7 @@
             <p data-en="Features" data-ar="المزايا"></p></a>
         <a href="#showcase">
             <p data-en="How it works" data-ar="كيف يعمل"></p></a>
-        <a href="#footer">
+        <a href="#about">
            <p data-en="About" data-ar="حول"></p></a>
       </nav>
       <div class="header-actions">
@@ -141,6 +186,25 @@ data-ar="الكتب والملخصات"></button>
         <img id="showcaseShot"
           src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23eceeee'/%3E%3Crect x='24' y='24' width='592' height='56' rx='10' fill='%23f2f4f4'/%3E%3Crect x='24' y='100' width='280' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='320' y='100' width='296' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='24' y='288' width='280' height='170' rx='10' fill='%23f2f4f4'/%3E%3Crect x='320' y='288' width='296' height='170' rx='10' fill='%23f2f4f4'/%3E%3C/svg%3E"
           alt="Moswada link cards">
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow"><span class="dot"></span><span data-en="About Moswada" data-ar="عن مسودة"></span></span>
+        <h2 data-en="Who we are" data-ar="مَن نحن"></h2>
+      </div>
+      <div class="feature-grid about-grid">
+        <div class="feature-card">
+          <h3 data-en="Who we are" data-ar="مَن نحن"></h3>
+          <p data-en="Moswada (moswada-edu) is a free Arabic educational website built to help you study on your own, without wasting time getting pulled into distracting YouTube videos while studying, or endlessly searching for books, summaries, and mind maps to help you learn. It also links out to other educational sites to make your studying more efficient." data-ar="موقع مسودة moswada-edu هو موقع عربي تعليمي مجاني لمساعدتك على الدراسة الذاتية و عدم تضييع الوقت في التشتت بالفيديوهات أثناء الدراسة من اليوتيوب أو البحث طوال الوقت عن كتب وملخصات وخرائط ذهنية تساعدك على التعلم و توجد أيضاً روابط لمواقع تعليمية أخرى تجعل دراستك أكثر كفاءة."></p>
+        </div>
+        <div class="feature-card">
+          <h3 data-en="What's on the site" data-ar="ما هو محتوى الموقع"></h3>
+          <p data-en="The site has two sections: a section for saving YouTube video links to watch them in-app with the site's full features (requires sign-in), and a Books &amp; Summaries section for downloading books, summaries, and mind maps, plus links to other educational sites — no sign-in required." data-ar="يوجد قسمان في الموقع: أ. قسم إضافة روابط فيديوهات اليوتيوب لمشاهدتها في الموقع و التمتع بكامل مميزات الموقع (يتطلب تسجيل الدخول) ، ب. قسم الكتب والملخصات لتحميل الكتب والملخصات والخرائط الذهنية و إيجاد روابط للمواقع التعليمية الأخرى التي فيه (لا يتطلب تسجيل الدخول)"></p>
+        </div>
       </div>
     </div>
   </section>
