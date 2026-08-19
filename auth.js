@@ -8,8 +8,7 @@
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   onAuthStateChanged, updateProfile, signInWithPopup,
- 
-  createUserWithEmailAndPassword, sendPasswordResetEmail
+  sendPasswordResetEmail
    
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, googleProvider, t, setDynamicTranslationHook } from "./shared.js";
