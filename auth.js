@@ -207,5 +207,5 @@ setDynamicTranslationHook(() => {
    otherwise.
    ============================================================ */
 Object.assign(window, {
-  showAuth, backToLanding, switchAuthMode, handleAuthSubmit, handleGoogleSignIn,
+  showAuth, backToLanding, switchAuthMode, handleAuthSubmit, handleGoogleSignIn, handleForgotPassword,
 });
