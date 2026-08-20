@@ -249,14 +249,11 @@ function renderTagDatalist(){
 function renderLinks(){
   renderFolderNav();
   renderTagChips();
+  renderTagDatalist();   // ⬅️ ضيف السطر ده
   const list = currentList();
   const grid = document.getElementById('linkGrid');
   const empty = document.getElementById('emptyState');
   document.getElementById('resultCount').textContent = t('resultCount')(list.length);
-   
-  renderTagDatalist();   // ⬅️ ضيف السطر ده
-  const list = currentList();
-  // ... باقي الكود زي ما هو
 
   if(list.length === 0){
     grid.innerHTML = '';
