@@ -233,6 +233,19 @@ function toggleTag(tag){
   renderLinks();
 }
 
+/* ------------------------------------------------------------
+   TAG SUGGESTIONS — a single shared list of every tag already
+   used across the user's links, so the Add-link modal and the
+   video player modal both suggest the same tags instead of
+   drifting into near-duplicate spellings.
+   ------------------------------------------------------------ */
+function renderTagDatalist(){
+  const dl = document.getElementById('existingTags');
+  if(!dl) return;
+  const allTags = [...new Set(links.flatMap(l => l.tags || []))].sort();
+  dl.innerHTML = allTags.map(tag => `<option value="${escapeAttr(tag)}"></option>`).join('');
+}
+
 function renderLinks(){
   renderFolderNav();
   renderTagChips();
@@ -240,6 +253,10 @@ function renderLinks(){
   const grid = document.getElementById('linkGrid');
   const empty = document.getElementById('emptyState');
   document.getElementById('resultCount').textContent = t('resultCount')(list.length);
+   
+  renderTagDatalist();   // ⬅️ ضيف السطر ده
+  const list = currentList();
+  // ... باقي الكود زي ما هو
 
   if(list.length === 0){
     grid.innerHTML = '';
