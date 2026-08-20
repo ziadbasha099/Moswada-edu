@@ -455,6 +455,11 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
 }
 .time-note-delete:hover{ background:var(--surface-high); color:var(--error); }
 
+/* Editable tags section in the video player modal — mirrors the
+   Add-link modal's tag-input-row, placed at the bottom of the card. */
+.player-tags-section{ margin-top:18px; padding-top:18px; border-top:1px solid var(--outline-variant); }
+.player-tags-section .player-notes-label{ margin-bottom:10px; }
+
 .toast{
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(10px); z-index:200;
   background:var(--on-surface); color:var(--surface); padding:12px 20px; border-radius:var(--r-md);

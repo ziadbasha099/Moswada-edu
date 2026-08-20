@@ -56,6 +56,10 @@ let editingLinkId = null;
 let composingTags = [];
 let currentDetailLinkId = null;
 
+/* Tags being edited live from the video player modal (kept separate
+   from `composingTags`, which belongs to the Add/Edit link modal). */
+let playerComposingTags = [];
+
 function getInitials(name, email){
   const source = (name && name.trim()) || (email ? email.split('@')[0] : '') || '';
   const parts = source.trim().split(/\s+/).filter(Boolean);
@@ -203,10 +207,14 @@ function currentList(){
   else if(activeFolder !== 'all'){ list = list.filter(l => l.folder === activeFolder); }
   if(activeTag){ list = list.filter(l => l.tags.includes(activeTag)); }
   if(searchQuery){
+    // Allow searching a tag with or without its leading "#" — tags are
+    // stored without it (handleTagKey/handlePlayerTagKey strip it on
+    // add), so "#محمد" and "محمد" should both match the same tag.
+    const cleanQuery = searchQuery.replace(/^#/, '');
     list = list.filter(l =>
       l.title.toLowerCase().includes(searchQuery) ||
       (l.notes||'').toLowerCase().includes(searchQuery) ||
-      (l.tags||[]).some(tg => tg.toLowerCase().includes(searchQuery))
+      (l.tags||[]).some(tg => tg.toLowerCase().includes(cleanQuery))
     );
   }
   return list;
@@ -513,7 +521,11 @@ function openPlayerModal(l){
 
   document.getElementById('playerTitle').textContent = l.title;
   document.getElementById('playerDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)}`;
-  document.getElementById('playerTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('');
+
+  // Editable tags row, moved to the bottom of the card.
+  playerComposingTags = [...(l.tags || [])];
+  renderPlayerTagRow();
+
   document.getElementById('playerNotes').value = l.notes || '';
   document.getElementById('deleteVideoBtn').onclick = () => { const id = l.id; activePlayerLink = null; deleteLink(id); closePlayerModal(); };
   document.getElementById('timeNoteTime').value = '';
@@ -622,6 +634,65 @@ async function savePlayerNotes(){
     const link = links.find(x => x.id === activePlayerLink.id);
     if(link) link.notes = notes;
     showToast(t('notesSavedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}
+
+/* ------------------------------------------------------------
+   PLAYER TAGS — editable tags directly from the video player
+   modal (moved to the bottom of the card, below timestamped
+   notes). Mirrors the Add/Edit-link modal's tag-pill UI, and
+   auto-saves to Firestore on every add/remove so it behaves the
+   same as the notes field.
+   ------------------------------------------------------------ */
+function renderPlayerTagRow(){
+  const row = document.getElementById('playerTagRow');
+  const input = document.getElementById('playerTagInput');
+  if(!row || !input) return;
+  row.querySelectorAll('.tag-pill').forEach(el => el.remove());
+  playerComposingTags.forEach(tg => {
+    const pill = document.createElement('span');
+    pill.className = 'tag-pill';
+    pill.innerHTML = `#${escapeHtml(tg)} <button type="button" onclick="removePlayerTag('${escapeAttr(tg)}')">&times;</button>`;
+    row.insertBefore(pill, input);
+  });
+}
+
+function handlePlayerTagKey(e){
+  if(e.key === 'Enter' || e.key === ','){
+    e.preventDefault();
+    const input = document.getElementById('playerTagInput');
+    const val = input.value.trim().replace(/^#/,'');
+    if(val && !playerComposingTags.includes(val)){
+      playerComposingTags.push(val);
+      renderPlayerTagRow();
+      savePlayerTags();
+    }
+    input.value = '';
+  } else if(e.key === 'Backspace' && document.getElementById('playerTagInput').value === ''){
+    if(playerComposingTags.length){
+      playerComposingTags.pop();
+      renderPlayerTagRow();
+      savePlayerTags();
+    }
+  }
+}
+
+function removePlayerTag(tg){
+  playerComposingTags = playerComposingTags.filter(x => x !== tg);
+  renderPlayerTagRow();
+  savePlayerTags();
+}
+
+async function savePlayerTags(){
+  if(!currentUser || !activePlayerLink) return;
+  const tags = [...playerComposingTags];
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { tags });
+    activePlayerLink.tags = tags;
+    const link = links.find(x => x.id === activePlayerLink.id);
+    if(link) link.tags = tags;
   }catch(err){
     console.error(err);
   }
@@ -869,4 +940,5 @@ Object.assign(window, {
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
+  handlePlayerTagKey, removePlayerTag,
 });
