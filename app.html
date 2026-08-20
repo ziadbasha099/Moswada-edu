@@ -159,7 +159,9 @@
       <div class="field">
         <label for="fTagInput" data-en="Tags" data-ar="الوسوم"></label>
         <div class="tag-input-row" id="tagRow">
-          <input type="text" id="fTagInput" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handleTagKey(event)">
+       
+             <!-- في مودال إضافة/تعديل رابط -->
+          <input type="text" id="fTagInput" list="existingTags" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handleTagKey(event)">
         </div>
       </div>
       <div class="field">
@@ -266,7 +268,9 @@
       <div class="player-tags-section">
         <span class="player-notes-label" data-en="Tags" data-ar="الوسوم"></span>
         <div class="tag-input-row" id="playerTagRow">
-          <input type="text" id="playerTagInput" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handlePlayerTagKey(event)">
+   
+          <!-- في مودال المشغّل -->
+          <input type="text" id="playerTagInput" list="existingTags" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handlePlayerTagKey(event)">   
         </div>
       </div>
     </div>
@@ -278,7 +282,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
+<datalist id="existingTags"></datalist>
 <!-- YouTube IFrame API is now loaded from inside dashboard.js, right after
      window.onYouTubeIframeAPIReady is defined, so there's no race between
      this script and the deferred module scripts below. -->
