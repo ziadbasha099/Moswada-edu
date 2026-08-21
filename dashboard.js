@@ -205,16 +205,16 @@ function currentList(){
   let list = links.slice();
   if(activeFolder === 'videos'){ list = list.filter(l => l.type === 'video'); }
   else if(activeFolder !== 'all'){ list = list.filter(l => l.folder === activeFolder); }
-  if(activeTag){ list = list.filter(l => l.tags.includes(activeTag)); }
+  if(activeTag){ list = list.filter(l => l.tags && l.tags.includes(activeTag)); }
   if(searchQuery){
     // Allow searching a tag with or without its leading "#" — tags are
     // stored without it (handleTagKey/handlePlayerTagKey strip it on
     // add), so "#محمد" and "محمد" should both match the same tag.
-    const cleanQuery = searchQuery.replace(/^#/, '');
+    const cleanQuery = searchQuery.trim().toLowerCase().replace(/^#/, '');
     list = list.filter(l =>
       l.title.toLowerCase().includes(searchQuery) ||
       (l.notes||'').toLowerCase().includes(searchQuery) ||
-      (l.tags||[]).some(tg => tg.toLowerCase().includes(cleanQuery))
+      (l.tags||[]).some(tg => tg.toLowerCase().trim().includes(cleanQuery))
     );
   }
   return list;
@@ -249,7 +249,7 @@ function renderTagDatalist(){
 function renderLinks(){
   renderFolderNav();
   renderTagChips();
-  renderTagDatalist();   // ⬅️ ضيف السطر ده
+  renderTagDatalist();
   const list = currentList();
   const grid = document.getElementById('linkGrid');
   const empty = document.getElementById('emptyState');
@@ -407,6 +407,13 @@ function renderTagRow(){
 
 async function saveLink(){
   if(!currentUser) return;
+  const pendingTag = document.getElementById('fTagInput') ? document.getElementById('fTagInput').value.trim().replace(/^#/, '') : '';
+  if (pendingTag && !composingTags.includes(pendingTag)) {
+    composingTags.push(pendingTag);
+    const input = document.getElementById('fTagInput');
+    if(input) input.value = '';
+  }
+
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
   let title = document.getElementById('fTitle').value.trim();
@@ -598,6 +605,7 @@ function destroyYtPlayer(){
 
 function closePlayerModal(){
   savePlayerNotes();
+  savePlayerTags();
   savePlaybackProgress();   // capture the current position before we tear the player down
   stopProgressAutosave();
   resetVideoLock();
@@ -769,6 +777,13 @@ function removePlayerTag(tg){
 
 async function savePlayerTags(){
   if(!currentUser || !activePlayerLink) return;
+  const pendingTag = document.getElementById('playerTagInput') ? document.getElementById('playerTagInput').value.trim().replace(/^#/, '') : '';
+  if (pendingTag && !playerComposingTags.includes(pendingTag)) {
+    playerComposingTags.push(pendingTag);
+    const input = document.getElementById('playerTagInput');
+    if(input) input.value = '';
+    renderPlayerTagRow();
+  }
   const tags = [...playerComposingTags];
   try{
     await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { tags });
