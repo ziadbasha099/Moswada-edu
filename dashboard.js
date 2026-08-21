@@ -655,13 +655,17 @@ function toggleVideoLock(e){
   isVideoLocked = !isVideoLocked;
   container.classList.toggle('controls-locked', isVideoLocked);
 
-  document.getElementById('lockIconOpen').classList.toggle('hidden', isVideoLocked);
-  document.getElementById('lockIconClosed').classList.toggle('hidden', !isVideoLocked);
+  const openIcon = document.getElementById('lockIconOpen');
+  const closedIcon = document.getElementById('lockIconClosed');
+  if(openIcon) openIcon.classList.toggle('hidden', isVideoLocked);
+  if(closedIcon) closedIcon.classList.toggle('hidden', !isVideoLocked);
 
   const lockBtn = document.getElementById('playerLockBtn');
-  const label = isVideoLocked ? t('unlockControls') : t('lockControls');
-  lockBtn.title = label;
-  lockBtn.setAttribute('aria-label', label);
+  if(lockBtn){
+    const label = isVideoLocked ? t('unlockControls') : t('lockControls');
+    lockBtn.title = label;
+    lockBtn.setAttribute('aria-label', label);
+  }
 
   showLockBtn(); // يفضل ظاهر لثواني بعد كل ضغطة عليه
 }

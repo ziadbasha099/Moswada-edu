@@ -429,9 +429,12 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
    وزر قفل عائم يختفي تلقائيًا ويظهر عند الضغط على الشاشة.
    --------------------------------------------------------------- */
 .player-lock-overlay{
-  position:absolute; inset:0; z-index:1; display:none;
+  position:absolute; inset:0; z-index:1;
+  visibility:hidden; pointer-events:none;
 }
-.player-video-container.controls-locked .player-lock-overlay{ display:block; }
+.player-video-container.controls-locked .player-lock-overlay{
+  visibility:visible; pointer-events:auto;
+}
 
 .player-lock-btn{
   position:absolute; top:12px; inset-inline-start:12px; z-index:3;
@@ -451,8 +454,13 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
 .player-video-container.controls-locked .player-lock-btn{ opacity:0; pointer-events:none; }
 .player-video-container.controls-locked.lock-btn-visible .player-lock-btn{ opacity:.9; pointer-events:auto; }
 
-/* لما يكون القفل مفعّل: خبّي زر التكبير تمامًا */
-.player-video-container.controls-locked .player-zoom-btn{ display:none; }
+/* لما يكون القفل مفعّل: خبّي زر التكبير تمامًا — نستخدم visibility+pointer-events
+   بدل display:none، لأن تبديل display على عنصر جوه Fullscreen حقيقي ممكن يسبب
+   على بعض المتصفحات (خصوصاً على الموبايل) عدم تحديث منطقة استقبال اللمس
+   بشكل صحيح لما العنصر يرجع يظهر تاني — وهو بالظبط اللي بيسبب "تعطل" الزر. */
+.player-video-container.controls-locked .player-zoom-btn{
+  visibility:hidden; pointer-events:none; opacity:0;
+}
 
 /* Timestamped notes — pin a note to a moment in the video */
 .time-notes-section{ margin-top:18px; padding-top:18px; border-top:1px solid var(--outline-variant); }
