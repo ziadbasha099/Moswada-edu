@@ -424,6 +424,36 @@ textarea.player-notes:focus{ border-color:var(--primary); background:var(--surfa
 .player-video-container:fullscreen{ display:flex; align-items:center; background:#000; }
 .player-video-container:-webkit-full-screen .player-wrap{ height:100%; }
 
+/* ---------------------------------------------------------------
+   قفل التحكم أثناء ملء الشاشة — طبقة تمنع أي ضغطة من الوصول للفيديو،
+   وزر قفل عائم يختفي تلقائيًا ويظهر عند الضغط على الشاشة.
+   --------------------------------------------------------------- */
+.player-lock-overlay{
+  position:absolute; inset:0; z-index:1; display:none;
+}
+.player-video-container.controls-locked .player-lock-overlay{ display:block; }
+
+.player-lock-btn{
+  position:absolute; top:12px; inset-inline-start:12px; z-index:3;
+  width:36px; height:36px; padding:0; border:none; border-radius:var(--r-md);
+  background:rgba(0,0,0,.55); color:#fff; display:none; align-items:center; justify-content:center;
+  opacity:.9; pointer-events:auto;
+  transition:opacity 220ms ease, background var(--transition);
+}
+.player-lock-btn:hover{ background:rgba(0,0,0,.75); }
+.player-lock-btn svg{ width:18px; height:18px; }
+.player-lock-btn .hidden{ display:none !important; }
+
+.player-video-container:fullscreen .player-lock-btn,
+.player-video-container:-webkit-full-screen .player-lock-btn{ display:inline-flex; }
+
+/* بعد القفل: الزر نفسه بيختفي تلقائيًا ويظهر بس عند الضغط على الشاشة */
+.player-video-container.controls-locked .player-lock-btn{ opacity:0; pointer-events:none; }
+.player-video-container.controls-locked.lock-btn-visible .player-lock-btn{ opacity:.9; pointer-events:auto; }
+
+/* لما يكون القفل مفعّل: خبّي زر التكبير تمامًا */
+.player-video-container.controls-locked .player-zoom-btn{ display:none; }
+
 /* Timestamped notes — pin a note to a moment in the video */
 .time-notes-section{ margin-top:18px; padding-top:18px; border-top:1px solid var(--outline-variant); }
 .time-notes-section .hint{ margin-bottom:10px; }

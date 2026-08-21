@@ -135,6 +135,8 @@ const I18N = {
     resetEmailPrompt: 'Enter your email above first, then tap "Forgot password?" again.',
     resetEmailSent: "If an account exists for that email, we've sent a reset link.",
     resetEmailSending: 'Sending…', 
+    lockControls: 'Lock controls',
+    unlockControls: 'Unlock controls',
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -193,6 +195,8 @@ const I18N = {
     resetEmailPrompt: 'أدخل بريدك الإلكتروني أعلاه أولاً، ثم اضغط "نسيت كلمة المرور؟" مرة أخرى.',
     resetEmailSent: 'إذا كان هناك حساب مرتبط بهذا البريد، فقد أرسلنا رابط إعادة التعيين إليه.',
     resetEmailSending: 'جارٍ الإرسال…',
+    lockControls: 'قفل أزرار التحكم',
+    unlockControls: 'فتح القفل',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }

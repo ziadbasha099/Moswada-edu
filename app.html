@@ -237,9 +237,23 @@
   <div class="modal player-modal">
     <div class="player-video-container" id="playerVideoContainer">
       <div class="player-wrap" id="playerWrap"></div>
+
+      <!-- طبقة شفافة تمنع أي ضغطة من الوصول للفيديو طالما القفل مفعّل -->
+      <div class="player-lock-overlay" id="playerLockOverlay" onclick="handleLockOverlayTap()"></div>
+
       <button type="button" class="player-zoom-btn" id="playerZoomBtn" onclick="toggleVideoZoom()" data-en-title="Fullscreen" data-ar-title="ملء الشاشة" title="Fullscreen" aria-label="Toggle fullscreen">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/>
+        </svg>
+      </button>
+
+      <!-- زر القفل — يظهر فقط أثناء ملء الشاشة -->
+      <button type="button" class="player-lock-btn" id="playerLockBtn" onclick="toggleVideoLock(event)" data-en-title="Lock controls" data-ar-title="قفل أزرار التحكم" title="Lock controls" aria-label="Lock controls">
+        <svg class="icon" id="lockIconOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.87-1"/>
+        </svg>
+        <svg class="icon hidden" id="lockIconClosed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>
         </svg>
       </button>
     </div>

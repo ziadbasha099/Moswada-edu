@@ -516,6 +516,7 @@ function openPlayerModal(l){
   activePlayerLink = l;
   if(!l.timeNotes) l.timeNotes = [];
   destroyYtPlayer();
+  resetVideoLock();
 
   const vid = extractYouTubeId(l.url);
   const wrap = document.getElementById('playerWrap');
@@ -599,6 +600,7 @@ function closePlayerModal(){
   savePlayerNotes();
   savePlaybackProgress();   // capture the current position before we tear the player down
   stopProgressAutosave();
+  resetVideoLock();
   if(document.fullscreenElement){ document.exitFullscreen(); }
   document.getElementById('playerModalBackdrop').classList.remove('show');
   destroyYtPlayer();
@@ -627,8 +629,70 @@ function updateZoomBtnState(){
   btn.title = label;
   btn.setAttribute('aria-label', label);
 }
-document.addEventListener('fullscreenchange', updateZoomBtnState);
-document.addEventListener('webkitfullscreenchange', updateZoomBtnState);
+/* ------------------------------------------------------------
+   قفل التحكم (Lock) — متاح فقط أثناء ملء الشاشة. عند القفل: بيخفي
+   زر التكبير وبيحط طبقة تمنع أي ضغطة توصل للفيديو. زر القفل نفسه
+   بيختفي بعد ثواني قليلة، ويظهر تاني عند الضغط على الشاشة (المطلوب
+   هو الضغط عليه مرة تانية عشان تفك القفل).
+   ------------------------------------------------------------ */
+let isVideoLocked = false;
+let lockBtnHideTimer = null;
+
+function showLockBtn(){
+  const container = document.getElementById('playerVideoContainer');
+  if(!container) return;
+  container.classList.add('lock-btn-visible');
+  clearTimeout(lockBtnHideTimer);
+  lockBtnHideTimer = setTimeout(() => {
+    container.classList.remove('lock-btn-visible');
+  }, 3000);
+}
+
+function toggleVideoLock(e){
+  if(e) e.stopPropagation();
+  const container = document.getElementById('playerVideoContainer');
+  if(!container) return;
+  isVideoLocked = !isVideoLocked;
+  container.classList.toggle('controls-locked', isVideoLocked);
+
+  document.getElementById('lockIconOpen').classList.toggle('hidden', isVideoLocked);
+  document.getElementById('lockIconClosed').classList.toggle('hidden', !isVideoLocked);
+
+  const lockBtn = document.getElementById('playerLockBtn');
+  const label = isVideoLocked ? t('unlockControls') : t('lockControls');
+  lockBtn.title = label;
+  lockBtn.setAttribute('aria-label', label);
+
+  showLockBtn(); // يفضل ظاهر لثواني بعد كل ضغطة عليه
+}
+
+function handleLockOverlayTap(){
+  // القفل شغال: الضغطة دي بتتلغم هنا ومتوصلش للفيديو أصلاً،
+  // ووظيفتها الوحيدة إظهار زر القفل عشان تقدر تفكه.
+  showLockBtn();
+}
+
+function resetVideoLock(){
+  const container = document.getElementById('playerVideoContainer');
+  if(!container) return;
+  isVideoLocked = false;
+  container.classList.remove('controls-locked', 'lock-btn-visible');
+  clearTimeout(lockBtnHideTimer);
+  const openIcon = document.getElementById('lockIconOpen');
+  const closedIcon = document.getElementById('lockIconClosed');
+  if(openIcon) openIcon.classList.remove('hidden');
+  if(closedIcon) closedIcon.classList.add('hidden');
+}
+
+function handleFullscreenChange(){
+  updateZoomBtnState();
+  // الخروج من ملء الشاشة بيلغي القفل تلقائيًا، لأنه غير منطقي برّا ملء الشاشة
+  if(!document.fullscreenElement && !document.webkitFullscreenElement){
+    resetVideoLock();
+  }
+}
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
 /* ------------------------------------------------------------
    VIDEO NOTES — free-text notes on the video link itself,
@@ -955,4 +1019,5 @@ Object.assign(window, {
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
   handlePlayerTagKey, removePlayerTag,
+  toggleVideoLock, handleLockOverlayTap,
 });
