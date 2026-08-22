@@ -199,6 +199,20 @@
     </div>
   </div>
 </div>
+ <!-- ======================================================================
+     SHARE FOLDER MODAL
+     ====================================================================== -->
+<div class="modal-backdrop" id="shareModalBackdrop" onclick="if(event.target===this) closeShareModal()">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h2 data-en="Share folder" data-ar="مشاركة المجلد"></h2>
+      <button class="btn-icon" onclick="closeShareModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="shareModalBody"></div>
+  </div>
+</div>    
 
 <!-- ======================================================================
      LINK DETAIL / NOTES MODAL (non-video)
