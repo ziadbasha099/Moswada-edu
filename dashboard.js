@@ -13,22 +13,14 @@
    users/{uid}/** to request.auth.uid == uid — see the setup
    notes inside firebase-config.js.
  ============================================================ */
-/*
-import {
-  onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  collection, addDoc, updateDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
-*/
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs,
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
+
 /* ============================================================
    MOCK IMAGE HELPERS (generates a lightweight branded SVG
    placeholder thumbnail when a link has no real thumbnail yet)
@@ -166,20 +158,6 @@ function closeSidebar(){
 /* ============================================================
    FOLDER NAV
    ============================================================ */
-/*
-function renderFolderNav(){
-  const nav = document.getElementById('folderNav');
-  nav.innerHTML = folders.map(f => {
-    const count = links.filter(l => l.folder === f.id).length;
-    return `<div class="nav-item ${activeFolder===f.id?'active':''}" data-folder="${f.id}" onclick="selectFolder('${f.id}')">
-      <span class="folder-dot" style="background:${f.color}"></span>
-      <span>${escapeHtml(f.name)}</span>
-      <span class="count">${count}</span>
-    </div>`;
-  }).join('');
-  document.getElementById('countAll').textContent = links.length;
-  document.getElementById('countVideos').textContent = links.filter(l => l.type === 'video').length;
-}*/
 function renderFolderNav(){
   const nav = document.getElementById('folderNav');
   nav.innerHTML = folders.map(f => {
@@ -231,9 +209,6 @@ function currentList(){
   else if(activeFolder !== 'all'){ list = list.filter(l => l.folder === activeFolder); }
   if(activeTag){ list = list.filter(l => l.tags && l.tags.includes(activeTag)); }
   if(searchQuery){
-    // Allow searching a tag with or without its leading "#" — tags are
-    // stored without it (handleTagKey/handlePlayerTagKey strip it on
-    // add), so "#محمد" and "محمد" should both match the same tag.
     const cleanQuery = searchQuery.trim().toLowerCase().replace(/^#/, '');
     list = list.filter(l =>
       l.title.toLowerCase().includes(searchQuery) ||
@@ -257,12 +232,6 @@ function toggleTag(tag){
   renderLinks();
 }
 
-/* ------------------------------------------------------------
-   TAG SUGGESTIONS — a single shared list of every tag already
-   used across the user's links, so the Add-link modal and the
-   video player modal both suggest the same tags instead of
-   drifting into near-duplicate spellings.
-   ------------------------------------------------------------ */
 function renderTagDatalist(){
   const dl = document.getElementById('existingTags');
   if(!dl) return;
@@ -315,7 +284,6 @@ function openCard(id){
   else{ openDetailModal(l); }
 }
 
-/* New code */
 /* ============================================================
    مشاركة مجلد الفيديوهات — ينشئ نسخة عامة (mirror) في
    sharedFolders/{shareId}/links فقط للفيديوهات، بدون كشف باقي
@@ -415,8 +383,6 @@ async function stopSharingFolder(){
   }catch(err){ console.error(err); }
 }
 
-/* نسخ/حذف فيديو من النسخة العامة كل ما يتغيّر في المجلد الأصلي،
-   طالما المجلد ده مُشارَك حالياً. */
 async function mirrorLinkIfShared(folderId, linkId, data){
   const folder = folders.find(f => f.id === folderId);
   if(!folder || !folder.shared || !folder.shareId) return;
@@ -432,7 +398,8 @@ async function unmirrorLink(folderId, linkId){
   const folder = folders.find(f => f.id === folderId);
   if(!folder || !folder.shareId) return;
   try{ await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links', linkId)); }catch(err){ /* no-op */ }
-       }
+}
+
 /* ============================================================
    VIDEO ID EXTRACTION (YouTube) — always embeds, never redirects
    ============================================================ */
@@ -441,12 +408,6 @@ function extractYouTubeId(url){
   return m ? m[1] : null;
 }
 
-/* ------------------------------------------------------------
-   YOUTUBE THUMBNAIL — real video thumbnail straight from
-   YouTube's public image CDN, no API key needed. Falls back to
-   the generated placeholder if the video has no thumbnail or
-   isn't a YouTube link.
-   ------------------------------------------------------------ */
 function youTubeThumbUrl(url, quality){
   const id = extractYouTubeId(url);
   return id ? `https://i.ytimg.com/vi/${id}/${quality || 'hqdefault'}.jpg` : null;
@@ -458,9 +419,7 @@ function thumbFor(l, folderObj){
   }
   return l.thumb || placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined);
 }
-/* Multi-step fallback for <img onerror="...">: hqdefault → mqdefault →
-   default → the generated color placeholder. Attached to window since
-   it's referenced from inline HTML built via template strings. */
+
 window.handleThumbError = function(img, videoId, fallbackSrc){
   const step = Number(img.dataset.thumbStep || 0);
   const chain = ['hqdefault', 'mqdefault', 'default'];
@@ -546,26 +505,9 @@ function renderTagRow(){
     row.insertBefore(pill, input);
   });
 }
-/*
+
 async function saveLink(){
   if(!currentUser) return;
-  const pendingTag = document.getElementById('fTagInput') ? document.getElementById('fTagInput').value.trim().replace(/^#/, '') : '';
-  if (pendingTag && !composingTags.includes(pendingTag)) {
-    composingTags.push(pendingTag);
-    const input = document.getElementById('fTagInput');
-    if(input) input.value = '';
-  } */
-  try{
-    if(editingLinkId){
-      await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
-      await mirrorLinkIfShared(folder, editingLinkId, data);
-    } else {
-      const ref = await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
-      await mirrorLinkIfShared(folder, ref.id, data);
-    }
-    closeLinkModal();
-    showToast(t('linkSavedToast'));
-  }catch(err){
 
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
@@ -576,15 +518,24 @@ async function saveLink(){
   const domain = domainOf(url);
   if(!title){ title = t('untitledFrom')(domain); }
 
-  const data = { url, title, folder, notes, tags:[...composingTags], type, domain };
+  const pendingTag = document.getElementById('fTagInput') ? document.getElementById('fTagInput').value.trim().replace(/^#/, '') : '';
+  if (pendingTag && !composingTags.includes(pendingTag)) {
+    composingTags.push(pendingTag);
+    const input = document.getElementById('fTagInput');
+    if(input) input.value = '';
+  }
+
+  const data = { url, title, folder, notes, tags: [...composingTags], type, domain };
   const saveBtn = document.querySelector('#linkModalBackdrop .btn-primary');
   if(saveBtn) saveBtn.disabled = true;
 
   try{
     if(editingLinkId){
       await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
+      await mirrorLinkIfShared(folder, editingLinkId, data);
     } else {
-      await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
+      const ref = await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
+      await mirrorLinkIfShared(folder, ref.id, data);
     }
     closeLinkModal();
     showToast(t('linkSavedToast'));
@@ -621,35 +572,18 @@ async function createFolder(){
 }
 
 /* ============================================================
-   VIDEO PLAYER MODAL — in-app embed, per anti-distraction rule
-   Uses the YouTube IFrame API (not a plain <iframe>) so we can
-   read the current playback time and seek to a saved timestamp —
-   that's what powers the timestamped-notes feature below.
+   VIDEO PLAYER MODAL
    ============================================================ */
-let ytPlayer = null;          // current YT.Player instance (YouTube videos only)
-let ytApiReady = false;       // becomes true once the IFrame API script has loaded
-let activePlayerLink = null;  // the link object currently open in the player modal
-let progressSaveInterval = null; // periodic autosave timer while a video plays
+let ytPlayer = null;
+let ytApiReady = false;
+let activePlayerLink = null;
+let progressSaveInterval = null;
 
-// Called automatically by the YouTube IFrame API script once it finishes loading.
 window.onYouTubeIframeAPIReady = function(){
   ytApiReady = true;
-  // If the modal was opened before the API finished loading, build the player now.
   if(activePlayerLink){ mountYouTubePlayer(activePlayerLink); }
 };
 
-/* ------------------------------------------------------------
-   Load the IFrame API script ourselves, right here, right after
-   the callback above is defined. Previously this <script> tag
-   lived in app.html and loaded in parallel with the deferred
-   module scripts (shared.js/dashboard.js) — depending on network
-   timing, the API could finish loading and fire
-   onYouTubeIframeAPIReady() BEFORE this module ran and defined
-   it, silently dropping the callback and leaving ytApiReady
-   stuck at false forever (black screen, no error). Loading it
-   from inside the module guarantees the callback always exists
-   first.
-   ------------------------------------------------------------ */
 (function loadYouTubeIframeAPI(){
   if(window.YT && window.YT.Player){ ytApiReady = true; return; }
   if(document.getElementById('yt-iframe-api-script')) return;
@@ -659,10 +593,6 @@ window.onYouTubeIframeAPIReady = function(){
   document.head.appendChild(tag);
 })();
 
-/* Safety-net fallback: if for any reason onYouTubeIframeAPIReady never
-   fires (e.g. the callback got overwritten by something else, or the
-   API loaded before this file ran in some edge case), poll briefly for
-   window.YT so the player still mounts instead of staying a black box. */
 function waitForYouTubeAPI(l){
   if(window.YT && window.YT.Player){
     ytApiReady = true;
@@ -685,9 +615,6 @@ function openPlayerModal(l){
     if(ytApiReady && window.YT && YT.Player){
       mountYouTubePlayer(l);
     } else {
-      // onYouTubeIframeAPIReady() will normally mount it once the script
-      // finishes loading; this polling fallback covers the rare case where
-      // that callback doesn't fire for some reason.
       waitForYouTubeAPI(l);
     }
   } else {
@@ -697,7 +624,6 @@ function openPlayerModal(l){
   document.getElementById('playerTitle').textContent = l.title;
   document.getElementById('playerDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)}`;
 
-  // Editable tags row, moved to the bottom of the card.
   playerComposingTags = [...(l.tags || [])];
   renderPlayerTagRow();
 
@@ -716,8 +642,6 @@ function mountYouTubePlayer(l){
   const el = document.getElementById('ytPlayerEl');
   if(!vid || !el) return;
   const playerVars = { rel: 0, modestbranding: 1, playsinline: 1 };
-  // Resume from the last saved position (skip the very start so we don't
-  // "resume" a video that only ever got a couple seconds in).
   if(l.progress && l.progress > 3){ playerVars.start = Math.floor(l.progress); }
 
   ytPlayer = new YT.Player('ytPlayerEl', {
@@ -728,15 +652,11 @@ function mountYouTubePlayer(l){
         startProgressAutosave();
       },
       onStateChange: function(e){
-        // YT.PlayerState.ENDED === 0
         if(e.data === 0){
           stopProgressAutosave();
           resetPlaybackProgress();
         }
       },
-      // Fires for real playback failures (video removed, or the owner
-      // disabled embedding) — without this the player area just stays
-      // black with no explanation.
       onError: function(){
         stopProgressAutosave();
         const w = document.getElementById('playerWrap');
@@ -759,21 +679,16 @@ function destroyYtPlayer(){
 function closePlayerModal(){
   savePlayerNotes();
   savePlayerTags();
-  savePlaybackProgress();   // capture the current position before we tear the player down
+  savePlaybackProgress();
   stopProgressAutosave();
   resetVideoLock();
   if(document.fullscreenElement){ document.exitFullscreen(); }
   document.getElementById('playerModalBackdrop').classList.remove('show');
   destroyYtPlayer();
-  document.getElementById('playerWrap').innerHTML = ''; // stop playback
+  document.getElementById('playerWrap').innerHTML = '';
   activePlayerLink = null;
 }
 
-/* ------------------------------------------------------------
-   ZOOM / FULLSCREEN — expands the video area to fill the screen,
-   using the native Fullscreen API (same behavior users expect
-   from any video player).
-   ------------------------------------------------------------ */
 function toggleVideoZoom(){
   const container = document.getElementById('playerVideoContainer');
   if(!document.fullscreenElement){
@@ -790,12 +705,7 @@ function updateZoomBtnState(){
   btn.title = label;
   btn.setAttribute('aria-label', label);
 }
-/* ------------------------------------------------------------
-   قفل التحكم (Lock) — متاح فقط أثناء ملء الشاشة. عند القفل: بيخفي
-   زر التكبير وبيحط طبقة تمنع أي ضغطة توصل للفيديو. زر القفل نفسه
-   بيختفي بعد ثواني قليلة، ويظهر تاني عند الضغط على الشاشة (المطلوب
-   هو الضغط عليه مرة تانية عشان تفك القفل).
-   ------------------------------------------------------------ */
+
 let isVideoLocked = false;
 let lockBtnHideTimer = null;
 
@@ -828,12 +738,10 @@ function toggleVideoLock(e){
     lockBtn.setAttribute('aria-label', label);
   }
 
-  showLockBtn(); // يفضل ظاهر لثواني بعد كل ضغطة عليه
+  showLockBtn();
 }
 
 function handleLockOverlayTap(){
-  // القفل شغال: الضغطة دي بتتلغم هنا ومتوصلش للفيديو أصلاً،
-  // ووظيفتها الوحيدة إظهار زر القفل عشان تقدر تفكه.
   showLockBtn();
 }
 
@@ -851,7 +759,6 @@ function resetVideoLock(){
 
 function handleFullscreenChange(){
   updateZoomBtnState();
-  // الخروج من ملء الشاشة بيلغي القفل تلقائيًا، لأنه غير منطقي برّا ملء الشاشة
   if(!document.fullscreenElement && !document.webkitFullscreenElement){
     resetVideoLock();
   }
@@ -859,12 +766,6 @@ function handleFullscreenChange(){
 document.addEventListener('fullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
-/* ------------------------------------------------------------
-   VIDEO NOTES — free-text notes on the video link itself,
-   editable directly in the player modal. Auto-saves to
-   Firestore whenever the textarea loses focus (blur), and
-   again automatically when the modal is closed.
-   ------------------------------------------------------------ */
 async function savePlayerNotes(){
   if(!currentUser || !activePlayerLink) return;
   const textarea = document.getElementById('playerNotes');
@@ -882,13 +783,6 @@ async function savePlayerNotes(){
   }
 }
 
-/* ------------------------------------------------------------
-   PLAYER TAGS — editable tags directly from the video player
-   modal (moved to the bottom of the card, below timestamped
-   notes). Mirrors the Add/Edit-link modal's tag-pill UI, and
-   auto-saves to Firestore on every add/remove so it behaves the
-   same as the notes field.
-   ------------------------------------------------------------ */
 function renderPlayerTagRow(){
   const row = document.getElementById('playerTagRow');
   const input = document.getElementById('playerTagInput');
@@ -948,14 +842,6 @@ async function savePlayerTags(){
   }
 }
 
-/* ------------------------------------------------------------
-   PLAYBACK PROGRESS — remembers where the user left off in a
-   video so it resumes there next time, instead of always
-   restarting from 0:00. Saved to Firestore on the link doc as
-   `progress` (seconds). Skips saving in the first few seconds so
-   we never "resume" a video that was barely started, and resets
-   to 0 once the video actually finishes so a rewatch starts over.
-   ------------------------------------------------------------ */
 async function savePlaybackProgress(){
   if(!currentUser || !activePlayerLink || !ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
   const progress = Math.floor(ytPlayer.getCurrentTime());
@@ -971,12 +857,10 @@ async function savePlaybackProgress(){
   }
 }
 
-/* Periodic autosave while the video is actually playing, so progress
-   survives a hard refresh/tab close, not just a clean modal close. */
 function startProgressAutosave(){
   stopProgressAutosave();
   progressSaveInterval = setInterval(() => {
-    if(ytPlayer && typeof ytPlayer.getPlayerState === 'function' && ytPlayer.getPlayerState() === 1 /* YT.PlayerState.PLAYING */){
+    if(ytPlayer && typeof ytPlayer.getPlayerState === 'function' && ytPlayer.getPlayerState() === 1){
       savePlaybackProgress();
     }
   }, 5000);
@@ -985,11 +869,9 @@ function stopProgressAutosave(){
   if(progressSaveInterval){ clearInterval(progressSaveInterval); progressSaveInterval = null; }
 }
 
-/* Called when the video reaches the end — clears the saved position
-   so the next open starts fresh from 0:00 instead of the last second. */
 async function resetPlaybackProgress(){
   if(!currentUser || !activePlayerLink) return;
-  if(!activePlayerLink.progress) return; // already 0, nothing to do
+  if(!activePlayerLink.progress) return;
   try{
     await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { progress: 0 });
     activePlayerLink.progress = 0;
@@ -1000,11 +882,6 @@ async function resetPlaybackProgress(){
   }
 }
 
-/* ------------------------------------------------------------
-   TIMESTAMPED NOTES — pin a note to a moment in the video,
-   the same pattern used by course/e-learning sites. Persisted
-   to Firestore so they survive a refresh.
-   ------------------------------------------------------------ */
 function formatTime(totalSeconds){
   const s = Math.max(0, Math.round(totalSeconds));
   const h = Math.floor(s / 3600);
@@ -1118,12 +995,6 @@ function closeDetailModal(){
   currentDetailLinkId = null;
 }
 
-/* ------------------------------------------------------------
-   DETAIL NOTES — free-text notes on a regular (non-video) link,
-   editable directly in the detail modal. Auto-saves to Firestore
-   whenever the textarea loses focus (blur), and again
-   automatically when the modal is closed.
-   ------------------------------------------------------------ */
 async function saveDetailNotes(){
   if(!currentUser || !currentDetailLinkId) return;
   const textarea = document.getElementById('detailNotes');
@@ -1140,15 +1011,6 @@ async function saveDetailNotes(){
   }
 }
 
-/*async function deleteLink(id){
-  if(!currentUser) return;
-  try{
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'links', id));
-    showToast(t('linkRemovedToast'));
-  }catch(err){
-    console.error(err);
-  }
-}*/
 async function deleteLink(id){
   if(!currentUser) return;
   const link = links.find(x => x.id === id);
@@ -1162,9 +1024,7 @@ async function deleteLink(id){
 }
 
 /* ============================================================
-   SIGN OUT — Firestore listeners are torn down and the redirect
-   to index.html happens automatically via the route guard above
-   once Firebase confirms the session ended.
+   SIGN OUT
    ============================================================ */
 async function exitApp(){
   try{
@@ -1175,9 +1035,7 @@ async function exitApp(){
 }
 
 /* ============================================================
-   i18n — re-render whatever this page generates dynamically
-   (topbar title, link grid, user row, video player notes)
-   whenever the language is switched
+   i18n
    ============================================================ */
 setDynamicTranslationHook(() => {
   updateTopbarTitle();
@@ -1190,10 +1048,7 @@ setDynamicTranslationHook(() => {
 });
 
 /* ============================================================
-   Expose functions used as inline HTML event handlers (onclick=...)
-   Required because this file is loaded as an ES module — module
-   scope is not global scope, so inline handlers can't see these
-   otherwise.
+   Expose functions for inline HTML event handlers
    ============================================================ */
 Object.assign(window, {
   toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
