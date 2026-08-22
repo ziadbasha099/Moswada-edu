@@ -13,7 +13,7 @@
    users/{uid}/** to request.auth.uid == uid — see the setup
    notes inside firebase-config.js.
  ============================================================ */
-import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs,
   onSnapshot, query, orderBy, serverTimestamp
