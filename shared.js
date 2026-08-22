@@ -151,6 +151,8 @@ const I18N = {
     addToMyList: 'Add to my videos',
     addedToListToast: 'Added to your videos',
     alreadyInListToast: 'Already in your videos',
+    verificationSentToast: 'Verification email sent',
+    stillNotVerifiedToast: "Not verified yet — check your inbox (and spam folder).",
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -225,6 +227,8 @@ const I18N = {
     addToMyList: 'أضف إلى فيديوهاتي',
     addedToListToast: 'تمت إضافته إلى فيديوهاتك',
     alreadyInListToast: 'موجود بالفعل في فيديوهاتك',
+    verificationSentToast: 'تم إرسال رسالة التحقق',
+    stillNotVerifiedToast: 'لم يتم التحقق بعد — راجع بريدك الوارد (ومجلد الرسائل غير المرغوب فيها).',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
