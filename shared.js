@@ -137,6 +137,17 @@ const I18N = {
     resetEmailSending: 'Sending…', 
     lockControls: 'Lock controls',
     unlockControls: 'Unlock controls',
+      
+    shareFolder: 'Share folder',
+    shareHintActive: 'Anyone with this link can view and add these videos to their own account.',
+    shareHintInactive: 'Create a public link so anyone can view this folder\'s videos and add them to their own account if signed in.',
+    shareLinkLabel: 'Share link',
+    copyLink: 'Copy link',
+    stopSharing: 'Stop sharing',
+    createShareLink: 'Create share link',
+    linkCopiedToast: 'Link copied',
+    shareCreatedToast: 'Share link created',
+    shareStoppedToast: 'Sharing stopped',
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -197,6 +208,17 @@ const I18N = {
     resetEmailSending: 'جارٍ الإرسال…',
     lockControls: 'قفل أزرار التحكم',
     unlockControls: 'فتح القفل',
+   
+    shareFolder: 'مشاركة المجلد',
+    shareHintActive: 'أي شخص معه هذا الرابط يقدر يشاهد الفيديوهات ويضيفها إلى حسابه.',
+    shareHintInactive: 'أنشئ رابطاً عاماً يقدر أي زائر يفتحه ويشاهد فيديوهات هذا المجلد، ويضيفها لحسابه لو كان مسجل دخول.',
+    shareLinkLabel: 'رابط المشاركة',
+    copyLink: 'نسخ الرابط',
+    stopSharing: 'إيقاف المشاركة',
+    createShareLink: 'إنشاء رابط مشاركة',
+    linkCopiedToast: 'تم نسخ الرابط',
+    shareCreatedToast: 'تم إنشاء رابط المشاركة',
+    shareStoppedToast: 'تم إيقاف المشاركة', 
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
