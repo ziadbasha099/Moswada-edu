@@ -166,6 +166,7 @@ function closeSidebar(){
 /* ============================================================
    FOLDER NAV
    ============================================================ */
+/*
 function renderFolderNav(){
   const nav = document.getElementById('folderNav');
   nav.innerHTML = folders.map(f => {
@@ -174,6 +175,22 @@ function renderFolderNav(){
       <span class="folder-dot" style="background:${f.color}"></span>
       <span>${escapeHtml(f.name)}</span>
       <span class="count">${count}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('countAll').textContent = links.length;
+  document.getElementById('countVideos').textContent = links.filter(l => l.type === 'video').length;
+}*/
+function renderFolderNav(){
+  const nav = document.getElementById('folderNav');
+  nav.innerHTML = folders.map(f => {
+    const count = links.filter(l => l.folder === f.id).length;
+    return `<div class="nav-item ${activeFolder===f.id?'active':''}" data-folder="${f.id}" onclick="selectFolder('${f.id}')">
+      <span class="folder-dot" style="background:${f.color}"></span>
+      <span>${escapeHtml(f.name)}</span>
+      <span class="count">${count}</span>
+      <button type="button" class="folder-share-btn" onclick="event.stopPropagation(); openShareModal('${f.id}')" title="${t('shareFolder')}" aria-label="${t('shareFolder')}">
+        <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+      </button>
     </div>`;
   }).join('');
   document.getElementById('countAll').textContent = links.length;
@@ -298,6 +315,124 @@ function openCard(id){
   else{ openDetailModal(l); }
 }
 
+/* New code */
+/* ============================================================
+   مشاركة مجلد الفيديوهات — ينشئ نسخة عامة (mirror) في
+   sharedFolders/{shareId}/links فقط للفيديوهات، بدون كشف باقي
+   بيانات المستخدم الخاصة.
+   ============================================================ */
+let shareModalFolderId = null;
+
+function openShareModal(folderId){
+  shareModalFolderId = folderId;
+  renderShareModal();
+  document.getElementById('shareModalBackdrop').classList.add('show');
+}
+function closeShareModal(){
+  document.getElementById('shareModalBackdrop').classList.remove('show');
+  shareModalFolderId = null;
+}
+
+function shareUrlFor(shareId){
+  return `${location.origin}${location.pathname.replace(/app\.html$/, '')}share.html?id=${shareId}`;
+}
+
+function renderShareModal(){
+  const folder = folders.find(f => f.id === shareModalFolderId);
+  const body = document.getElementById('shareModalBody');
+  if(!folder || !body) return;
+
+  if(folder.shared && folder.shareId){
+    body.innerHTML = `
+      <p class="hint">${t('shareHintActive')}</p>
+      <div class="field">
+        <label>${t('shareLinkLabel')}</label>
+        <div class="tag-input-row">
+          <input type="text" readonly value="${escapeAttr(shareUrlFor(folder.shareId))}" id="shareUrlInput"
+            style="border:none;background:transparent;flex:1;outline:none;font-size:13px;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline btn-sm" onclick="copyShareUrl()">${t('copyLink')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="stopSharingFolder()">${t('stopSharing')}</button>
+      </div>`;
+  } else {
+    body.innerHTML = `
+      <p class="hint">${t('shareHintInactive')}</p>
+      <button class="btn btn-primary" onclick="createShareLink()">${t('createShareLink')}</button>`;
+  }
+}
+
+function copyShareUrl(){
+  const input = document.getElementById('shareUrlInput');
+  if(!input) return;
+  input.select();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(input.value).then(() => showToast(t('linkCopiedToast'))).catch(() => {});
+  }
+}
+
+async function createShareLink(){
+  if(!currentUser || !shareModalFolderId) return;
+  const folder = folders.find(f => f.id === shareModalFolderId);
+  if(!folder) return;
+
+  const shareId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+
+  try{
+    await setDoc(doc(db, SHARED_FOLDERS_COLLECTION, shareId), {
+      ownerUid: currentUser.uid,
+      folderId: folder.id,
+      name: folder.name,
+      color: folder.color,
+      createdAt: serverTimestamp()
+    });
+
+    const videosInFolder = links.filter(l => l.folder === folder.id && l.type === 'video');
+    await Promise.all(videosInFolder.map(l => setDoc(doc(db, SHARED_FOLDERS_COLLECTION, shareId, 'links', l.id), {
+      title: l.title, url: l.url, type: l.type, domain: l.domain, thumb: l.thumb || null,
+      createdAt: serverTimestamp()
+    })));
+
+    await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folder.id), { shared: true, shareId });
+    renderShareModal();
+    showToast(t('shareCreatedToast'));
+  }catch(err){ console.error(err); }
+}
+
+async function stopSharingFolder(){
+  if(!currentUser || !shareModalFolderId) return;
+  const folder = folders.find(f => f.id === shareModalFolderId);
+  if(!folder || !folder.shareId) return;
+
+  try{
+    const linksSnap = await getDocs(collection(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links'));
+    await Promise.all(linksSnap.docs.map(d => deleteDoc(d.ref)));
+    await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId));
+    await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folder.id), { shared: false, shareId: null });
+    renderShareModal();
+    showToast(t('shareStoppedToast'));
+  }catch(err){ console.error(err); }
+}
+
+/* نسخ/حذف فيديو من النسخة العامة كل ما يتغيّر في المجلد الأصلي،
+   طالما المجلد ده مُشارَك حالياً. */
+async function mirrorLinkIfShared(folderId, linkId, data){
+  const folder = folders.find(f => f.id === folderId);
+  if(!folder || !folder.shared || !folder.shareId) return;
+  if(data.type !== 'video') return;
+  try{
+    await setDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links', linkId), {
+      title: data.title, url: data.url, type: data.type, domain: data.domain, thumb: data.thumb || null,
+      createdAt: serverTimestamp()
+    });
+  }catch(err){ console.error(err); }
+}
+async function unmirrorLink(folderId, linkId){
+  const folder = folders.find(f => f.id === folderId);
+  if(!folder || !folder.shareId) return;
+  try{ await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links', linkId)); }catch(err){ /* no-op */ }
+       }
 /* ============================================================
    VIDEO ID EXTRACTION (YouTube) — always embeds, never redirects
    ============================================================ */
@@ -411,7 +546,7 @@ function renderTagRow(){
     row.insertBefore(pill, input);
   });
 }
-
+/*
 async function saveLink(){
   if(!currentUser) return;
   const pendingTag = document.getElementById('fTagInput') ? document.getElementById('fTagInput').value.trim().replace(/^#/, '') : '';
@@ -419,7 +554,18 @@ async function saveLink(){
     composingTags.push(pendingTag);
     const input = document.getElementById('fTagInput');
     if(input) input.value = '';
-  }
+  } */
+  try{
+    if(editingLinkId){
+      await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
+      await mirrorLinkIfShared(folder, editingLinkId, data);
+    } else {
+      const ref = await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
+      await mirrorLinkIfShared(folder, ref.id, data);
+    }
+    closeLinkModal();
+    showToast(t('linkSavedToast'));
+  }catch(err){
 
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
@@ -994,10 +1140,21 @@ async function saveDetailNotes(){
   }
 }
 
-async function deleteLink(id){
+/*async function deleteLink(id){
   if(!currentUser) return;
   try{
     await deleteDoc(doc(db, 'users', currentUser.uid, 'links', id));
+    showToast(t('linkRemovedToast'));
+  }catch(err){
+    console.error(err);
+  }
+}*/
+async function deleteLink(id){
+  if(!currentUser) return;
+  const link = links.find(x => x.id === id);
+  try{
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'links', id));
+    if(link) await unmirrorLink(link.folder, id);
     showToast(t('linkRemovedToast'));
   }catch(err){
     console.error(err);
@@ -1046,4 +1203,5 @@ Object.assign(window, {
   saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
   handlePlayerTagKey, removePlayerTag,
   toggleVideoLock, handleLockOverlayTap,
+  openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder, 
 });
