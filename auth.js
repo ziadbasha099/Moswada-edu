@@ -20,7 +20,13 @@ import { auth, googleProvider, t, setDynamicTranslationHook } from "./shared.js"
    ------------------------------------------------------------ */
 onAuthStateChanged(auth, (user) => {
   if(user){
-    window.location.href = 'app.html';
+    const redirect = localStorage.getItem('post-login-redirect');
+    if(redirect){
+      localStorage.removeItem('post-login-redirect');
+      window.location.href = redirect;
+    } else {
+      window.location.href = 'app.html';
+    }
   }
 });
 
