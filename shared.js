@@ -148,6 +148,9 @@ const I18N = {
     linkCopiedToast: 'Link copied',
     shareCreatedToast: 'Share link created',
     shareStoppedToast: 'Sharing stopped',
+    addToMyList: 'Add to my videos',
+    addedToListToast: 'Added to your videos',
+    alreadyInListToast: 'Already in your videos',
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -219,6 +222,9 @@ const I18N = {
     linkCopiedToast: 'تم نسخ الرابط',
     shareCreatedToast: 'تم إنشاء رابط المشاركة',
     shareStoppedToast: 'تم إيقاف المشاركة', 
+    addToMyList: 'أضف إلى فيديوهاتي',
+    addedToListToast: 'تمت إضافته إلى فيديوهاتك',
+    alreadyInListToast: 'موجود بالفعل في فيديوهاتك',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
