@@ -12,7 +12,8 @@
    Firestore security rules (Firebase console) must restrict
    users/{uid}/** to request.auth.uid == uid — see the setup
    notes inside firebase-config.js.
-   ============================================================ */
+ ============================================================ */
+/*
 import {
   onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -21,7 +22,13 @@ import {
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
-
+*/
+import {
+  collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs,
+  onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
+import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 /* ============================================================
    MOCK IMAGE HELPERS (generates a lightweight branded SVG
    placeholder thumbnail when a link has no real thumbnail yet)
