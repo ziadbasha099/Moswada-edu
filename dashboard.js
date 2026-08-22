@@ -13,7 +13,7 @@
    users/{uid}/** to request.auth.uid == uid — see the setup
    notes inside firebase-config.js.
  ============================================================ */
-import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs,
   onSnapshot, query, orderBy, serverTimestamp
@@ -108,6 +108,19 @@ function stopListening(){
 let hasEnteredOnce = false;
 onAuthStateChanged(auth, (user) => {
   if(user){
+    if(!user.emailVerified){
+      // Signed in, but the email isn't verified yet — hold this user on
+      // the verification gate instead of the dashboard, and make sure
+      // no private data listener is running for them in the meantime.
+      currentUser = user;
+      stopListening();
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('verifyView').classList.remove('hidden');
+      document.getElementById('verifyEmailAddr').textContent = user.email || '';
+      return;
+    }
+
+    document.getElementById('verifyView').classList.add('hidden');
     currentUser = user;
     updateUserRow(user);
     startListening(user.uid);
@@ -123,6 +136,62 @@ onAuthStateChanged(auth, (user) => {
     window.location.href = 'index.html';
   }
 });
+
+/* ============================================================
+   EMAIL VERIFICATION GATE — actions for the screen shown above
+   ============================================================ */
+async function resendVerification(){
+  if(!currentUser) return;
+  const btn = document.getElementById('verifyResendBtn');
+  const errEl = document.getElementById('verifyError');
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  try{
+    await sendEmailVerification(currentUser);
+    showToast(t('verificationSentToast'));
+  }catch(err){
+    console.error(err);
+    errEl.textContent = err.code === 'auth/too-many-requests' ? t('authTooMany') : t('authGeneric');
+    errEl.classList.remove('hidden');
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function checkVerification(){
+  if(!currentUser) return;
+  const btn = document.getElementById('verifyCheckBtn');
+  const errEl = document.getElementById('verifyError');
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  try{
+    await currentUser.reload(); // refreshes emailVerified from Firebase
+    if(currentUser.emailVerified){
+      document.getElementById('verifyView').classList.add('hidden');
+      updateUserRow(currentUser);
+      startListening(currentUser.uid);
+      updateTopbarTitle();
+      document.getElementById('app').classList.remove('hidden');
+      hasEnteredOnce = true;
+      showToast(t('welcomeToast')(currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '')));
+    } else {
+      errEl.textContent = t('stillNotVerifiedToast');
+      errEl.classList.remove('hidden');
+    }
+  }catch(err){
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function verifyExitApp(){
+  try{
+    await signOut(auth);
+  }catch(err){
+    console.error(err);
+  }
+}
 
 /* ============================================================
    THEME TOGGLE — persisted (shared across app.html/settings.html)
@@ -1058,5 +1127,6 @@ Object.assign(window, {
   saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
   handlePlayerTagKey, removePlayerTag,
   toggleVideoLock, handleLockOverlayTap,
-  openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder, 
+  openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder,
+  resendVerification, checkVerification, verifyExitApp,
 });

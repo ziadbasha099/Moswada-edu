@@ -8,8 +8,7 @@
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   onAuthStateChanged, updateProfile, signInWithPopup,
-  sendPasswordResetEmail
-   
+  sendPasswordResetEmail, sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, googleProvider, t, setDynamicTranslationHook } from "./shared.js";
 
@@ -126,6 +125,14 @@ async function handleAuthSubmit(e){
     if(authMode === 'signup'){
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
+      try{
+        await sendEmailVerification(cred.user);
+      }catch(verifyErr){
+        // Account creation still succeeds even if the verification email
+        // fails to send — the user can request it again from the
+        // verification-gate screen inside app.html.
+        console.error('sendEmailVerification failed:', verifyErr);
+      }
     } else {
       await signInWithEmailAndPassword(auth, email, password);
     }

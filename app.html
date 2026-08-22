@@ -309,6 +309,35 @@
   </div>
 </div>
 
+<!-- ======================================================================
+     EMAIL VERIFICATION GATE — shown instead of the dashboard to any
+     signed-in user whose email isn't verified yet. Blocks access until
+     they click the link Firebase emailed them.
+     ====================================================================== -->
+<div id="verifyView" class="auth-page hidden">
+  <div class="auth-topbar">
+    <div class="container">
+      <div class="logo">
+        <span class="logo-mark" aria-hidden="true">
+          <img src="moswada-logo.png" alt="Moswada logo">
+        </span>
+      </div>
+      <button class="btn btn-ghost" onclick="verifyExitApp()" data-en="Sign out" data-ar="تسجيل الخروج"></button>
+    </div>
+  </div>
+  <div class="auth-shell">
+    <div class="auth-card" style="text-align:center;">
+      <h1 data-en="Verify your email" data-ar="تحقّق من بريدك الإلكتروني"></h1>
+      <p class="auth-sub" data-en="We sent a verification link to" data-ar="أرسلنا رابط تحقق إلى"></p>
+      <p class="auth-sub" id="verifyEmailAddr" style="font-weight:700; margin-top:4px;"></p>
+      <p class="auth-sub" style="margin-top:14px;" data-en="Click the link in that email, then tap the button below." data-ar="اضغط الرابط الموجود في الرسالة، ثم اضغط الزر بالأسفل."></p>
+      <div class="auth-error hidden" id="verifyError" role="alert"></div>
+      <button type="button" class="btn btn-primary" style="width:100%; margin-top:20px;" onclick="checkVerification()" id="verifyCheckBtn" data-en="I've verified — continue" data-ar="تحققت — متابعة"></button>
+      <button type="button" class="btn btn-ghost" style="width:100%; margin-top:10px;" onclick="resendVerification()" id="verifyResendBtn" data-en="Resend email" data-ar="إعادة إرسال الرسالة"></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <datalist id="existingTags"></datalist>
 <!-- YouTube IFrame API is now loaded from inside dashboard.js, right after
