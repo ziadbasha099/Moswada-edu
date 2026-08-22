@@ -81,3 +81,5 @@ export const ADMIN_EMAIL = "ziadbasha099@gmail.com";
    لا تسيب السطر ده في كود الإنتاج أبداً.
    ============================================================ */
 export const RECAPTCHA_V3_SITE_KEY = "6Lcg8ootAAAAAJ-Q58iOltqowG3dELsdv6DTLbe1";
+
+export const SHARED_FOLDERS_COLLECTION = "sharedFolders";
