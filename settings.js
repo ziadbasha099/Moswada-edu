@@ -15,6 +15,7 @@ import {
   auth, db, t, showToast, setDynamicTranslationHook, getStoredTheme, setTheme,
   setLanguage, currentLang
 } from "./shared.js";
+import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 
 let currentUser = null;
 
@@ -103,7 +104,46 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
    then deletes the Firebase Auth user itself. Firestore has no
    automatic cascade delete, so the user's data is cleared first
    to avoid leaving orphaned documents behind.
+   ------------------------------------------------------------
+   IMPORTANT: any folder the user had shared publicly (shared:true
+   + shareId) has a mirror living in sharedFolders/{shareId} and
+   sharedFolders/{shareId}/links/*, which is NOT under
+   users/{uid}/** and would otherwise survive account deletion —
+   leaving a public share link pointing at videos that belong to
+   a deleted account. So before wiping users/{uid}/**, we first
+   walk every folder, and for any that's shared we tear down its
+   sharedFolders mirror exactly the way stopSharingFolder() does
+   on the dashboard.
    ============================================================ */
+async function unshareAllFolders(uid){
+  const foldersSnap = await getDocs(collection(db, 'users', uid, 'folders'));
+  const sharedFolders = foldersSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(f => f.shared && f.shareId);
+
+  await Promise.all(sharedFolders.map(async (folder) => {
+    try{
+      const linksSnap = await getDocs(collection(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links'));
+      await Promise.all(linksSnap.docs.map(d => deleteDoc(d.ref)));
+      await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId));
+    }catch(err){
+      console.error('Failed to unshare folder', folder.id, err);
+    }
+  }));
+}
+
+async function deleteAllUserData(uid){
+  // Tear down any public share mirrors first — they live outside
+  // users/{uid}/** and would otherwise be orphaned.
+  await unshareAllFolders(uid);
+
+  const subcollections = ['links', 'folders'];
+  for(const name of subcollections){
+    const snap = await getDocs(collection(db, 'users', uid, name));
+    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'users', uid, name, d.id))));
+  }
+}
+
 function openDeleteModal(){
   document.getElementById('deleteError').classList.add('hidden');
   document.getElementById('deleteModalBackdrop').classList.add('show');
@@ -112,14 +152,6 @@ function closeDeleteModal(){
   document.getElementById('deleteModalBackdrop').classList.remove('show');
 }
 document.getElementById('deleteAccountBtn').addEventListener('click', openDeleteModal);
-
-async function deleteAllUserData(uid){
-  const subcollections = ['links', 'folders'];
-  for(const name of subcollections){
-    const snap = await getDocs(collection(db, 'users', uid, name));
-    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'users', uid, name, d.id))));
-  }
-}
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
   if(!currentUser) return;
