@@ -635,6 +635,7 @@ html[dir="rtl"] .user-row-link{ text-align:right; }
   flex-shrink:0;
 }
 .nav-item:hover .folder-share-btn{ display:inline-flex; }
+.nav-item:hover .folder-share-btn{ display:inline-flex; }
 .nav-item .count + .folder-share-btn{ margin-left:6px; }
 .folder-share-btn:hover{ background:var(--surface-high); color:var(--primary); }
 html[dir="rtl"] .folder-share-btn{ margin-left:0; margin-right:auto; }
