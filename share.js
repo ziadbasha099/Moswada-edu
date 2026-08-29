@@ -23,6 +23,7 @@ let activePlayerLink = null;
 let ytPlayer = null;
 let ytApiReady = false;
 let importFolderCache = null;
+let isAddingAll = false;
 
 onAuthStateChanged(auth, (user) => { currentUser = user; });
 
@@ -69,9 +70,11 @@ async function loadSharedFolder(){
     loading.classList.add('hidden');
     if(sharedLinks.length === 0){
       empty.classList.remove('hidden');
+      updateAddAllVisibility();
       return;
     }
     renderGrid();
+    updateAddAllVisibility();
   }catch(err){
     console.error(err);
     loading.classList.add('hidden');
@@ -93,6 +96,16 @@ function renderGrid(){
         <button class="btn btn-outline btn-sm" style="margin-top:auto;" onclick="addToMyList('${l.id}')">${t('addToMyList')}</button>
       </div>
     </div>`).join('');
+}
+
+/* ------------------------------------------------------------
+   "ADD ALL" BUTTON — only worth showing once there's more than
+   one video to bulk-import; toggled after every load/render.
+   ------------------------------------------------------------ */
+function updateAddAllVisibility(){
+  const row = document.getElementById('addAllRow');
+  if(!row) return;
+  row.classList.toggle('hidden', sharedLinks.length < 2);
 }
 
 /* ------------------------------------------------------------
@@ -161,7 +174,7 @@ function toggleVideoZoom(){
 }
 
 /* ------------------------------------------------------------
-   ADD TO MY LIST
+   ADD TO MY LIST (single video)
    - Not signed in  → remember this page, send to sign-in, auth.js
                        brings the visitor straight back here after.
    - Signed in      → skip if already saved (matched by URL), else
@@ -201,6 +214,58 @@ async function addToMyList(id){
   }
 }
 
+/* ------------------------------------------------------------
+   ADD ALL TO MY LIST (bulk import)
+   Same rules as addToMyList, but for the whole shared folder in
+   one action:
+   - Not signed in → same redirect-back-after-sign-in flow.
+   - Fetches the visitor's existing links ONCE (instead of one
+     query per video) to skip anything already saved by URL.
+   - Files everything new under the same imported folder used by
+     the single "Add to my videos" button.
+   ------------------------------------------------------------ */
+async function addAllToMyList(){
+  if(isAddingAll || !sharedLinks.length) return;
+
+  if(!currentUser){
+    localStorage.setItem('post-login-redirect', location.href);
+    location.href = 'index.html';
+    return;
+  }
+
+  const btn = document.getElementById('addAllBtn');
+  isAddingAll = true;
+  if(btn) btn.disabled = true;
+  showToast(t('addingAllToast'));
+
+  try{
+    const existingSnap = await getDocs(collection(db, 'users', currentUser.uid, 'links'));
+    const existingUrls = new Set(existingSnap.docs.map(d => d.data().url));
+
+    const toAdd = sharedLinks.filter(l => !existingUrls.has(l.url));
+
+    if(toAdd.length === 0){
+      showToast(t('allAlreadyInListToast'));
+      return;
+    }
+
+    const folderId = await getOrCreateImportFolder(folderMeta.name, folderMeta.color);
+
+    await Promise.all(toAdd.map(l => addDoc(collection(db, 'users', currentUser.uid, 'links'), {
+      url: l.url, title: l.title, folder: folderId, notes: '', tags: [],
+      type: l.type, domain: l.domain, thumb: l.thumb || null,
+      timeNotes: [], progress: 0, createdAt: serverTimestamp()
+    })));
+
+    showToast(t('allAddedToast')(toAdd.length));
+  }catch(err){
+    console.error(err);
+  }finally{
+    isAddingAll = false;
+    if(btn) btn.disabled = false;
+  }
+}
+
 async function getOrCreateImportFolder(name, color){
   if(importFolderCache) return importFolderCache;
   const snap = await getDocs(query(
@@ -226,6 +291,6 @@ setDynamicTranslationHook(() => {
   if(sharedLinks.length) renderGrid();
 });
 
-Object.assign(window, { openPlayerFor, closePlayerModal, toggleVideoZoom, addToMyList });
+Object.assign(window, { openPlayerFor, closePlayerModal, toggleVideoZoom, addToMyList, addAllToMyList });
 
 loadSharedFolder();

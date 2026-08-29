@@ -29,10 +29,18 @@
 </header>
 
 <div class="container" style="padding-top:32px; padding-bottom:64px;">
-  <div class="section-head" style="text-align:start; margin:0 0 32px; max-width:none;">
-    <span class="eyebrow"><span class="dot"></span><span data-en="Shared folder" data-ar="مجلد مُشارَك"></span></span>
-    <h2 id="shareTitle">…</h2>
-    <p data-en="Videos shared with you. Play them here, or add any of them to your own account." data-ar="فيديوهات تمت مشاركتها معك. شغّلها هنا، أو أضف أياً منها إلى حسابك."></p>
+  <div class="section-head" style="text-align:start; margin:0 0 32px; max-width:none; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div>
+      <span class="eyebrow"><span class="dot"></span><span data-en="Shared folder" data-ar="مجلد مُشارَك"></span></span>
+      <h2 id="shareTitle">…</h2>
+      <p data-en="Videos shared with you. Play them here, or add any of them to your own account." data-ar="فيديوهات تمت مشاركتها معك. شغّلها هنا، أو أضف أياً منها إلى حسابك."></p>
+    </div>
+    <!-- Bulk import — hidden until we know there's more than one video
+         to add (see updateAddAllVisibility() in share.js) -->
+    <button class="btn btn-primary hidden" id="addAllBtn" onclick="addAllToMyList()" style="flex-shrink:0;">
+      <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      <span data-en="Add all to my videos" data-ar="أضف الكل إلى فيديوهاتي"></span>
+    </button>
   </div>
 
   <div class="link-grid" id="shareGrid"></div>
