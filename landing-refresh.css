@@ -1,0 +1,127 @@
+/* ==================================================================
+   MOSWADA — LANDING PAGE VISUAL REFRESH
+   ------------------------------------------------------------------
+   Restyles the public homepage (div#landing) to match the new
+   reference design: richer teal accent, 12px "rounded-xl" buttons,
+   borderless cards that pick up a teal border on hover, a warmer
+   hero glow, and social links in the footer.
+
+   Scoped to #landing everywhere it can be, so app.html, admin.html,
+   settings.html and the sign-in screen keep their current look —
+   only the public marketing page changes.
+   ================================================================== */
+
+:root{
+  --landing-accent:       #1e5f58;
+  --landing-accent-hover: #17493f;
+  --landing-accent-soft:  #e5f0ef;
+  --landing-on-accent:    #ffffff;
+  --landing-glow:         rgba(30,95,88,.20);
+  --landing-shadow:       0 20px 60px -16px rgba(30,95,88,.35);
+  --landing-card-shadow:  0 4px 20px rgba(30,95,88,.06);
+  --landing-card-shadow-hover: 0 10px 32px rgba(30,95,88,.12);
+}
+[data-theme="dark"]{
+  --landing-accent:       #6fcfc2;
+  --landing-accent-hover: #89ded2;
+  --landing-accent-soft:  #1c3532;
+  --landing-on-accent:    #00201d;
+  --landing-glow:         rgba(111,207,194,.22);
+  --landing-shadow:       0 20px 60px -16px rgba(0,0,0,.55);
+  --landing-card-shadow:  0 4px 20px rgba(0,0,0,.30);
+  --landing-card-shadow-hover: 0 10px 32px rgba(0,0,0,.45);
+}
+
+/* ---------------- Buttons: 12px rounded corners, richer teal ---------------- */
+#landing .btn-primary{
+  background:var(--landing-accent);
+  color:var(--landing-on-accent);
+  border-radius:0.75rem;
+}
+#landing .btn-primary:hover{
+  background:var(--landing-accent-hover);
+  box-shadow:var(--landing-card-shadow-hover);
+}
+#landing .btn-outline{
+  color:var(--landing-accent);
+  border-color:var(--landing-accent);
+  border-radius:0.75rem;
+}
+#landing .btn-outline:hover{
+  background:var(--landing-accent-soft);
+}
+
+/* ---------------- Hero glow + illustration ---------------- */
+#landing .hero::before{
+  background:radial-gradient(closest-side, var(--landing-glow), transparent 70%);
+  opacity:.9;
+}
+#landing .info-img{
+  box-shadow:var(--landing-shadow);
+}
+
+/* ---------------- Feature / about cards ("study cards") ---------------- */
+#landing .feature-card{
+  border-color:transparent;
+  box-shadow:var(--landing-card-shadow);
+  border-radius:1rem;
+}
+#landing .feature-card:hover{
+  border-color:var(--landing-accent-soft);
+  box-shadow:var(--landing-card-shadow-hover);
+}
+#landing .feature-icon{
+  border-radius:0.75rem;
+  background:var(--landing-accent-soft);
+  color:var(--landing-accent);
+}
+
+/* ---------------- Showcase visual + CTA band ---------------- */
+#landing .showcase-visual{
+  box-shadow:var(--landing-card-shadow);
+}
+#landing .check-list svg{
+  color:var(--landing-accent);
+}
+#landing .cta-band{
+  background:var(--landing-accent);
+}
+#landing .cta-band .btn-primary{
+  background:#ffffff;
+  color:var(--landing-accent);
+}
+#landing .cta-band .btn-primary:hover{
+  background:var(--landing-accent-soft);
+}
+
+/* ---------------- Footer: social links row ---------------- */
+.footer-social{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.footer-social a{
+  width:38px; height:38px; flex-shrink:0;
+  border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-container);
+  color:var(--on-surface-variant);
+  transition:background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+.footer-social a:hover{
+  background:var(--landing-accent);
+  color:var(--landing-on-accent);
+  transform:translateY(-2px);
+}
+.footer-social svg{ width:18px; height:18px; }
+
+@media (max-width: 768px){
+  .landing-footer .container{ text-align:center; }
+}
+
+/* ---------------- Language button: always visible, even on the
+   smallest screens — shrink it instead of hiding its label ---------------- */
+@media (max-width: 420px){
+  #lang-btn{ padding:8px 12px; gap:6px; }
+  #lang-btn .lang-btn-label{ display:inline; font-size:11px; }
+}

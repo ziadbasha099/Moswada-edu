@@ -13,6 +13,9 @@
 
 <!-- ربط ملف الـ CSS الخارجي -->
 <link rel="stylesheet" href="style.css">
+<!-- تحديث شكل الصفحة الرئيسية ليتوافق مع التصميم الجديد (أزرار،
+     كروت، ألوان) بدون التأثير على شاشات لوحة التحكم أو الإعدادات -->
+<link rel="stylesheet" href="landing-refresh.css">
 
 <!-- صورة المعاينة لفيسبوك، لينكد إن، وواتساب -->
 <meta property="og:image" content="https://moswada-edu.vercel.app/info-photo.png">
@@ -39,7 +42,8 @@
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "USD"
-  }
+  },
+  "sameAs": ["https://www.facebook.com/share/186chKu8po/"]
 }
 </script>
 <script type="application/ld+json">
@@ -92,7 +96,7 @@
       <div class="header-actions">
 
          <!-- language -->
-         <!-- زر التبديل بين اللغات -->
+         <!-- زر التبديل بين اللغات — يبقى ظاهراً دائماً على كل المقاسات -->
         <button id="lang-btn" aria-label="Switch language">
           <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="9"/>
@@ -121,11 +125,12 @@ data-ar="الكتب والملخصات"></button>
       </div>
       <p class="hero-note" data-en="Get the books and summaries • study without distractions" data-ar="أحصل على الكتب والملخصات • ادرس بلا تشتت"></p>
 
-<!-- Hero visual. Swap this data-URI placeholder for a real product
-     screenshot or demo-video embed whenever one is ready. -->
+<!-- Hero visual — the illustrated desk/laptop graphic supplied for the
+     new design. Save the attached image as "moswada-hero-illustration.jpg"
+     next to index.html on the server for it to show up here. -->
 <img class="info-img"
- src="info-photo.png"
- alt="Moswada dashboard preview">
+ src="moswada-hero-illustration.jpg"
+ alt="Illustration of a laptop showing the Moswada dashboard next to folders, a video player, and books">
 
     </div>
   </section>
@@ -226,6 +231,13 @@ data-ar="الكتب والملخصات"></button>
         
       </div>
       <p class="footer-muted" data-en="© 2026 Moswada . Built for distraction-free saving." data-ar="© 2026 مسودة. صُمم للحفظ بلا تشتيت."></p>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/share/186chKu8po/" target="_blank" rel="noopener noreferrer"
+           aria-label="Moswada on Facebook"
+           data-en-title="Follow us on Facebook" data-ar-title="تابعنا على فيسبوك" title="Follow us on Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.51 17.52 2 12 2S2 6.51 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z"/></svg>
+        </a>
+      </div>
     </div>
   </footer>
 </div>
