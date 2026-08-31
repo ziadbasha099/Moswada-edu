@@ -6,16 +6,21 @@
    geometric sans (system UI stack) for headline/label roles.
    ============================================================ */
 :root{
-  --surface:#f8fafa; --surface-dim:#d8dada; --surface-bright:#f8fafa;
-  --surface-lowest:#ffffff; --surface-low:#f2f4f4; --surface-container:#eceeee;
-  --surface-high:#e6e8e9; --surface-highest:#e1e3e3;
-  --on-surface:#191c1d; --on-surface-variant:#3f4947;
-  --outline:#6f7978; --outline-variant:#bec9c7;
+  /* Light theme backgrounds shifted from neutral gray to the soft
+     mint/sage tint used across the landing page mockups — cards stay
+     near-white (--surface-lowest) while page/section backgrounds pick
+     up a gentle green cast. */
+  --surface:#eaf3f0; --surface-dim:#d7e6e1; --surface-bright:#f4faf8;
+  --surface-lowest:#ffffff; --surface-low:#e4f1ec; --surface-container:#daece4;
+  --surface-high:#cfe4da; --surface-highest:#c3dbd0;
+  --on-surface:#182220; --on-surface-variant:#3f4947;
+  --outline:#6f7978; --outline-variant:#bfd6cc;
   --primary:#226864; --on-primary:#ffffff; --primary-container:#5fa19c; --on-primary-container:#003532;
   --secondary:#3e6563; --on-secondary:#ffffff; --secondary-container:#c1ebe7; --on-secondary-container:#446b69;
   --tertiary:#56605f; --tertiary-container:#8d9896; --on-tertiary-container:#26302f;
   --error:#ba1a1a; --on-error:#ffffff; --error-container:#ffdad6; --on-error-container:#93000a;
-  --background:#f8fafa; --on-background:#191c1d;
+  --background:#eef6f3; --on-background:#182220;
+  --background-gradient: linear-gradient(180deg, #f2f9f6 0%, #e7f3ee 45%, #dcecE5 100%);
 
   --font-display:'Hanken Grotesk', -apple-system, 'Segoe UI', sans-serif;
   --font-body:'Manrope', -apple-system, sans-serif;
@@ -50,6 +55,12 @@ body{
   font-family:var(--font-body); background:var(--background); color:var(--on-background);
   transition:background var(--transition), color var(--transition);
   -webkit-font-smoothing:antialiased;
+}
+/* Soft mint gradient wash behind the landing page in light mode only —
+   dark mode keeps its flat charcoal background untouched. */
+body:not([data-theme="dark"]){
+  background:var(--background-gradient);
+  background-attachment:fixed;
 }
 img{max-width:100%; display:block;}
 button{font-family:inherit; cursor:pointer;}
