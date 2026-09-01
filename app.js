@@ -588,10 +588,18 @@ function renderTagRow(){
   });
 }
 
+// Only http/https links are ever allowed to be stored or opened. Without
+// this, a crafted "javascript:" or "data:" URI could be saved as a link and
+// later executed when assigned to an <a href> (openDetailModal/safeHref).
+function isSafeUrl(url){
+  return /^https?:\/\/.+/i.test(String(url || '').trim());
+}
+
 async function saveLink(){
   if(!currentUser) return;
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
+  if(!isSafeUrl(url)){ showToast(t('invalidUrlToast') || 'Please enter a valid http:// or https:// link'); return; }
   let title = document.getElementById('fTitle').value.trim();
   const folder = document.getElementById('fFolder').value;
   const notes = document.getElementById('fNotes').value.trim();
@@ -840,7 +848,7 @@ function openDetailModal(l){
   document.getElementById('detailDomain').innerHTML = `<span class="favicon-dot"></span>${escapeHtml(l.domain)} · ${folderObj?escapeHtml(folderObj.name):''}`;
   document.getElementById('detailTags').innerHTML = (l.tags||[]).map(tg=>`<span class="tag">#${escapeHtml(tg)}</span>`).join('') || '<span class="hint">No tags yet</span>';
   document.getElementById('detailNotes').textContent = l.notes || t('noNotesYet');
-  document.getElementById('detailOpenBtn').href = l.url;
+  document.getElementById('detailOpenBtn').href = isSafeUrl(l.url) ? l.url : '#';
   document.getElementById('deleteLinkBtn').onclick = () => { deleteLink(l.id); closeDetailModal(); };
   document.getElementById('detailModalBackdrop').classList.add('show');
 }

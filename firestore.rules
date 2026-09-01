@@ -20,6 +20,15 @@
 
    users/{userId}/**:
      - كل مستخدم يقرأ/يكتب بياناته الخاصة فقط (folders/links).
+
+   sharedFolders/{shareId} (+ /links/{linkId}):
+     - القراءة مفتوحة للجميع (رابط المشاركة العام في share.html).
+     - الإنشاء: أي مستخدم مسجّل دخول، بشرط أن يكتب uid نفسه كمالك
+       (ownerUid == request.auth.uid) — يمنع انتحال ملكية مجلد.
+     - التعديل/الحذف: فقط صاحب المجلد الأصلي (owner)، حتى لا يقدر
+       مستخدم آخر يوقف مشاركة أو يعدّل مجلد مش بتاعه.
+     - الفيديوهات داخل links/{linkId}: نفس القاعدة، بالتحقق من
+       ownerUid على وثيقة المجلد الأب.
    ============================================================ */
 rules_version = '2';
 service cloud.firestore {
@@ -34,6 +43,21 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null
                           && request.auth.uid == userId;
+    }
+
+    match /sharedFolders/{shareId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.ownerUid;
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.ownerUid;
+
+      match /links/{linkId} {
+        allow read: if true;
+        allow write: if request.auth != null
+                     && request.auth.uid ==
+                        get(/databases/$(database)/documents/sharedFolders/$(shareId)).data.ownerUid;
+      }
     }
   }
 }

@@ -76,6 +76,13 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+// Defense-in-depth: admin.js already blocks non-http(s) links before saving,
+// but this page renders whatever is stored in Firestore directly into an
+// href, so re-validate here too before ever writing it into the DOM.
+function isSafeUrl(url){
+  return /^https?:\/\/.+/i.test(String(url || '').trim());
+}
+
 function renderChips(){
   const folders = [...new Set(allItems.map(i => i.folder).filter(Boolean))].sort();
   const chipsEl = document.getElementById("folderChips");
@@ -122,7 +129,7 @@ function renderGrid(){
           ${i.folder ? `<span class="dl-card-folder"><span class="dot" style="background:${folderColor(i.folder)}"></span>${escapeHtml(i.folder)}</span>` : ""}
         </div>
       </div>
-      <a class="dl-card-btn" href="${escapeHtml(i.url)}" target="_blank" rel="noopener noreferrer">
+      <a class="dl-card-btn" href="${isSafeUrl(i.url) ? escapeHtml(i.url) : '#'}" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         ${t("download")}
       </a>
