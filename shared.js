@@ -157,6 +157,11 @@ const I18N = {
     allAlreadyInListToast: 'All of these are already in your videos',
     verificationSentToast: 'Verification email sent',
     stillNotVerifiedToast: "Not verified yet — check your inbox (and spam folder).",
+  // ...existing keys...
+    icon: "Icon", color: "Color",
+    editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
+    updated: "Download updated", editHeading: "Edit a download",
+
   },
   ar: {
     welcomeToast: name => `أهلاً بعودتك يا ${name}`,
@@ -237,7 +242,10 @@ const I18N = {
     allAlreadyInListToast: 'كل هذه الفيديوهات موجودة بالفعل في فيديوهاتك',
     verificationSentToast: 'تم إرسال رسالة التحقق',
     stillNotVerifiedToast: 'لم يتم التحقق بعد — راجع بريدك الوارد (ومجلد الرسائل غير المرغوب فيها).',
-  }
+     // ...existing keys...
+    icon: "الأيقونة", color: "اللون",
+    editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
+    updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
 };
 export function t(key){ return I18N[currentLang][key]; }
 
