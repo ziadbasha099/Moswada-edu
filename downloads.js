@@ -44,6 +44,19 @@ function folderColor(name){
   return FOLDER_PALETTE[Math.abs(h) % FOLDER_PALETTE.length];
 }
 
+/* ---------- Per-item download icon + color (set from /admin) ----------
+   Firestore data is untrusted input — whitelist icon/color before ever
+   using them to pick an SVG or build a CSS class name. */
+const ICON_SVGS = {
+  file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>`,
+  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 10-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 107.07 7.07l1.4-1.4"/></svg>`,
+  mindmap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M8.2 7l7.6 3.8M8.2 17l7.6-3.8"/></svg>`,
+};
+function iconMarkup(type){ return ICON_SVGS[type] || ICON_SVGS.file; }
+function iconColorClass(color){
+  return ["green","blue","yellow"].includes(color) ? `icon-color-${color}` : "icon-color-green";
+}
+
 function t(key){ return I18N[lang][key]; }
 
 function applyLanguage(){
@@ -121,8 +134,8 @@ function renderGrid(){
   grid.innerHTML = items.map(i => `
     <div class="dl-card">
       <div class="dl-card-top">
-        <div class="dl-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <div class="dl-card-icon ${iconColorClass(i.color)}">
+          ${iconMarkup(i.icon)}
         </div>
         <div>
           <p class="dl-card-title">${escapeHtml(i.title)}</p>

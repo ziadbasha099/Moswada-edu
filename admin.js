@@ -24,7 +24,7 @@ import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot,
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
@@ -63,6 +63,9 @@ const I18N = {
     onlyMediafire: "Please paste a valid MediaFire link (mediafire.com).",
     missingTitle: "Give the file a title.", missingFolder: "Name the new folder, or pick an existing one.",
     added: "Download added", removed: "Download removed", removeTitle: "Remove",
+    icon: "Icon", color: "Color",
+    editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
+    updated: "Download updated", editHeading: "Edit a download",
   },
   ar: {
     loginTitle: "تسجيل دخول المدير", loginSub: "سجّل الدخول بحساب المدير لإدارة روابط التحميل.",
@@ -75,6 +78,9 @@ const I18N = {
     onlyMediafire: "الرجاء لصق رابط MediaFire صحيح (mediafire.com).",
     missingTitle: "أعطِ الملف عنواناً.", missingFolder: "سمِّ المجلد الجديد، أو اختر مجلداً موجوداً.",
     added: "تمت إضافة التنزيل", removed: "تمت إزالة التنزيل", removeTitle: "إزالة",
+    icon: "الأيقونة", color: "اللون",
+    editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
+    updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
   }
 };
 function t(k){ return I18N[lang][k]; }
@@ -97,8 +103,43 @@ function applyStaticText(){
   document.getElementById("urlLabel").textContent = t("url");
   document.getElementById("urlHint").textContent = t("urlHint");
   document.getElementById("addBtn").textContent = t("addBtn");
+  document.getElementById("iconLabel").textContent = t("icon");
+  document.getElementById("colorLabel").textContent = t("color");
+  document.getElementById("cancelEditBtn").textContent = t("cancel");
 }
 applyStaticText();
+
+/* ---------------- Icon / color catalogue ---------------- */
+const ICON_SVGS = {
+  file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>`,
+  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 10-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 107.07 7.07l1.4-1.4"/></svg>`,
+  mindmap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M8.2 7l7.6 3.8M8.2 17l7.6-3.8"/></svg>`,
+};
+const VALID_ICONS = ["file", "link", "mindmap"];
+const VALID_COLORS = ["green", "blue", "yellow"];
+function iconMarkup(type){ return ICON_SVGS[VALID_ICONS.includes(type) ? type : "file"]; }
+function colorClass(color){ return `icon-color-${VALID_COLORS.includes(color) ? color : "green"}`; }
+
+let selectedIcon = "file";
+let selectedColor = "green";
+let editingId = null;
+
+function setActiveIcon(val){
+  selectedIcon = VALID_ICONS.includes(val) ? val : "file";
+  document.querySelectorAll("#iconPicker .icon-opt").forEach(b => b.classList.toggle("active", b.dataset.icon === selectedIcon));
+}
+function setActiveColor(val){
+  selectedColor = VALID_COLORS.includes(val) ? val : "green";
+  document.querySelectorAll("#colorPicker .color-opt").forEach(b => b.classList.toggle("active", b.dataset.color === selectedColor));
+}
+document.querySelectorAll("#iconPicker .icon-opt").forEach(btn => {
+  btn.addEventListener("click", () => setActiveIcon(btn.dataset.icon));
+});
+document.querySelectorAll("#colorPicker .color-opt").forEach(btn => {
+  btn.addEventListener("click", () => setActiveColor(btn.dataset.color));
+});
+setActiveIcon(selectedIcon);
+setActiveColor(selectedColor);
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -194,21 +235,69 @@ function renderList(){
   const list = document.getElementById("list");
   list.innerHTML = items.map(i => `
     <div class="admin-row">
+      <div class="icon-preview ${colorClass(i.color)}">${iconMarkup(i.icon)}</div>
       <div class="meta">
         <div class="t">${escapeHtml(i.title)}</div>
         <div class="f">${escapeHtml(i.folder || "")}</div>
       </div>
+      <button class="edit-btn" data-id="${i.id}" title="${t("editTitle")}" aria-label="${t("editTitle")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
       <button data-id="${i.id}" title="${t("removeTitle")}" aria-label="${t("removeTitle")}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>`).join("");
-  list.querySelectorAll("button[data-id]").forEach(btn => {
+  list.querySelectorAll("button.edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => enterEditMode(btn.getAttribute("data-id")));
+  });
+  list.querySelectorAll("button[data-id]:not(.edit-btn)").forEach(btn => {
     btn.addEventListener("click", async () => {
-      await deleteDoc(doc(db, DOWNLOADS_COLLECTION, btn.getAttribute("data-id")));
+      const id = btn.getAttribute("data-id");
+      if(id === editingId) exitEditMode();
+      await deleteDoc(doc(db, DOWNLOADS_COLLECTION, id));
       showToast(t("removed"));
     });
   });
 }
+
+/* ---------------- Edit an existing download ---------------- */
+function enterEditMode(id){
+  const item = items.find(i => i.id === id);
+  if(!item) return;
+  editingId = id;
+
+  document.getElementById("fileTitle").value = item.title || "";
+  document.getElementById("fileUrl").value = item.url || "";
+
+  const select = document.getElementById("folderSelect");
+  if([...select.options].some(o => o.value === item.folder)){
+    select.value = item.folder;
+  } else {
+    select.value = "__new__";
+    document.getElementById("newFolderInput").value = item.folder || "";
+  }
+  toggleNewFolderInput();
+
+  setActiveIcon(item.icon);
+  setActiveColor(item.color);
+
+  document.getElementById("addTitle").textContent = t("editHeading");
+  document.getElementById("addBtn").textContent = t("saveChanges");
+  document.getElementById("cancelEditBtn").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function exitEditMode(){
+  editingId = null;
+  document.getElementById("addTitle").textContent = t("addTitle");
+  document.getElementById("addBtn").textContent = t("addBtn");
+  document.getElementById("cancelEditBtn").classList.add("hidden");
+  document.getElementById("addForm").reset();
+  toggleNewFolderInput();
+  setActiveIcon("file");
+  setActiveColor("green");
+}
+document.getElementById("cancelEditBtn").addEventListener("click", exitEditMode);
 
 /* ---------------- Add download ---------------- */
 const addError = document.getElementById("addError");
@@ -228,13 +317,20 @@ document.getElementById("addForm").addEventListener("submit", async (e) => {
  /* if (!/^https?:\/\/(www\.)?mediafire\.com\//i.test(url)) return showAddError(t("onlyMediafire")); */
   if (!/^https?:\/\/.+/i.test(url)) return showAddError(t("onlyMediafire"));
 
-  await addDoc(collection(db, DOWNLOADS_COLLECTION), {
-    title, url, folder, createdAt: serverTimestamp()
-  });
+  const data = { title, url, folder, icon: selectedIcon, color: selectedColor };
 
-  document.getElementById("addForm").reset();
-  toggleNewFolderInput();
-  showToast(t("added"));
+  if (editingId) {
+    await updateDoc(doc(db, DOWNLOADS_COLLECTION, editingId), data);
+    showToast(t("updated"));
+    exitEditMode();
+  } else {
+    await addDoc(collection(db, DOWNLOADS_COLLECTION), { ...data, createdAt: serverTimestamp() });
+    document.getElementById("addForm").reset();
+    toggleNewFolderInput();
+    setActiveIcon("file");
+    setActiveColor("green");
+    showToast(t("added"));
+  }
 });
 
 function showAddError(msg){

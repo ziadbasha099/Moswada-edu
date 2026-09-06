@@ -187,3 +187,41 @@ a{ color:inherit; }
   font-size:13.5px; opacity:0; pointer-events:none; transition:.25s;
 }
 .admin-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============================================================
+   ICON / COLOR PICKERS (Admin — "Add a download" form)
+   ============================================================ */
+.icon-picker, .color-picker{ display:flex; gap:10px; }
+.icon-opt{
+  width:44px; height:44px; border-radius:var(--r-sm); border:1.5px solid var(--line);
+  background:var(--surface); color:var(--ink-soft); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:.15s;
+}
+.icon-opt svg{ width:20px; height:20px; }
+.icon-opt:hover{ border-color:var(--teal); color:var(--ink); }
+.icon-opt.active{ border-color:var(--teal); background:color-mix(in srgb, var(--teal) 12%, transparent); color:var(--teal); }
+
+.color-opt{
+  width:32px; height:32px; border-radius:50%; border:2px solid transparent; cursor:pointer;
+  box-shadow:0 0 0 1px var(--line) inset;
+}
+.color-opt.active{ border-color:var(--ink); }
+.color-swatch-green{ background:#d8efe3; }
+.color-swatch-blue{ background:#dbe9f8; }
+.color-swatch-yellow{ background:#faf0d1; }
+
+/* ---------- Download card icon — color variants ---------- */
+.dl-card-icon.icon-color-green{ background:#d8efe3; color:#2f8a5f; }
+.dl-card-icon.icon-color-blue{ background:#dbe9f8; color:#2f6fb0; }
+.dl-card-icon.icon-color-yellow{ background:#faf0d1; color:#b9860a; }
+[data-theme="dark"] .dl-card-icon.icon-color-green{ background:color-mix(in srgb, #2f8a5f 30%, transparent); color:#8fe0b8; }
+[data-theme="dark"] .dl-card-icon.icon-color-blue{ background:color-mix(in srgb, #2f6fb0 30%, transparent); color:#9dc4f2; }
+[data-theme="dark"] .dl-card-icon.icon-color-yellow{ background:color-mix(in srgb, #b9860a 30%, transparent); color:#f0d27a; }
+
+/* ---------- Admin list row: icon preview + edit button ---------- */
+.admin-row .icon-preview{
+  flex:none; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+}
+.admin-row .icon-preview svg{ width:15px; height:15px; }
+.admin-row button.edit-btn{ color:var(--teal); }
+.admin-row button.edit-btn:hover{ background:color-mix(in srgb, var(--teal) 14%, transparent); }
