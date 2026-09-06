@@ -246,6 +246,7 @@ const I18N = {
     icon: "الأيقونة", color: "اللون",
     editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
     updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
+  }
 };
 export function t(key){ return I18N[currentLang][key]; }
 
