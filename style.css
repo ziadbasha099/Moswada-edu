@@ -278,6 +278,8 @@ input, textarea, select{font-family:inherit; color:inherit;}
 }
 .chip:hover{ background:var(--surface-high); }
 .chip.active{ background:var(--secondary-container); color:var(--on-secondary-container); }
+.chip-more{ background:transparent; border:1px dashed var(--outline-variant); color:var(--primary); font-weight:700; }
+.chip-more:hover{ background:var(--surface-low); border-color:var(--primary); }
 
 .link-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
 

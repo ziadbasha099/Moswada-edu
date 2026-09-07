@@ -157,6 +157,8 @@ const I18N = {
     allAlreadyInListToast: 'All of these are already in your videos',
     verificationSentToast: 'Verification email sent',
     stillNotVerifiedToast: "Not verified yet — check your inbox (and spam folder).",
+    showMoreTags: 'Show more',
+    showLessTags: 'Show less',
   // ...existing keys...
     icon: "Icon", color: "Color",
     editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
@@ -242,6 +244,8 @@ const I18N = {
     allAlreadyInListToast: 'كل هذه الفيديوهات موجودة بالفعل في فيديوهاتك',
     verificationSentToast: 'تم إرسال رسالة التحقق',
     stillNotVerifiedToast: 'لم يتم التحقق بعد — راجع بريدك الوارد (ومجلد الرسائل غير المرغوب فيها).',
+    showMoreTags: 'عرض المزيد',
+    showLessTags: 'عرض أقل',
      // ...existing keys...
     icon: "الأيقونة", color: "اللون",
     editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",

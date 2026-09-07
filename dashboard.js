@@ -54,6 +54,7 @@ let activeTag = null;
 let editingLinkId = null;
 let composingTags = [];
 let currentDetailLinkId = null;
+let tagsExpanded = false;
 
 /* Tags being edited live from the video player modal (kept separate
    from `composingTags`, which belongs to the Add/Edit link modal). */
@@ -292,13 +293,27 @@ function renderTagChips(){
   const allTags = [...new Set(links.flatMap(l => l.tags || []))].sort();
   const chips = document.getElementById('tagChips');
   if(allTags.length === 0){ chips.innerHTML = ''; return; }
-  chips.innerHTML = allTags.map(tag =>
+
+  const TAG_LIMIT = 5;
+  const visibleTags = tagsExpanded ? allTags : allTags.slice(0, TAG_LIMIT);
+
+  let html = visibleTags.map(tag =>
     `<button class="chip ${activeTag===tag?'active':''}" onclick="toggleTag('${escapeAttr(tag)}')">#${escapeHtml(tag)}</button>`
   ).join('');
+
+  if(allTags.length > TAG_LIMIT){
+    html += `<button class="chip chip-more" onclick="toggleTagsExpanded()">${tagsExpanded ? t('showLessTags') : t('showMoreTags')}</button>`;
+  }
+
+  chips.innerHTML = html;
 }
 function toggleTag(tag){
   activeTag = activeTag === tag ? null : tag;
   renderLinks();
+}
+function toggleTagsExpanded(){
+  tagsExpanded = !tagsExpanded;
+  renderTagChips();
 }
 
 function renderTagDatalist(){
@@ -1129,6 +1144,7 @@ setDynamicTranslationHook(() => {
    ============================================================ */
 Object.assign(window, {
   toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
+  toggleTagsExpanded,
   openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
