@@ -108,8 +108,10 @@ const I18N = {
     haveAccount: 'Already have an account? ',
     signInLink: 'Sign in',
     validEmail: 'Enter a valid email address.',
-    passwordLen: 'Password must be at least 8 characters.',
+    passwordLen: 'Password must be between 8 and 11 characters.',
     enterName: 'Enter your name to create an account.',
+    tooManyAttemptsLockout: seconds => `Too many incorrect attempts. Try again in ${seconds} second${seconds===1?'':'s'}.`,
+     
     authAccountExists: 'An account already exists with this email using a different sign-in method.',
     authPopupBlocked: 'Your browser blocked the sign-in popup. Please allow popups and try again.',
     enterFullscreen: 'Fullscreen',
@@ -195,8 +197,10 @@ const I18N = {
     haveAccount: 'لديك حساب بالفعل؟ ',
     signInLink: 'تسجيل الدخول',
     validEmail: 'أدخل بريداً إلكترونياً صحيحاً.',
-    passwordLen: 'يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.',
+    passwordLen: 'يجب أن تتكوّن كلمة المرور من 8 إلى 11 حرفًا على الأقل.',
     enterName: 'أدخل اسمك لإنشاء حساب.',
+    tooManyAttemptsLockout: seconds => `عدد كبير من المحاولات الخاطئة. حاول مرة أخرى بعد ${seconds} ثانية.`,
+     
     authAccountExists: 'يوجد حساب بهذا البريد الإلكتروني بالفعل عبر طريقة تسجيل دخول مختلفة.',
     authPopupBlocked: 'قام المتصفح بحظر نافذة تسجيل الدخول. يرجى السماح بالنوافذ المنبثقة والمحاولة مرة أخرى.',
     enterFullscreen: 'ملء الشاشة',
