@@ -49,6 +49,68 @@ function mapAuthError(code){
    ============================================================ */
 let authMode = 'signin';
 
+/* ============================================================
+   LOGIN LOCKOUT — after 4 wrong password attempts in a row,
+   block sign-in for 4 seconds. Every time the lockout triggers
+   again afterwards, the wait time doubles (4s → 8s → 16s → 32s
+   ...). Resets back to 4s after a successful sign-in.
+   ------------------------------------------------------------
+   NOTE: this is a client-side UX guard only (it resets on page
+   refresh). Firebase Authentication already enforces its own
+   server-side rate limiting (auth/too-many-requests), which is
+   the real security backstop — this just makes brute-forcing
+   annoying and gives the user clear feedback in the UI.
+   ============================================================ */
+const LOGIN_LOCKOUT_THRESHOLD = 4;   // wrong attempts before locking
+let failedLoginAttempts = 0;
+let currentLockoutMs = 4000;         // starts at 4 seconds, doubles each trigger
+let lockoutEndTime = 0;
+let lockoutInterval = null;
+
+function isLockedOut(){
+  return lockoutEndTime > Date.now();
+}
+
+function updateLockoutUI(){
+  const remainingMs = lockoutEndTime - Date.now();
+  const seconds = Math.max(1, Math.ceil(remainingMs / 1000));
+  document.getElementById('authSubmitBtn').disabled = true;
+  showAuthError(t('tooManyAttemptsLockout')(seconds));
+}
+
+function clearLockoutUI(){
+  document.getElementById('authSubmitBtn').disabled = false;
+  hideAuthError();
+}
+
+function startLoginLockout(){
+  lockoutEndTime = Date.now() + currentLockoutMs;
+  updateLockoutUI();
+
+  clearInterval(lockoutInterval);
+  lockoutInterval = setInterval(() => {
+    if(Date.now() >= lockoutEndTime){
+      clearInterval(lockoutInterval);
+      lockoutInterval = null;
+      failedLoginAttempts = 0;
+      clearLockoutUI();
+    } else {
+      updateLockoutUI();
+    }
+  }, 250);
+
+  // Next lockout (if the user fails another 4 times) is twice as long.
+  currentLockoutMs *= 2;
+}
+
+function resetLoginLockout(){
+  clearInterval(lockoutInterval);
+  lockoutInterval = null;
+  lockoutEndTime = 0;
+  failedLoginAttempts = 0;
+  currentLockoutMs = 4000;
+}
+
 function showAuth(mode){
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('auth').classList.remove('hidden');
@@ -87,6 +149,8 @@ function switchAuthMode(mode){
   switchEl.appendChild(btn);
 
   document.getElementById('authForm').reset();
+
+  if(isSignUp){ resetLoginLockout(); } // lockout only applies to sign-in attempts
 }
 
 function showAuthError(msg){
@@ -109,13 +173,18 @@ async function handleAuthSubmit(e){
   e.preventDefault();
   hideAuthError();
 
+  if(authMode === 'signin' && isLockedOut()){
+    updateLockoutUI();
+    return;
+  }
+
   const name = document.getElementById('authName').value.trim();
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if(!emailPattern.test(email)){ showAuthError(t('validEmail')); return; }
-  if(password.length < 8){ showAuthError(t('passwordLen')); return; }
+  if(password.length < 8 || password.length > 11){ showAuthError(t('passwordLen')); return; }
   if(authMode === 'signup' && !name){ showAuthError(t('enterName')); return; }
 
   const submitBtn = document.getElementById('authSubmitBtn');
@@ -135,13 +204,23 @@ async function handleAuthSubmit(e){
       }
     } else {
       await signInWithEmailAndPassword(auth, email, password);
+      resetLoginLockout(); // successful sign-in clears any past failed attempts
     }
     // The onAuthStateChanged() route guard above redirects to app.html automatically.
   } catch(err){
     console.error(err);
     showAuthError(mapAuthError(err.code));
+
+    const isBadCredentials = ['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found'].includes(err.code);
+    if(authMode === 'signin' && isBadCredentials){
+      failedLoginAttempts++;
+      if(failedLoginAttempts >= LOGIN_LOCKOUT_THRESHOLD){
+        startLoginLockout();
+        return; // startLoginLockout() already disabled the button + shows its own message
+      }
+    }
   } finally {
-    submitBtn.disabled = false;
+    if(!isLockedOut()) submitBtn.disabled = false;
   }
 }
 
