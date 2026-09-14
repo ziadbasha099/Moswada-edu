@@ -15,11 +15,16 @@
  ============================================================ */
 import { signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs,
+  collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, getDocs,
+  getCountFromServer, runTransaction, writeBatch, increment,
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
+
+// الحد الأقصى لعدد الروابط لكل حساب — يجب أن يطابق القيمة (200) المكتوبة
+// في firestore.rules، لأن هذا الرقم هنا مجرد تحقّق سريع للواجهة فقط.
+const MAX_LINKS_PER_USER = 200;
 
 /* ============================================================
    MOCK IMAGE HELPERS (generates a lightweight branded SVG
@@ -75,6 +80,7 @@ function updateUserRow(user){
 }
 
 function startListening(uid){
+  ensureLinksCounter(uid);
   const foldersQ = query(collection(db, 'users', uid, 'folders'), orderBy('createdAt', 'asc'));
   unsubFolders = onSnapshot(foldersQ, snap => {
     folders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -97,6 +103,24 @@ function stopListening(){
   activeFolder = 'all';
   activeTag = null;
   searchQuery = '';
+}
+
+/* ============================================================
+   عدّاد الروابط — users/{uid}.linksCount هو الأساس الذي يعتمد عليه
+   الحد الأقصى (200) في firestore.rules. تُهيَّأ مرة واحدة فقط لكل
+   حساب، اعتماداً على عدّ حقيقي من السيرفر (getCountFromServer)، ولا
+   تُعاد كتابتها أبداً إذا كانت موجودة بالفعل.
+   ============================================================ */
+async function ensureLinksCounter(uid){
+  try{
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    if(userSnap.exists() && typeof userSnap.data().linksCount === 'number') return;
+    const countSnap = await getCountFromServer(collection(db, 'users', uid, 'links'));
+    await setDoc(userRef, { linksCount: countSnap.data().count }, { merge: true });
+  }catch(err){
+    console.error('Failed to initialize links counter:', err);
+  }
 }
 
 /* ------------------------------------------------------------
@@ -603,6 +627,15 @@ async function saveLink(){
   const url = document.getElementById('fUrl').value.trim();
   if(!url){ showToast(t('addUrlToast')); return; }
   if(!isSafeUrl(url)){ showToast(t('invalidUrlToast') || 'Please enter a valid http:// or https:// link'); return; }
+
+  // حد أقصى لإجمالي الروابط لكل حساب — يمنع استخدام حساب واحد (أو
+  // سكربت يستدعي Firestore مباشرة) لإغراق قاعدة البيانات بمستندات
+  // بلا حدود. هذا مجرد تحقّق سريع وودّي؛ الإنفاذ الحقيقي في firestore.rules.
+  if(!editingLinkId && links.length >= MAX_LINKS_PER_USER){
+    showToast(t('linkLimitReachedToast'));
+    return;
+  }
+
   let title = document.getElementById('fTitle').value.trim();
   const folder = document.getElementById('fFolder').value;
   const notes = document.getElementById('fNotes').value.trim();
@@ -626,16 +659,44 @@ async function saveLink(){
       await updateDoc(doc(db, 'users', currentUser.uid, 'links', editingLinkId), data);
       await mirrorLinkIfShared(folder, editingLinkId, data);
     } else {
-      const ref = await addDoc(collection(db, 'users', currentUser.uid, 'links'), { ...data, timeNotes: [], progress: 0, createdAt: serverTimestamp() });
-      await mirrorLinkIfShared(folder, ref.id, data);
+      const newLinkId = await createLinkWithCounter(currentUser.uid, { ...data, timeNotes: [], progress: 0 });
+      await mirrorLinkIfShared(folder, newLinkId, data);
     }
     closeLinkModal();
     showToast(t('linkSavedToast'));
   }catch(err){
     console.error(err);
+    showToast(err && err.code === 'permission-denied' ? t('linkLimitReachedToast') : t('authGeneric'));
   }finally{
     if(saveBtn) saveBtn.disabled = false;
   }
+}
+
+/* ------------------------------------------------------------
+   ينشئ الرابط الجديد ويزيد users/{uid}.linksCount في نفس المعاملة
+   الذرية (transaction)، حتى تبقى الكتابتان متزامنتين دائماً وتستطيع
+   firestore.rules التحقّق بأمان من أن العدّاد لا يزيد إلا بمقدار 1
+   لكل رابط جديد، ولا يتجاوز أبداً MAX_LINKS_PER_USER.
+   ------------------------------------------------------------ */
+async function createLinkWithCounter(uid, data){
+  const userRef = doc(db, 'users', uid);
+  const newLinkRef = doc(collection(db, 'users', uid, 'links'));
+
+  await runTransaction(db, async (tx) => {
+    const userSnap = await tx.get(userRef);
+    const currentCount = (userSnap.exists() && typeof userSnap.data().linksCount === 'number')
+      ? userSnap.data().linksCount
+      : 0;
+
+    if(currentCount >= MAX_LINKS_PER_USER){
+      throw Object.assign(new Error('Link limit reached'), { code: 'permission-denied' });
+    }
+
+    tx.set(userRef, { linksCount: currentCount + 1 }, { merge: true });
+    tx.set(newLinkRef, { ...data, createdAt: serverTimestamp() });
+  });
+
+  return newLinkRef.id;
 }
 
 /* ============================================================
@@ -1107,7 +1168,10 @@ async function deleteLink(id){
   if(!currentUser) return;
   const link = links.find(x => x.id === id);
   try{
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'links', id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'users', currentUser.uid, 'links', id));
+    batch.set(doc(db, 'users', currentUser.uid), { linksCount: increment(-1) }, { merge: true });
+    await batch.commit();
     if(link) await unmirrorLink(link.folder, id);
     showToast(t('linkRemovedToast'));
   }catch(err){

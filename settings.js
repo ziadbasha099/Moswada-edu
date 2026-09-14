@@ -142,6 +142,10 @@ async function deleteAllUserData(uid){
     const snap = await getDocs(collection(db, 'users', uid, name));
     await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'users', uid, name, d.id))));
   }
+
+  // حذف مستند users/{uid} نفسه أيضاً (يحمل فقط عدّاد linksCount حالياً)
+  // حتى لا تبقى بيانات يتيمة بعد حذف الحساب نهائياً.
+  try{ await deleteDoc(doc(db, 'users', uid)); }catch(err){ /* قد يكون غير موجود أصلاً */ }
 }
 
 function openDeleteModal(){
