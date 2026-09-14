@@ -165,6 +165,7 @@ const I18N = {
     icon: "Icon", color: "Color",
     editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
     updated: "Download updated", editHeading: "Edit a download",
+    linkLimitReachedToast: "You've reached the 200 saved links limit. Remove some links to add new ones.",
 
   },
   ar: {
@@ -254,6 +255,7 @@ const I18N = {
     icon: "الأيقونة", color: "اللون",
     editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
     updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
+    linkLimitReachedToast: 'لقد وصلت إلى الحد الأقصى (٢٠٠ رابط محفوظ). احذف بعض الروابط لإضافة روابط جديدة.',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
