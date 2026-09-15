@@ -30,34 +30,85 @@
      - الفيديوهات داخل links/{linkId}: نفس القاعدة، بالتحقق من
        ownerUid على وثيقة المجلد الأب.
    ============================================================ */
-rules_version = '2';
+rrules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isBanned() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/bannedEmails/$(request.auth.token.email));
+    }
 
     match /downloads/{docId} {
       allow read: if true;
       allow write: if request.auth != null
-                   && request.auth.token.email == "ziadbasha099@gmail.com";
+                   && request.auth.token.email == "true";
     }
 
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null
-                          && request.auth.uid == userId;
-    }
+    // --- قسم المستخدمين مع الحفاظ على حظر الحسابات وحد الـ 200 رابط ---
+    match /users/{userId} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId && !isBanned();
 
-    match /sharedFolders/{shareId} {
-      allow read: if true;
-      allow create: if request.auth != null
-                    && request.auth.uid == request.resource.data.ownerUid;
-      allow update, delete: if request.auth != null
-                            && request.auth.uid == resource.data.ownerUid;
+      allow create, update: if request.auth != null && request.auth.uid == userId && !isBanned()
+        && (!('linksCount' in request.resource.data) ||
+            (request.resource.data.linksCount is int && request.resource.data.linksCount >= 0));
+
+      match /folders/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId && !isBanned();
+      }
 
       match /links/{linkId} {
-        allow read: if true;
+        allow read, update, delete: if request.auth != null && request.auth.uid == userId && !isBanned();
+
+        // إرجاع ميزة حد الـ 200 رابط المفقودة
+        allow create: if request.auth != null && request.auth.uid == userId && !isBanned() && (
+          (!exists(/databases/$(database)/documents/users/$(userId)) &&
+            getAfter(/databases/$(database)/documents/users/$(userId)).data.linksCount == 1)
+          ||
+          (exists(/databases/$(database)/documents/users/$(userId)) &&
+            getAfter(/databases/$(database)/documents/users/$(userId)).data.linksCount ==
+              get(/databases/$(database)/documents/users/$(userId)).data.linksCount + 1)
+        ) && getAfter(/databases/$(database)/documents/users/$(userId)).data.linksCount <= 200;
+      }
+
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId && !isBanned();
+      }
+    }
+
+    // --- قسم المجلدات المشاركة والإبلاغات والحظر ---
+    match /sharedFolders/{shareId} {
+      allow read: if !exists(/databases/$(database)/documents/reports/$(shareId));
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.ownerUid
+                    && !isBanned();
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.ownerUid
+                            && !isBanned();
+
+      match /links/{linkId} {
+        allow read: if !exists(/databases/$(database)/documents/reports/$(shareId));
         allow write: if request.auth != null
                      && request.auth.uid ==
-                        get(/databases/$(database)/documents/sharedFolders/$(shareId)).data.ownerUid;
+                        get(/databases/$(database)/documents/sharedFolders/$(shareId)).data.ownerUid
+                     && !isBanned();
       }
+    }
+
+    match /reports/{shareId} {
+      allow get, list: if request.auth != null
+                        && request.auth.token.email == "true";
+      allow create: if request.resource.data.status == 'pending'
+                    && request.resource.data.shareId == shareId;
+      allow update, delete: if request.auth != null
+                            && request.auth.token.email == "true";
+    }
+
+    match /bannedEmails/{email} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email == "true";
     }
   }
 }
+
