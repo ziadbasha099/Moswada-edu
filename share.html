@@ -35,12 +35,22 @@
       <h2 id="shareTitle">…</h2>
       <p data-en="Videos shared with you. Play them here, or add any of them to your own account." data-ar="فيديوهات تمت مشاركتها معك. شغّلها هنا، أو أضف أياً منها إلى حسابك."></p>
     </div>
-    <!-- Bulk import — hidden until we know there's more than one video
-         to add (see updateAddAllVisibility() in share.js) -->
-    <button class="btn btn-primary hidden" id="addAllBtn" onclick="addAllToMyList()" style="flex-shrink:0;">
-      <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-      <span data-en="Add all to my videos" data-ar="أضف الكل إلى فيديوهاتي"></span>
-    </button>
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap;">
+      <!-- Report this shared folder — hidden until we know the folder
+           actually loaded (see loadSharedFolder() in share.js) -->
+      <button class="btn btn-ghost btn-sm hidden" id="reportBtn" onclick="openReportModal()">
+        <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/>
+        </svg>
+        <span data-en="Report content" data-ar="إبلاغ عن المحتوى"></span>
+      </button>
+      <!-- Bulk import — hidden until we know there's more than one video
+           to add (see updateAddAllVisibility() in share.js) -->
+      <button class="btn btn-primary hidden" id="addAllBtn" onclick="addAllToMyList()" style="flex-shrink:0;">
+        <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span data-en="Add all to my videos" data-ar="أضف الكل إلى فيديوهاتي"></span>
+      </button>
+    </div>
   </div>
 
   <div class="link-grid" id="shareGrid"></div>
@@ -82,6 +92,28 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closePlayerModal()" data-en="Close" data-ar="إغلاق"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     REPORT FOLDER — CONFIRMATION MODAL
+     ====================================================================== -->
+<div class="modal-backdrop" id="reportModalBackdrop" onclick="if(event.target===this) closeReportModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 data-en="Report this folder?" data-ar="إبلاغ عن هذا المجلد؟"></h2>
+      <button class="btn-icon" onclick="closeReportModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p data-en="This will immediately disable this share link for everyone. Our team will review the report." data-ar="سيؤدي هذا إلى تعطيل رابط المشاركة فوراً للجميع. سيراجع فريقنا البلاغ."></p>
+      <div class="admin-error hidden" id="reportError"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeReportModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn" style="background:var(--error);color:var(--on-error);" id="confirmReportBtn" onclick="submitReport()" data-en="Report" data-ar="إبلاغ"></button>
     </div>
   </div>
 </div>

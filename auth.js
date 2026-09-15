@@ -7,18 +7,57 @@
    ============================================================ */
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  onAuthStateChanged, updateProfile, signInWithPopup,
+  onAuthStateChanged, updateProfile, signInWithPopup, signOut,
   sendPasswordResetEmail, sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { auth, googleProvider, t, setDynamicTranslationHook } from "./shared.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { auth, db, googleProvider, t, setDynamicTranslationHook } from "./shared.js";
+
+/* ------------------------------------------------------------
+   BANNED EMAIL CHECK — Spark-plan-friendly moderation backstop.
+   bannedEmails/{email} is world-readable (see firestore.rules)
+   specifically so this check can run client-side, before the
+   visitor is even signed in. Real enforcement against a
+   determined attacker still lives in firestore.rules (the
+   isBanned() guard on users/{userId}/**) — this is the friendly
+   UX layer that stops a banned person from getting into the app
+   at all instead of hitting permission-denied errors once inside.
+   ------------------------------------------------------------ */
+async function isEmailBanned(email){
+  if(!email) return false;
+  try{
+    const snap = await getDoc(doc(db, 'bannedEmails', email));
+    return snap.exists();
+  }catch(err){
+    console.error('Banned-email check failed:', err);
+    return false; // fail open — never lock out a legitimate user over a network hiccup
+  }
+}
+
+/* Signs the just-authenticated user back out and shows the ban
+   message if their email is on the list. Returns true if the
+   user was banned (and therefore signed back out). */
+async function rejectIfBanned(user){
+  if(await isEmailBanned(user.email)){
+    await signOut(auth);
+    showAuthError(t('accountBannedError'));
+    return true;
+  }
+  return false;
+}
 
 /* ------------------------------------------------------------
    ROUTE GUARD — if Firebase already has a signed-in session
    (returning visitor, or just finished signing in), send them
    straight to the dashboard instead of showing the landing page.
+   Banned visitors are caught here too, so a previously-banned
+   person can't just reload the page to slip past the check that
+   runs inside handleAuthSubmit()/handleGoogleSignIn().
    ------------------------------------------------------------ */
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if(user){
+    if(await rejectIfBanned(user)) return;
+
     const redirect = localStorage.getItem('post-login-redirect');
     if(redirect){
       localStorage.removeItem('post-login-redirect');
@@ -191,6 +230,13 @@ async function handleAuthSubmit(e){
   submitBtn.disabled = true;
 
   try{
+    // Checked up front for sign-up too, so a banned email never gets a
+    // brand-new Firebase Auth account created in the first place.
+    if(await isEmailBanned(email)){
+      showAuthError(t('accountBannedError'));
+      return;
+    }
+
     if(authMode === 'signup'){
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
@@ -203,7 +249,8 @@ async function handleAuthSubmit(e){
         console.error('sendEmailVerification failed:', verifyErr);
       }
     } else {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      if(await rejectIfBanned(cred.user)) return;
       resetLoginLockout(); // successful sign-in clears any past failed attempts
     }
     // The onAuthStateChanged() route guard above redirects to app.html automatically.
@@ -272,7 +319,8 @@ async function handleForgotPassword(){
 async function handleGoogleSignIn(){
   hideAuthError();
   try{
-    await signInWithPopup(auth, googleProvider);
+    const cred = await signInWithPopup(auth, googleProvider);
+    if(await rejectIfBanned(cred.user)) return;
     // Redirect handled by the route guard above once Firebase confirms the session.
   } catch(err){
     // The user closing the popup themselves isn't a real error.

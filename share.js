@@ -6,13 +6,23 @@
    visitor can also copy any of them into their own account —
    filed automatically under a folder named after the shared
    folder (reused if they already have one with that name).
+
+   Also lets any visitor (signed in or not) report the folder.
+   A report is a single Firestore doc keyed by shareId itself
+   (see submitReport()) — firestore.rules then blocks read access
+   to that sharedFolders/{shareId} doc and its links the instant
+   the report exists, with no server code required. An admin
+   reviews reports/{shareId} manually in the Firebase console or
+   a simple admin page and decides whether to ban the owner.
    ============================================================ */
 import {
-  collection, doc, getDoc, getDocs, addDoc, query, where, serverTimestamp
+  collection, doc, getDoc, getDocs, addDoc, setDoc, query, where, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, db, t, showToast, escapeHtml, setDynamicTranslationHook } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
+
+const REPORTS_COLLECTION = "reports";
 
 const shareId = new URLSearchParams(location.search).get('id');
 
@@ -56,6 +66,11 @@ async function loadSharedFolder(){
   try{
     const folderSnap = await getDoc(doc(db, SHARED_FOLDERS_COLLECTION, shareId));
     if(!folderSnap.exists()){
+      // Either the link never existed, the owner stopped sharing it, OR
+      // it was just reported — firestore.rules denies read access to a
+      // reported sharedFolders/{shareId} doc, so this same "not found"
+      // branch is what a reported link falls into too. That's fine: we
+      // don't want visitors to be able to tell the difference.
       loading.classList.add('hidden');
       notFound.classList.remove('hidden');
       return;
@@ -68,6 +83,7 @@ async function loadSharedFolder(){
     sharedLinks = linksSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     loading.classList.add('hidden');
+    document.getElementById('reportBtn').classList.remove('hidden');
     if(sharedLinks.length === 0){
       empty.classList.remove('hidden');
       updateAddAllVisibility();
@@ -103,9 +119,9 @@ function renderGrid(){
    one video to bulk-import; toggled after every load/render.
    ------------------------------------------------------------ */
 function updateAddAllVisibility(){
-  const row = document.getElementById('addAllRow');
-  if(!row) return;
-  row.classList.toggle('hidden', sharedLinks.length < 2);
+  const btn = document.getElementById('addAllBtn');
+  if(!btn) return;
+  btn.classList.toggle('hidden', sharedLinks.length < 2);
 }
 
 /* ------------------------------------------------------------
@@ -284,6 +300,58 @@ async function getOrCreateImportFolder(name, color){
 }
 
 /* ------------------------------------------------------------
+   REPORT CONTENT
+   ------------------------------------------------------------
+   Writes reports/{shareId} (doc ID = the shareId itself, not an
+   auto ID). That's what lets firestore.rules block reads on
+   sharedFolders/{shareId} the instant this doc exists — no
+   server-side code needed. It also means a second report on the
+   same shareId is a Firestore "update" rather than "create",
+   which the rules reject — so this naturally caps it at one
+   report per folder and we surface that as a friendly message
+   instead of a raw permission error.
+   ------------------------------------------------------------ */
+function openReportModal(){
+  if(!folderMeta) return;
+  document.getElementById('reportError').classList.add('hidden');
+  document.getElementById('reportModalBackdrop').classList.add('show');
+}
+function closeReportModal(){
+  document.getElementById('reportModalBackdrop').classList.remove('show');
+}
+
+async function submitReport(){
+  if(!shareId || !folderMeta) return;
+  const btn = document.getElementById('confirmReportBtn');
+  const errEl = document.getElementById('reportError');
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+
+  try{
+    await setDoc(doc(db, REPORTS_COLLECTION, shareId), {
+      shareId,
+      folderId: folderMeta.folderId || null,
+      ownerUid: folderMeta.ownerUid,
+      folderName: folderMeta.name || '',
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    showToast(t('reportSubmittedToast'));
+    closeReportModal();
+  }catch(err){
+    if(err.code === 'permission-denied'){
+      // Most likely: this folder was already reported once before.
+      errEl.textContent = t('reportAlreadySubmittedToast');
+      errEl.classList.remove('hidden');
+    } else {
+      console.error(err);
+    }
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ------------------------------------------------------------
    i18n — re-render the grid so dynamic button labels stay
    translated when the language toggle is used
    ------------------------------------------------------------ */
@@ -291,6 +359,9 @@ setDynamicTranslationHook(() => {
   if(sharedLinks.length) renderGrid();
 });
 
-Object.assign(window, { openPlayerFor, closePlayerModal, toggleVideoZoom, addToMyList, addAllToMyList });
+Object.assign(window, {
+  openPlayerFor, closePlayerModal, toggleVideoZoom, addToMyList, addAllToMyList,
+  openReportModal, closeReportModal, submitReport,
+});
 
 loadSharedFolder();
