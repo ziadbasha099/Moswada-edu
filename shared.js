@@ -166,6 +166,7 @@ const I18N = {
     editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
     updated: "Download updated", editHeading: "Edit a download",
     linkLimitReachedToast: "You've reached the 200 saved links limit. Remove some links to add new ones.",
+    accountBannedError: 'This account has been suspended. Contact support if you believe this is a mistake.',
     reportSubmittedToast: 'Report submitted — this link is now disabled',
     reportAlreadySubmittedToast: 'This folder has already been reported and is under review',
 
@@ -258,8 +259,9 @@ const I18N = {
     editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
     updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
     linkLimitReachedToast: 'لقد وصلت إلى الحد الأقصى (٢٠٠ رابط محفوظ). احذف بعض الروابط لإضافة روابط جديدة.',
+    accountBannedError: 'تم تعليق هذا الحساب. راسل الدعم إذا كنت تعتقد أن هذا خطأ.',
     reportSubmittedToast: 'تم إرسال البلاغ — تم تعطيل هذا الرابط',
-    reportAlreadySubmittedToast: 'تم الإبلاغ عن هذا المجلد بالفعل وهو قيد المراجعة',
+    reportAlreadySubمittedToast: 'تم الإبلاغ عن هذا المجلد بالفعل وهو قيد المراجعة',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
