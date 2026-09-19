@@ -23,10 +23,18 @@ import { auth, db, googleProvider, t, setDynamicTranslationHook } from "./shared
    UX layer that stops a banned person from getting into the app
    at all instead of hitting permission-denied errors once inside.
    ------------------------------------------------------------ */
+const BANNED_EMAILS_COLLECTION = 'bannedEmails';
+const BANNED_USERS_COLLECTION = 'bannedUsers';
+
+/**
+ * Returns true if bannedEmails/{email} exists. Fails open on network errors.
+ * @param {string} email
+ * @returns {Promise<boolean>}
+ */
 async function isEmailBanned(email){
   if(!email) return false;
   try{
-    const snap = await getDoc(doc(db, 'bannedEmails', email));
+    const snap = await getDoc(doc(db, BANNED_EMAILS_COLLECTION, email));
     return snap.exists();
   }catch(err){
     console.error('Banned-email check failed:', err);
@@ -34,11 +42,37 @@ async function isEmailBanned(email){
   }
 }
 
-/* Signs the just-authenticated user back out and shows the ban
-   message if their email is on the list. Returns true if the
-   user was banned (and therefore signed back out). */
+/**
+ * Returns true if bannedUsers/{uid} exists. Fails open on network errors.
+ * The admin bans by UID (stored in every report), because the browser SDK
+ * cannot look up an account's email from its UID.
+ * @param {string} uid
+ * @returns {Promise<boolean>}
+ */
+async function isUserBanned(uid){
+  if(!uid) return false;
+  try{
+    const snap = await getDoc(doc(db, BANNED_USERS_COLLECTION, uid));
+    return snap.exists();
+  }catch(err){
+    console.error('Banned-user check failed:', err);
+    return false; // fail open — never lock out a legitimate user over a network hiccup
+  }
+}
+
+/**
+ * Signs the just-authenticated user back out and shows the ban message if
+ * their UID or their email is on a ban list. Both lists are checked in
+ * parallel. Returns true if the user was banned (and therefore signed out).
+ * @param {import('firebase/auth').User} user
+ * @returns {Promise<boolean>}
+ */
 async function rejectIfBanned(user){
-  if(await isEmailBanned(user.email)){
+  const [bannedByUid, bannedByEmail] = await Promise.all([
+    isUserBanned(user.uid),
+    isEmailBanned(user.email),
+  ]);
+  if(bannedByUid || bannedByEmail){
     await signOut(auth);
     showAuthError(t('accountBannedError'));
     return true;

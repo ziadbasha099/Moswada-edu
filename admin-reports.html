@@ -29,10 +29,11 @@
   .modal-footer{ display:flex; justify-content:flex-end; gap:10px; padding:18px 22px 22px; }
   .modal-footer .admin-btn{ width:auto; padding:10px 18px; font-size:13.5px; }
 
-  .admin-btn.danger{ background:var(--terracotta-dark); }
+  .admin-btn.danger{ background:var(--terracotta-dark); color:#fff; }
   .admin-btn.danger:hover{ filter:brightness(0.95); }
   .admin-btn.small{ width:auto; padding:8px 14px; font-size:13px; }
-  .admin-btn.small:disabled{ opacity:.45; cursor:not-allowed; }
+  /* Disabled buttons keep a readable label instead of fading to an empty box. */
+  .admin-btn.small:disabled{ opacity:1; cursor:not-allowed; background:var(--line); color:var(--ink-soft); }
 
   .report-row{ flex-wrap:wrap; row-gap:8px; align-items:center; }
   .admin-row .meta .f{ line-height:18px; }

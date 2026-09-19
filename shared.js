@@ -261,7 +261,7 @@ const I18N = {
     linkLimitReachedToast: 'لقد وصلت إلى الحد الأقصى (٢٠٠ رابط محفوظ). احذف بعض الروابط لإضافة روابط جديدة.',
     accountBannedError: 'تم تعليق هذا الحساب. راسل الدعم إذا كنت تعتقد أن هذا خطأ.',
     reportSubmittedToast: 'تم إرسال البلاغ — تم تعطيل هذا الرابط',
-    reportAlreadySubمittedToast: 'تم الإبلاغ عن هذا المجلد بالفعل وهو قيد المراجعة',
+    reportAlreadySubmittedToast: 'تم الإبلاغ عن هذا المجلد بالفعل وهو قيد المراجعة',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }

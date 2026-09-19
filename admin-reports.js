@@ -4,26 +4,27 @@
    Lets the admin review reported shared folders and permanently
    ban the accounts behind them. Two independent lists:
      - reports/{shareId}      → pending reports awaiting review
-     - bannedEmails/{email}   → accounts currently banned
+     - bannedUsers/{uid}      → accounts currently banned
 
    Real access control for both collections lives in
    firestore.rules (only ADMIN_EMAIL may read/write reports and
-   write bannedEmails) — the ADMIN_EMAIL check below is a friendly
+   write bannedUsers) — the ADMIN_EMAIL check below is a friendly
    client-side gate, not the security boundary itself. See the
    note in firestore.rules about keeping that check in sync with
    ADMIN_EMAIL in firebase-config.js.
 
-   Banning writes bannedEmails/{email}; every other page already
-   enforces that record (auth.js's isEmailBanned() on sign-in,
-   and isBanned() in firestore.rules on every users/{uid} write) —
-   this page only needs to create/remove that one document.
+   Banning writes bannedUsers/{uid}. The owner's UID is stored in every
+   report (share.js), whereas the email cannot be looked up from a UID
+   with the browser SDK. Enforcement lives in auth.js (isUserBanned() on
+   sign-in) and in firestore.rules (isBanned() on every users/{uid} write);
+   this page only creates/removes that one document.
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot,
+  getFirestore, collection, doc, deleteDoc, onSnapshot, writeBatch,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
@@ -47,7 +48,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const REPORTS_COLLECTION = "reports";
-const BANNED_COLLECTION = "bannedEmails";
+const BANNED_COLLECTION = "bannedUsers";
+const REPORT_STATUS_PENDING = "pending";
+const REPORT_STATUS_BANNED = "banned";
+const OWNER_UID_PREVIEW_LENGTH = 8;
 
 /* ---------------- i18n ---------------- */
 const lang = localStorage.getItem("preferred-language") || "en";
@@ -64,8 +68,8 @@ const I18N = {
     bannedSub: "These accounts can no longer sign in or use the app.",
     noBanned: "No banned accounts yet.",
     banBtn: "Ban owner", dismissBtn: "Dismiss report", unbanBtn: "Unban",
-    unknownEmail: "Unknown owner (older share link — can't be banned from here)",
-    confirmBanBody: email => `This blocks ${email} from signing in or using Moswada, and removes their access immediately. Undo it with "Unban" if needed.`,
+    unknownOwner: "Unknown owner (report has no owner ID — can't be banned from here)",
+    confirmBanBody: owner => `This blocks ${owner} from signing in or using Moswada, effective immediately. You can undo it with "Unban".`,
     bannedToast: "Account banned",
     unbannedToast: "Account unbanned",
     dismissedToast: "Report dismissed",
@@ -84,8 +88,8 @@ const I18N = {
     bannedSub: "لم يعد بإمكان هذه الحسابات تسجيل الدخول أو استخدام التطبيق.",
     noBanned: "لا توجد حسابات محظورة بعد.",
     banBtn: "حظر المالك", dismissBtn: "تجاهل البلاغ", unbanBtn: "إلغاء الحظر",
-    unknownEmail: "مالك غير معروف (رابط مشاركة قديم — لا يمكن حظره من هنا)",
-    confirmBanBody: email => `سيؤدي هذا إلى منع ${email} من تسجيل الدخول أو استخدام مسودة، وإزالة وصوله فوراً. يمكنك التراجع لاحقاً بـ"إلغاء الحظر".`,
+    unknownOwner: "مالك غير معروف (البلاغ بلا معرّف مالك — لا يمكن حظره من هنا)",
+    confirmBanBody: owner => `سيؤدي هذا إلى منع ${owner} من تسجيل الدخول أو استخدام مسودة فوراً. يمكنك التراجع لاحقاً بـ"إلغاء الحظر".`,
     bannedToast: "تم حظر الحساب",
     unbannedToast: "تم إلغاء حظر الحساب",
     dismissedToast: "تم تجاهل البلاغ",
@@ -195,28 +199,44 @@ function listenReports(){
   }, err => console.error("reports listener:", err));
 }
 
+/**
+ * Returns a readable owner label for a report: the email when present
+ * (older reports), otherwise a shortened UID.
+ * @param {{ownerEmail?: string, ownerUid?: string}} report
+ * @returns {string}
+ */
+function describeOwner(report){
+  if(report.ownerEmail) return report.ownerEmail;
+  if(report.ownerUid) return `UID ${report.ownerUid.slice(0, OWNER_UID_PREVIEW_LENGTH)}…`;
+  return t("unknownOwner");
+}
+
+/** Renders only reports still awaiting a decision (banned ones are hidden). */
 function renderReports(){
   const list = document.getElementById("reportsList");
   const empty = document.getElementById("noReports");
-  if(!reports.length){
+  const pendingReports = reports.filter(r => (r.status || REPORT_STATUS_PENDING) === REPORT_STATUS_PENDING);
+
+  if(!pendingReports.length){
     list.innerHTML = "";
     empty.classList.remove("hidden");
     return;
   }
   empty.classList.add("hidden");
 
-  list.innerHTML = reports.map(r => `
+  list.innerHTML = pendingReports.map(r => `
     <div class="admin-row report-row">
       <div class="meta">
         <div class="t">${escapeHtml(r.folderName || r.id)}</div>
-        <div class="f">${t("ownerLabel")}: ${r.ownerEmail ? escapeHtml(r.ownerEmail) : t("unknownEmail")} · ${t("reportedOn")}: ${formatDate(r.createdAt)}</div>
+        <div class="f">${t("ownerLabel")}: ${escapeHtml(describeOwner(r))} · ${t("reportedOn")}: ${formatDate(r.createdAt)}</div>
       </div>
       <button type="button" class="admin-btn secondary small" data-action="dismiss" data-share-id="${escapeHtml(r.id)}">${t("dismissBtn")}</button>
       <button type="button" class="admin-btn danger small" data-action="ban"
         data-share-id="${escapeHtml(r.id)}"
-        data-owner-email="${r.ownerEmail ? escapeHtml(r.ownerEmail) : ''}"
+        data-owner-uid="${escapeHtml(r.ownerUid || '')}"
+        data-owner-label="${escapeHtml(describeOwner(r))}"
         data-folder-name="${escapeHtml(r.folderName || '')}"
-        ${r.ownerEmail ? '' : 'disabled'}>${t("banBtn")}</button>
+        ${r.ownerUid ? '' : 'disabled'}>${t("banBtn")}</button>
     </div>`).join("");
 
   list.querySelectorAll('[data-action="dismiss"]').forEach(btn => {
@@ -225,7 +245,8 @@ function renderReports(){
   list.querySelectorAll('[data-action="ban"]').forEach(btn => {
     btn.addEventListener("click", () => openBanModal(
       btn.getAttribute("data-share-id"),
-      btn.getAttribute("data-owner-email"),
+      btn.getAttribute("data-owner-uid"),
+      btn.getAttribute("data-owner-label"),
       btn.getAttribute("data-folder-name")
     ));
   });
@@ -242,6 +263,7 @@ function listenBanned(){
   }, err => console.error("banned listener:", err));
 }
 
+/** Renders banned accounts; each document ID is the banned user's UID. */
 function renderBanned(){
   const list = document.getElementById("bannedList");
   const empty = document.getElementById("noBanned");
@@ -258,20 +280,24 @@ function renderBanned(){
         <div class="t">${escapeHtml(b.id)}</div>
         <div class="f">${b.folderName ? `${t("folderLabel")}: ${escapeHtml(b.folderName)} · ` : ''}${t("bannedOn")}: ${formatDate(b.bannedAt)}</div>
       </div>
-      <button type="button" class="admin-btn secondary small" data-email="${escapeHtml(b.id)}" data-action="unban">${t("unbanBtn")}</button>
+      <button type="button" class="admin-btn secondary small" data-uid="${escapeHtml(b.id)}" data-action="unban">${t("unbanBtn")}</button>
     </div>`).join("");
 
   list.querySelectorAll('[data-action="unban"]').forEach(btn => {
-    btn.addEventListener("click", () => unbanAccount(btn.getAttribute("data-email")));
+    btn.addEventListener("click", () => unbanAccount(btn.getAttribute("data-uid")));
   });
 }
 
-async function unbanAccount(email){
+/**
+ * Removes the ban record so the account can sign in again.
+ * @param {string} uid
+ */
+async function unbanAccount(uid){
   try{
-    await deleteDoc(doc(db, BANNED_COLLECTION, email));
+    await deleteDoc(doc(db, BANNED_COLLECTION, uid));
     showToast(t("unbannedToast"));
   }catch(err){
-    console.error(err);
+    console.error("Unban failed:", err);
     showToast(t("genericError"));
   }
 }
@@ -279,31 +305,46 @@ async function unbanAccount(email){
 /* ---------------- Ban confirmation modal ---------------- */
 let pendingBan = null;
 
-function openBanModal(shareId, ownerEmail, folderName){
-  if(!ownerEmail) return; // defense-in-depth; the button is already disabled in this case
-  pendingBan = { shareId, ownerEmail, folderName };
-  document.getElementById("banModalBody").textContent = t("confirmBanBody")(ownerEmail);
+/**
+ * Opens the confirmation dialog for banning a report's owner.
+ * @param {string} shareId
+ * @param {string} ownerUid
+ * @param {string} ownerLabel  Human-readable owner description for the dialog.
+ * @param {string} folderName
+ */
+function openBanModal(shareId, ownerUid, ownerLabel, folderName){
+  if(!ownerUid) return; // defense-in-depth; the button is already disabled in this case
+  pendingBan = { shareId, ownerUid, ownerLabel, folderName };
+  document.getElementById("banModalBody").textContent = t("confirmBanBody")(ownerLabel);
   document.getElementById("banModalBackdrop").classList.add("show");
 }
 function closeBanModal(){
   document.getElementById("banModalBackdrop").classList.remove("show");
   pendingBan = null;
 }
+
+/**
+ * Bans the owner and marks the report as handled in one atomic batch,
+ * so a report can never end up banned-but-still-pending (or vice versa).
+ */
 async function confirmBan(){
   if(!pendingBan) return;
   const btn = document.getElementById("confirmBanBtn");
   btn.disabled = true;
   try{
-    await setDoc(doc(db, BANNED_COLLECTION, pendingBan.ownerEmail), {
-      email: pendingBan.ownerEmail,
+    const batch = writeBatch(db);
+    batch.set(doc(db, BANNED_COLLECTION, pendingBan.ownerUid), {
+      ownerUid: pendingBan.ownerUid,
       folderName: pendingBan.folderName || null,
       shareId: pendingBan.shareId,
       bannedAt: serverTimestamp()
     });
+    batch.update(doc(db, REPORTS_COLLECTION, pendingBan.shareId), { status: REPORT_STATUS_BANNED });
+    await batch.commit();
     showToast(t("bannedToast"));
     closeBanModal();
   }catch(err){
-    console.error(err);
+    console.error("Ban failed:", err);
     showToast(t("genericError"));
   }finally{
     btn.disabled = false;
