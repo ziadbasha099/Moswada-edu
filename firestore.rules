@@ -12,37 +12,63 @@
      ب) أو تستخدم Firebase CLI: `firebase deploy --only firestore:rules`
         (المشروع فيه firebase.json بيشاور على الملف ده).
 
+   isAdmin():
+     - بريد الأدمن مكتوب مرة واحدة فقط داخل الدالة isAdmin()
+       بالأسفل، وباقي القواعد تستدعيها. لازم يطابق ADMIN_EMAIL في
+       firebase-config.js بالظبط. لو غيّرت بريد الأدمن، حدّثه في
+       المكانين (هنا وفي الكونسول).
+
    downloads/{docId}:
      - القراءة مفتوحة للجميع (صفحة التنزيلات عامة).
-     - الكتابة مسموحة فقط لحساب بريد إلكتروني محدد (الأدمن).
-       ملحوظة: لو غيّرت بريد الأدمن، لازم تحدّث القيمة هنا وفي
-       الكونسول معاً.
+     - الكتابة مسموحة فقط للأدمن.
 
    users/{userId}/**:
-     - كل مستخدم يقرأ/يكتب بياناته الخاصة فقط (folders/links).
+     - كل مستخدم يقرأ/يكتب بياناته الخاصة فقط (folders/links)،
+       ما لم يكن محظوراً (isBanned).
+     - إنشاء رابط جديد يتطلب زيادة users/{uid}.linksCount بمقدار 1
+       بالظبط في نفس العملية، وألا يتجاوز 200.
 
    sharedFolders/{shareId} (+ /links/{linkId}):
-     - القراءة مفتوحة للجميع (رابط المشاركة العام في share.html).
+     - القراءة مفتوحة للجميع (رابط المشاركة العام في share.html)
+       طالما لا يوجد بلاغ على هذا المجلد.
      - الإنشاء: أي مستخدم مسجّل دخول، بشرط أن يكتب uid نفسه كمالك
        (ownerUid == request.auth.uid) — يمنع انتحال ملكية مجلد.
-     - التعديل/الحذف: فقط صاحب المجلد الأصلي (owner)، حتى لا يقدر
-       مستخدم آخر يوقف مشاركة أو يعدّل مجلد مش بتاعه.
-     - الفيديوهات داخل links/{linkId}: نفس القاعدة، بالتحقق من
-       ownerUid على وثيقة المجلد الأب.
+     - التعديل/الحذف: فقط صاحب المجلد الأصلي (owner).
+
+   reports/{shareId}:
+     - أي زائر يقدر يبلّغ (create) لكن مرة واحدة فقط لكل مجلد
+       (معرّف المستند = shareId). البلاغ لازم يحمل ownerUid المطابق
+       لمالك المجلد الحقيقي، حتى لا يقدر أحد يلفّق بلاغاً ضد غيره.
+     - القراءة/التعديل/الحذف: للأدمن فقط.
+
+   الحظر:
+     - bannedUsers/{uid}   ← الأساسي. الأدمن يحظر بالـ UID لأنه
+                              موجود في كل بلاغ (ownerUid).
+     - bannedEmails/{email} ← يبقى للتوافق مع أي حظر قديم بالبريد.
+     - isBanned() يفحص الاثنين، فأي حساب في أي قائمة يُمنع من
+       الكتابة على بياناته وعلى المجلدات المشاركة.
    ============================================================ */
-rrules_version = '2';
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /* حساب الأدمن الوحيد — يطابق ADMIN_EMAIL في firebase-config.js */
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email == "ziadbasha099@gmail.com";
+    }
+
+    /* المحظور = uid أو بريد مسجّل في إحدى قائمتي الحظر */
     function isBanned() {
-      return request.auth != null &&
-             exists(/databases/$(database)/documents/bannedEmails/$(request.auth.token.email));
+      return request.auth != null && (
+        exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/bannedEmails/$(request.auth.token.email))
+      );
     }
 
     match /downloads/{docId} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.token.email == "true";
+      allow write: if isAdmin();
     }
 
     // --- قسم المستخدمين مع الحفاظ على حظر الحسابات وحد الـ 200 رابط ---
@@ -71,9 +97,10 @@ service cloud.firestore {
         ) && getAfter(/databases/$(database)/documents/users/$(userId)).data.linksCount <= 200;
       }
 
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId && !isBanned();
-      }
+      // لا توجد قاعدة شاملة {document=**} هنا عمداً: كانت تطابق أيضاً
+      // users/{uid}/links/** وتتجاوز شرط حد الـ 200 أعلاه. المسارات المسموحة
+      // تحت users/{uid} هي فقط: مستند المستخدم نفسه، folders، links.
+      // أي إنشاء لرابط لازم يمر عبر createLinkWithCounter() (links-counter.js).
     }
 
     // --- قسم المجلدات المشاركة والإبلاغات والحظر ---
@@ -96,19 +123,29 @@ service cloud.firestore {
     }
 
     match /reports/{shareId} {
-      allow get, list: if request.auth != null
-                        && request.auth.token.email == "true";
-      allow create: if request.resource.data.status == 'pending'
-                    && request.resource.data.shareId == shareId;
-      allow update, delete: if request.auth != null
-                            && request.auth.token.email == "true";
+      allow read, update, delete: if isAdmin();
+
+      // الحقول المسموحة = بالظبط ما يكتبه submitReport() في share.js،
+      // و ownerUid لازم يطابق مالك المجلد المشارَك الحقيقي.
+      allow create: if request.resource.data.keys().hasOnly(
+                         ['shareId', 'folderId', 'ownerUid', 'folderName', 'status', 'createdAt'])
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.shareId == shareId
+                    && request.resource.data.ownerUid ==
+                       get(/databases/$(database)/documents/sharedFolders/$(shareId)).data.ownerUid;
     }
 
+    // الحظر بالـ UID (الأساسي): المستخدم يقرأ سجله هو فقط (لفحص auth.js
+    // بعد تسجيل الدخول)، والأدمن وحده يكتب ويعرض القائمة كاملة.
+    match /bannedUsers/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list, write: if isAdmin();
+    }
+
+    // الحظر بالبريد (قديم — للتوافق فقط)
     match /bannedEmails/{email} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.token.email == "true";
+      allow write: if isAdmin();
     }
   }
 }
-

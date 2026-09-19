@@ -14,15 +14,29 @@
    the report exists, with no server code required. An admin
    reviews reports/{shareId} manually in the Firebase console or
    a simple admin page and decides whether to ban the owner.
+
+   Security notes:
+   - Everything under sharedFolders/* is written by the folder owner,
+     so it is untrusted input. Values are HTML-escaped when rendered,
+     and only sanitized fields are copied into a visitor's account
+     (see buildImportedLinkData / toSafeFolderColor).
+   - Links are created through createLinkWithCounter() so the
+     200-link limit in firestore.rules is enforced.
    ============================================================ */
 import {
   collection, doc, getDoc, getDocs, addDoc, setDoc, query, where, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { auth, db, t, showToast, escapeHtml, setDynamicTranslationHook } from "./shared.js";
+import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook } from "./shared.js";
+import {
+  MAX_LINKS_PER_USER, ensureLinksCounter, createLinkWithCounter, isLinkLimitError
+} from "./links-counter.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 
 const REPORTS_COLLECTION = "reports";
+
+const DEFAULT_FOLDER_COLOR = '#226864';
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 const shareId = new URLSearchParams(location.search).get('id');
 
@@ -41,12 +55,32 @@ onAuthStateChanged(auth, (user) => { currentUser = user; });
    YouTube helpers — same extraction logic as dashboard.js
    ------------------------------------------------------------ */
 function extractYouTubeId(url){
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
   return m ? m[1] : null;
 }
 function youTubeThumbUrl(url){
   const id = extractYouTubeId(url);
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+/**
+ * Only http/https URLs are ever used (same rule as dashboard.js).
+ * @param {unknown} url
+ * @returns {boolean}
+ */
+function isSafeUrl(url){
+  return /^https?:\/\/.+/i.test(String(url || '').trim());
+}
+
+/**
+ * Picks a thumbnail for a shared link. The YouTube thumbnail is derived
+ * from a strictly validated video ID; a stored thumb is used only if it is
+ * an http(s) URL. Callers must still escape the result before using it.
+ * @param {{url?: string, thumb?: string}} sharedLink
+ * @returns {string}
+ */
+function getThumbnailSrc(sharedLink){
+  return youTubeThumbUrl(sharedLink.url) || (isSafeUrl(sharedLink.thumb) ? sharedLink.thumb : '');
 }
 
 /* ------------------------------------------------------------
@@ -98,21 +132,37 @@ async function loadSharedFolder(){
   }
 }
 
+/**
+ * Renders the shared videos. Link IDs are chosen by the folder owner, so they
+ * are never put inside inline onclick="..." code (HTML-escaping cannot make a
+ * value safe inside a JS string). They go in data-* attributes and are read by
+ * the delegated click handler below.
+ */
 function renderGrid(){
   const grid = document.getElementById('shareGrid');
   grid.innerHTML = sharedLinks.map(l => `
     <div class="link-card">
-      <div class="thumb" onclick="openPlayerFor('${l.id}')">
-        <img src="${l.thumb || youTubeThumbUrl(l.url) || ''}" alt="">
+      <div class="thumb" data-action="play" data-link-id="${escapeAttr(l.id)}">
+        <img src="${escapeAttr(getThumbnailSrc(l))}" alt="">
         <div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
       </div>
       <div class="card-body">
         <div class="card-title">${escapeHtml(l.title)}</div>
         <div class="card-domain"><span class="favicon-dot"></span>${escapeHtml(l.domain)}</div>
-        <button class="btn btn-outline btn-sm" style="margin-top:auto;" onclick="addToMyList('${l.id}')">${t('addToMyList')}</button>
+        <button class="btn btn-outline btn-sm" style="margin-top:auto;" data-action="add" data-link-id="${escapeAttr(l.id)}">${t('addToMyList')}</button>
       </div>
     </div>`).join('');
 }
+
+/** Single click listener for every card (play / add), see renderGrid(). */
+function handleGridClick(event){
+  const actionElement = event.target.closest('[data-action]');
+  if(!actionElement) return;
+  const linkId = actionElement.dataset.linkId;
+  if(actionElement.dataset.action === 'play') openPlayerFor(linkId);
+  else if(actionElement.dataset.action === 'add') addToMyList(linkId);
+}
+document.getElementById('shareGrid').addEventListener('click', handleGridClick);
 
 /* ------------------------------------------------------------
    "ADD ALL" BUTTON — only worth showing once there's more than
@@ -190,6 +240,78 @@ function toggleVideoZoom(){
 }
 
 /* ------------------------------------------------------------
+   IMPORT HELPERS
+   ------------------------------------------------------------ */
+
+/**
+ * Sends anonymous visitors to sign-in and remembers this page so auth.js
+ * brings them straight back after logging in.
+ * @returns {boolean} true if the visitor was redirected.
+ */
+function redirectToSignInIfAnonymous(){
+  if(currentUser) return false;
+  localStorage.setItem('post-login-redirect', location.href);
+  location.href = 'index.html';
+  return true;
+}
+
+/**
+ * Folder colors are later injected into a style="" attribute by the
+ * dashboard, so anything that is not a plain #rrggbb value is dropped.
+ * @param {unknown} color
+ * @returns {string}
+ */
+function toSafeFolderColor(color){
+  return HEX_COLOR_PATTERN.test(String(color || '')) ? color : DEFAULT_FOLDER_COLOR;
+}
+
+/**
+ * Builds the document saved in the visitor's own account from an untrusted
+ * shared link. Only known-safe shapes are copied; thumb is left empty because
+ * the dashboard derives YouTube thumbnails itself.
+ * @param {object} sharedLink
+ * @param {string} folderId
+ * @returns {object}
+ */
+function buildImportedLinkData(sharedLink, folderId){
+  return {
+    url: sharedLink.url,
+    title: String(sharedLink.title || ''),
+    folder: folderId,
+    notes: '',
+    tags: [],
+    type: sharedLink.type === 'video' ? 'video' : 'article',
+    domain: String(sharedLink.domain || ''),
+    thumb: null,
+    timeNotes: [],
+    progress: 0
+  };
+}
+
+/** Logs the error and shows the limit message or a generic one. */
+function showImportError(error){
+  console.error('Import failed:', error);
+  showToast(isLinkLimitError(error) ? t('linkLimitReachedToast') : t('authGeneric'));
+}
+
+/**
+ * Imports links ONE AT A TIME. Each link needs its own transaction because
+ * firestore.rules only accepts a +1 change of users/{uid}.linksCount per commit.
+ * @param {string} uid
+ * @param {object[]} linksToImport
+ * @param {string} folderId
+ * @returns {Promise<number>} How many links were created.
+ */
+async function importLinksSequentially(uid, linksToImport, folderId){
+  let importedCount = 0;
+  for(const sharedLink of linksToImport){
+    await createLinkWithCounter(uid, buildImportedLinkData(sharedLink, folderId));
+    importedCount++;
+  }
+  return importedCount;
+}
+
+/* ------------------------------------------------------------
    ADD TO MY LIST (single video)
    - Not signed in  → remember this page, send to sign-in, auth.js
                        brings the visitor straight back here after.
@@ -198,35 +320,28 @@ function toggleVideoZoom(){
                        folder (created once, then reused).
    ------------------------------------------------------------ */
 async function addToMyList(id){
-  const l = sharedLinks.find(x => x.id === id);
-  if(!l) return;
-
-  if(!currentUser){
-    localStorage.setItem('post-login-redirect', location.href);
-    location.href = 'index.html';
-    return;
-  }
+  const sharedLink = sharedLinks.find(x => x.id === id);
+  if(!sharedLink) return;
+  if(redirectToSignInIfAnonymous()) return;
+  if(!isSafeUrl(sharedLink.url)){ showToast(t('authGeneric')); return; }
 
   try{
+    const uid = currentUser.uid;
     const existing = await getDocs(query(
-      collection(db, 'users', currentUser.uid, 'links'),
-      where('url', '==', l.url)
+      collection(db, 'users', uid, 'links'),
+      where('url', '==', sharedLink.url)
     ));
     if(!existing.empty){
       showToast(t('alreadyInListToast'));
       return;
     }
 
+    await ensureLinksCounter(uid);
     const folderId = await getOrCreateImportFolder(folderMeta.name, folderMeta.color);
-
-    await addDoc(collection(db, 'users', currentUser.uid, 'links'), {
-      url: l.url, title: l.title, folder: folderId, notes: '', tags: [],
-      type: l.type, domain: l.domain, thumb: l.thumb || null,
-      timeNotes: [], progress: 0, createdAt: serverTimestamp()
-    });
+    await createLinkWithCounter(uid, buildImportedLinkData(sharedLink, folderId));
     showToast(t('addedToListToast'));
   }catch(err){
-    console.error(err);
+    showImportError(err);
   }
 }
 
@@ -237,17 +352,13 @@ async function addToMyList(id){
    - Not signed in → same redirect-back-after-sign-in flow.
    - Fetches the visitor's existing links ONCE (instead of one
      query per video) to skip anything already saved by URL.
+   - Stops at the 200-link limit instead of failing half-way.
    - Files everything new under the same imported folder used by
      the single "Add to my videos" button.
    ------------------------------------------------------------ */
 async function addAllToMyList(){
   if(isAddingAll || !sharedLinks.length) return;
-
-  if(!currentUser){
-    localStorage.setItem('post-login-redirect', location.href);
-    location.href = 'index.html';
-    return;
-  }
+  if(redirectToSignInIfAnonymous()) return;
 
   const btn = document.getElementById('addAllBtn');
   isAddingAll = true;
@@ -255,27 +366,30 @@ async function addAllToMyList(){
   showToast(t('addingAllToast'));
 
   try{
-    const existingSnap = await getDocs(collection(db, 'users', currentUser.uid, 'links'));
+    const uid = currentUser.uid;
+    await ensureLinksCounter(uid);
+    const existingSnap = await getDocs(collection(db, 'users', uid, 'links'));
     const existingUrls = new Set(existingSnap.docs.map(d => d.data().url));
 
-    const toAdd = sharedLinks.filter(l => !existingUrls.has(l.url));
-
-    if(toAdd.length === 0){
+    const newLinks = sharedLinks.filter(l => isSafeUrl(l.url) && !existingUrls.has(l.url));
+    if(newLinks.length === 0){
       showToast(t('allAlreadyInListToast'));
       return;
     }
 
+    const remainingSlots = Math.max(0, MAX_LINKS_PER_USER - existingSnap.size);
+    const linksToImport = newLinks.slice(0, remainingSlots);
+    if(linksToImport.length === 0){
+      showToast(t('linkLimitReachedToast'));
+      return;
+    }
+
     const folderId = await getOrCreateImportFolder(folderMeta.name, folderMeta.color);
-
-    await Promise.all(toAdd.map(l => addDoc(collection(db, 'users', currentUser.uid, 'links'), {
-      url: l.url, title: l.title, folder: folderId, notes: '', tags: [],
-      type: l.type, domain: l.domain, thumb: l.thumb || null,
-      timeNotes: [], progress: 0, createdAt: serverTimestamp()
-    })));
-
-    showToast(t('allAddedToast')(toAdd.length));
+    const importedCount = await importLinksSequentially(uid, linksToImport, folderId);
+    const wasTruncated = linksToImport.length < newLinks.length;
+    showToast(wasTruncated ? t('linkLimitReachedToast') : t('allAddedToast')(importedCount));
   }catch(err){
-    console.error(err);
+    showImportError(err);
   }finally{
     isAddingAll = false;
     if(btn) btn.disabled = false;
@@ -284,16 +398,17 @@ async function addAllToMyList(){
 
 async function getOrCreateImportFolder(name, color){
   if(importFolderCache) return importFolderCache;
+  const folderName = String(name || '');
   const snap = await getDocs(query(
     collection(db, 'users', currentUser.uid, 'folders'),
-    where('name', '==', name)
+    where('name', '==', folderName)
   ));
   if(!snap.empty){
     importFolderCache = snap.docs[0].id;
     return importFolderCache;
   }
   const ref = await addDoc(collection(db, 'users', currentUser.uid, 'folders'), {
-    name, color: color || '#226864', createdAt: serverTimestamp()
+    name: folderName, color: toSafeFolderColor(color), createdAt: serverTimestamp()
   });
   importFolderCache = ref.id;
   return importFolderCache;
@@ -359,8 +474,10 @@ setDynamicTranslationHook(() => {
   if(sharedLinks.length) renderGrid();
 });
 
+// Only handlers referenced by inline onclick="..." in share.html.
+// (openPlayerFor / addToMyList are now reached via handleGridClick.)
 Object.assign(window, {
-  openPlayerFor, closePlayerModal, toggleVideoZoom, addToMyList, addAllToMyList,
+  closePlayerModal, toggleVideoZoom, addAllToMyList,
   openReportModal, closeReportModal, submitReport,
 });
 
