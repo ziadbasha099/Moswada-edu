@@ -1,0 +1,100 @@
+/* ==================================================================
+   MOSWADA — "الألعاب التعليمية" (Educational Games) page
+   Additive stylesheet only — reuses every color/typography/spacing
+   token already defined in style.css (:root and [data-theme="dark"]),
+   so this page automatically matches light/dark mode and RTL/LTR
+   without duplicating any design tokens.
+   ================================================================== */
+
+.games-shell{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 96px;
+}
+
+.games-heading{ margin-bottom: 32px; }
+.games-heading h1{
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 32px;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.games-heading p{
+  color: var(--on-surface-variant);
+  font-size: 15px;
+  line-height: 24px;
+  max-width: 640px;
+}
+
+.game-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.game-card{
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.game-card:hover{ transform: translateY(-3px); box-shadow: var(--shadow-2); }
+
+/* ---- Illustrative image area (inline SVG, theme-aware) ---- */
+.game-card-image{
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--secondary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.game-card-image svg{ width: 62%; height: 62%; }
+
+.game-card-badge{
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  background: var(--surface-lowest);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  padding: 4px 12px;
+  border-radius: var(--r-full);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.game-card-body{
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.game-card-body h3{
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+}
+.game-card-body p{
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  line-height: 22px;
+  flex: 1;
+}
+.game-card-cta{ margin-top: 14px; align-self: flex-start; }
+.game-card-cta:disabled{ opacity: 0.65; cursor: not-allowed; box-shadow: none; }
+
+@media (max-width: 768px){
+  .games-shell{ padding: 28px 16px 72px; }
+  .games-heading h1{ font-size: 26px; }
+  .game-grid{ grid-template-columns: 1fr; }
+}

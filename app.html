@@ -110,13 +110,16 @@
         <a class="btn-icon" href="downloads.html" data-en-title="Downloads" data-ar-title="التنزيلات" title="Downloads" aria-label="Downloads">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         </a>
-        <!-- زر التبديل بين اللغات، متاح من داخل لوحة التحكم أيضاً -->
-        <button id="lang-btn" aria-label="Switch language">
-          <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9"/>
-            <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>
+        <!-- رابط الألعاب التعليمية — حلّ محل زر تبديل اللغة، الذي أصبح
+             متاحاً فقط من صفحة الإعدادات (settings.html) -->
+        <a class="btn-icon" href="games.html" data-en-title="Educational games" data-ar-title="الألعاب التعليمية" title="Educational games" aria-label="Educational games">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 7H7a5 5 0 00-4.8 6.5l.6 1.9A3 3 0 005.6 18h.1a3 3 0 002.7-1.7L9 15h6l.6 1.3A3 3 0 0018.3 18h.1a3 3 0 002.8-3.6l-.6-1.9A5 5 0 0017 7z"/>
+            <path d="M8 10.5v3M6.5 12h3"/>
+            <circle cx="15" cy="10.5" r="0.9" fill="currentColor" stroke="none"/>
+            <circle cx="17.5" cy="13" r="0.9" fill="currentColor" stroke="none"/>
           </svg>
-        </button>
+        </a>
         <button class="btn btn-primary btn-sm" onclick="openLinkModal()">
           <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
           <span data-en="Add link" data-ar="إضافة رابط"></span>

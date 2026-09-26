@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational Games — Moswada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="moswada logo home.jpg">
+<link rel="apple-touch-icon" sizes="180x180" href="moswada logo home.jpg">
+
+<!-- نفس ملف التصميم الأساسي المستخدم في app.html (الألوان، الخطوط، الأزرار)
+     بالإضافة إلى ملف إضافي خاص بهذه الصفحة فقط (بطاقات الألعاب) -->
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="games.css">
+</head>
+<body data-theme="light">
+
+<!-- ======================================================================
+     GAMES PAGE — only reachable by a signed-in user, same route-guard
+     pattern used by settings.html/games.js: starts hidden to avoid a
+     flash of empty UI before shared.js confirms who's signed in.
+     ====================================================================== -->
+<div id="gamesPage" class="hidden">
+
+  <div class="topbar">
+    <a class="logo settings-logo" href="app.html">
+      <span class="logo-mark" aria-hidden="true">
+        <img src="moswada-logo.png" alt="Moswada logo">
+      </span>
+    </a>
+    <div class="topbar-actions">
+      <button id="lang-btn" aria-label="Switch language">
+        <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>
+        </svg>
+        <span class="lang-btn-label">العربية</span>
+      </button>
+      <a class="btn btn-ghost settings-back-btn" href="app.html" data-en="Back to your links" data-ar="العودة إلى روابطك"></a>
+    </div>
+  </div>
+
+  <div class="games-shell container">
+    <div class="games-heading">
+      <h1 data-en="Educational games" data-ar="الألعاب التعليمية"></h1>
+      <p data-en="Learn while you play — a small, focused set of games designed to help what you save actually stick." data-ar="تعلّم وأنت تلعب — مجموعة صغيرة ومركّزة من الألعاب صُممت لتساعدك على تثبيت ما تحفظه."></p>
+    </div>
+
+    <div class="game-grid" id="gameGrid">
+
+      <!-- ============== لعبة: بطاقات تعليمية (Flashcards) ============== -->
+      <div class="game-card">
+        <div class="game-card-image">
+          <span class="game-card-badge" data-en="Coming soon" data-ar="قريباً"></span>
+          <!-- توضيح بصري لبطاقات تعليمية متراكمة، مرسوم كـ SVG داخلي حتى
+               يتوافق تلقائياً مع الوضع الفاتح/الداكن دون تحميل صورة خارجية -->
+          <svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="18" y="26" width="90" height="62" rx="10" transform="rotate(-8 18 26)" fill="var(--surface-container-highest)" stroke="var(--outline-variant)" stroke-width="1.5"/>
+            <rect x="30" y="20" width="90" height="62" rx="10" transform="rotate(4 30 20)" fill="var(--surface-lowest)" stroke="var(--outline-variant)" stroke-width="1.5"/>
+            <rect x="38" y="24" width="86" height="58" rx="10" fill="var(--primary-container)"/>
+            <text x="81" y="61" text-anchor="middle" font-family="Manrope, sans-serif" font-size="30" font-weight="800" fill="var(--on-primary-container)">A+B</text>
+            <circle cx="128" cy="30" r="9" fill="var(--tertiary-container, var(--secondary-container))"/>
+            <path d="M124 30l3 3 6-6" stroke="var(--on-tertiary-container, var(--on-secondary-container))" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="game-card-body">
+          <h3 data-en="Flashcards" data-ar="بطاقات تعليمية"></h3>
+          <p data-en="Turn any topic into a quick deck of question-and-answer cards, and quiz yourself until it sticks." data-ar="حوّل أي موضوع إلى مجموعة بطاقات سؤال وجواب سريعة، واختبر نفسك حتى تثبت المعلومة."></p>
+          <button type="button" class="btn btn-outline btn-sm game-card-cta" disabled data-en="Coming soon" data-ar="قريباً"></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- shared.js first (Firebase init, i18n, theme, toast) — games.js depends on it -->
+<script type="module" src="shared.js"></script>
+<script type="module" src="games.js"></script>
+
+</body>
+</html>
