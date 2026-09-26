@@ -50,9 +50,8 @@
     <div class="game-grid" id="gameGrid">
 
       <!-- ============== لعبة: بطاقات تعليمية (Flashcards) ============== -->
-      <div class="game-card">
+      <div class="game-card" onclick="openFlashcardModal()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFlashcardModal();}">
         <div class="game-card-image">
-          <span class="game-card-badge" data-en="Coming soon" data-ar="قريباً"></span>
           <!-- توضيح بصري لبطاقات تعليمية متراكمة، مرسوم كـ SVG داخلي حتى
                يتوافق تلقائياً مع الوضع الفاتح/الداكن دون تحميل صورة خارجية -->
           <svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -67,7 +66,7 @@
         <div class="game-card-body">
           <h3 data-en="Flashcards" data-ar="بطاقات تعليمية"></h3>
           <p data-en="Turn any topic into a quick deck of question-and-answer cards, and quiz yourself until it sticks." data-ar="حوّل أي موضوع إلى مجموعة بطاقات سؤال وجواب سريعة، واختبر نفسك حتى تثبت المعلومة."></p>
-          <button type="button" class="btn btn-outline btn-sm game-card-cta" disabled data-en="Coming soon" data-ar="قريباً"></button>
+          <button type="button" class="btn btn-primary btn-sm game-card-cta" data-en="Open" data-ar="فتح"></button>
         </div>
       </div>
 
@@ -75,11 +74,119 @@
   </div>
 </div>
 
+<!-- ======================================================================
+     FLASHCARD EDITOR — add a card to a subject/folder, or jump straight
+     into a study session for whichever subject/folder is picked.
+     ====================================================================== -->
+<div class="modal-backdrop" id="flashcardModalBackdrop" onclick="if(event.target===this) closeFlashcardModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 data-en="Flashcards" data-ar="بطاقات تعليمية"></h2>
+      <button class="btn-icon" onclick="closeFlashcardModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fcSubject" data-en="Subject" data-ar="المادة"></label>
+        <select id="fcSubject" onchange="handleSubjectSelectChange()">
+          <option value="__new__" data-en="+ New subject" data-ar="+ إنشاء مادة جديدة"></option>
+        </select>
+        <input type="text" id="fcNewSubject" class="hidden" data-en-placeholder="e.g. Biology" data-ar-placeholder="مثال: أحياء" placeholder="e.g. Biology" style="margin-top:8px;">
+      </div>
+      <div class="field">
+        <label for="fcFolder" data-en="Folder" data-ar="المجلد"></label>
+        <select id="fcFolder" onchange="handleFolderSelectChange()" disabled>
+          <option value="__new__" data-en="+ New folder" data-ar="+ إنشاء مجلد جديد"></option>
+        </select>
+        <input type="text" id="fcNewFolder" class="hidden" data-en-placeholder="e.g. Chapter 1" data-ar-placeholder="مثال: الفصل الأول" placeholder="e.g. Chapter 1" style="margin-top:8px;">
+        <span class="hint" id="fcCardsCountHint"></span>
+      </div>
+      <div class="field">
+        <label for="fcTerm" data-en="Term / word (front of the card)" data-ar="المصطلح أو الكلمة (وجه البطاقة)"></label>
+        <input type="text" id="fcTerm" data-en-placeholder="e.g. Photosynthesis" data-ar-placeholder="مثال: التمثيل الضوئي" placeholder="e.g. Photosynthesis">
+      </div>
+      <div class="field">
+        <label for="fcDefinition" data-en="Definition / translation (back of the card)" data-ar="التعريف أو الترجمة (ظهر البطاقة)"></label>
+        <textarea id="fcDefinition" rows="3" data-en-placeholder="e.g. The process plants use to turn light into energy" data-ar-placeholder="مثال: العملية التي تحوّل بها النباتات الضوء إلى طاقة" placeholder="e.g. The process plants use to turn light into energy"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="handleDoneClick()" data-en="Done" data-ar="تم"></button>
+      <button class="btn btn-primary" onclick="handleStartPlayingClick()" data-en="Start playing" data-ar="ابدأ اللعب"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     STUDY SESSION — the actual flashcard "game" screen. Kept visually
+     dark/focused regardless of the site's light/dark theme, the same way
+     the video player modal always plays on a black background.
+     ====================================================================== -->
+<div class="modal-backdrop study-modal-backdrop" id="studyModalBackdrop" onclick="if(event.target===this) closeStudyModal()">
+  <div class="study-wrap" onclick="event.stopPropagation()">
+    <div class="study-card">
+      <div class="study-card-top">
+        <div class="study-menu-wrap">
+          <button type="button" class="study-menu-btn" onclick="toggleStudyMenu(event)" aria-label="Menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+          </button>
+          <div class="study-menu hidden" id="studyMenu">
+            <button type="button" onclick="endStudySession()" data-en="End session" data-ar="إنهاء الجلسة"></button>
+          </div>
+        </div>
+        <span class="study-counter" id="studyCounter">1 / 1</span>
+      </div>
+
+      <div class="study-question-view" id="studyQuestionView">
+        <div class="study-term-wrap">
+          <p class="study-term" id="studyTerm"></p>
+          <p class="study-definition hidden" id="studyDefinition"></p>
+        </div>
+        <button type="button" class="study-reveal-btn" id="studyRevealBtn" onclick="revealAnswer()" data-en="Show answer" data-ar="عرض الإجابة"></button>
+      </div>
+
+      <div class="study-results-view hidden" id="studyResultsView">
+        <h2 data-en="Session complete" data-ar="انتهت الجلسة"></h2>
+        <p class="study-results-summary">
+          <span data-en="Correct" data-ar="صحيح"></span>: <span id="resultCorrect">0</span>
+          &nbsp;·&nbsp;
+          <span data-en="Wrong" data-ar="خطأ"></span>: <span id="resultWrong">0</span>
+        </p>
+        <div class="study-results-actions">
+          <button type="button" class="btn btn-outline" onclick="restartSession()" data-en="Play again" data-ar="إعادة اللعب"></button>
+          <button type="button" class="btn btn-primary" onclick="closeStudyModal()" data-en="Close" data-ar="إغلاق"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="study-controls" id="studyControls">
+      <button type="button" class="study-ctrl-btn study-ctrl-nav" onclick="prevCard()" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <button type="button" class="study-ctrl-btn study-ctrl-correct" id="correctBtn" onclick="markCorrect()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span id="correctCount">0</span>
+      </button>
+      <button type="button" class="study-ctrl-btn study-ctrl-wrong" id="wrongBtn" onclick="markWrong()" disabled>
+        <span id="wrongCount">0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <button type="button" class="study-ctrl-btn study-ctrl-nav" onclick="nextCard()" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<!-- shared.js first (Firebase init, i18n, theme, toast) — games.js depends on it -->
+<!-- shared.js first (Firebase init, i18n, theme, toast) — games.js depends on it.
+     flashcards.js is its own module (see the comment in games.js) so the
+     route-guard file stays small while the flashcards feature grows. -->
 <script type="module" src="shared.js"></script>
 <script type="module" src="games.js"></script>
+<script type="module" src="flashcards.js"></script>
 
 </body>
 </html>

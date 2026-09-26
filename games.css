@@ -93,8 +93,148 @@
 .game-card-cta{ margin-top: 14px; align-self: flex-start; }
 .game-card-cta:disabled{ opacity: 0.65; cursor: not-allowed; box-shadow: none; }
 
+.game-card{ cursor: pointer; }
+
 @media (max-width: 768px){
   .games-shell{ padding: 28px 16px 72px; }
   .games-heading h1{ font-size: 26px; }
   .game-grid{ grid-template-columns: 1fr; }
+}
+
+/* ==================================================================
+   FLASHCARD STUDY SESSION
+   Deliberately dark and theme-independent (light or dark mode makes
+   no difference here), the same way the video player modal always
+   plays on a black background — a focused "quiz card" look.
+   ================================================================== */
+.study-modal-backdrop{
+  background: radial-gradient(ellipse 900px 620px at 50% 42%, #303336 0%, #0b0c0d 72%);
+}
+
+.study-wrap{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 460px;
+}
+
+.study-card{
+  width: 100%;
+  min-height: 440px;
+  background: #1e2020;
+  color: #f2f0ee;
+  border-radius: 28px;
+  padding: 24px 26px 30px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.study-card-top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.study-counter{
+  color: #9aa19e;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.study-menu-wrap{ position: relative; }
+.study-menu-btn{
+  background: none; border: none; color: #9aa19e; cursor: pointer;
+  padding: 6px; border-radius: 8px; display: flex;
+}
+.study-menu-btn:hover{ background: rgba(255,255,255,.08); }
+.study-menu{
+  position: absolute; top: 34px; inset-inline-start: 0;
+  background: #26282a; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  min-width: 170px; overflow: hidden; z-index: 5;
+}
+.study-menu button{
+  display: block; width: 100%; text-align: start; padding: 11px 14px;
+  background: none; border: none; color: #e7e5e3; font-size: 13px;
+  font-family: var(--font-body); cursor: pointer;
+}
+.study-menu button:hover{ background: rgba(255,255,255,.08); }
+.study-menu.hidden{ display: none; }
+
+.study-question-view{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.study-term-wrap{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.study-term{
+  text-align: center;
+  font-size: 21px;
+  line-height: 1.8;
+  color: #f5f3f1;
+  max-width: 340px;
+}
+.study-definition{
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #c9d1cf;
+  max-width: 340px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+.study-reveal-btn{
+  background: none; border: none; color: #8a9490;
+  font-family: var(--font-label); font-size: 13px; font-weight: 600;
+  cursor: pointer; padding: 10px; margin-top: auto;
+}
+.study-reveal-btn:hover{ color: #c9d1cf; }
+.study-reveal-btn.hidden{ display: none; }
+
+.study-results-view{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; }
+.study-results-view h2{ font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #f5f3f1; }
+.study-results-summary{ color: #c9d1cf; font-size: 15px; }
+.study-results-actions{ display: flex; gap: 10px; margin-top: 16px; }
+
+.study-controls{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 22px;
+  direction: ltr; /* keep icon order (back / correct / wrong / forward) consistent in both languages */
+}
+.study-ctrl-btn{
+  border: none; cursor: pointer; color: #e7e5e3;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .15s ease, opacity .15s ease;
+  font-family: var(--font-label); font-weight: 700; font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.study-ctrl-btn:active{ transform: scale(0.94); }
+.study-ctrl-btn:disabled{ opacity: .4; cursor: not-allowed; transform: none; }
+.study-ctrl-btn svg{ width: 18px; height: 18px; }
+.study-ctrl-nav{
+  width: 46px; height: 46px; border-radius: 50%;
+  background: #24262a; color: #7fa8e0;
+}
+.study-ctrl-correct{
+  height: 46px; padding: 0 18px; border-radius: 999px;
+  background: #1c3527; color: #39c973;
+}
+.study-ctrl-wrong{
+  height: 46px; padding: 0 18px; border-radius: 999px;
+  background: #3a2222; color: #ef5f5f;
 }
