@@ -59,7 +59,7 @@ service cloud.firestore {
     /* حساب الأدمن الوحيد — يطابق ADMIN_EMAIL في firebase-config.js */
     function isAdmin() {
       return request.auth != null
-          && request.auth.token.email == "ziadbasha099@gmail.com";
+          && request.auth.token.email == "true";
     }
 
     /* المحظور = uid أو بريد مسجّل في إحدى قائمتي الحظر */
