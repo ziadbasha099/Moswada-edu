@@ -15,7 +15,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moswada-edu — Summaries of study materials . Distraction-Free.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- "Fraunces" is added ONLY for the landing page's editorial serif headline
+     treatment (see landing-refresh.css) — every other font/page is untouched. -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&display=swap" rel="stylesheet">
 <!-- Favicon: a self-contained inline SVG data URI, so the site never
      depends on an external logo file that may be missing from the repo -->
 <link rel="icon" type="image/svg+xml" href="moswada logo home.jpg">
@@ -74,7 +77,7 @@
       "name": "ما هو محتوى الموقع؟ (What's on the site?)",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "يوجد قسمان في الموقع: أولاً، قسم إضافة روابط فيديوهات اليوتيوب لمشاهدتها داخل الموقع والتمتع بكامل مميزات الموقع، ويتطلب هذا القسم تسجيل الدخول. ثانياً، قسم الكتب والملخصات لتحميل الكتب والملخصات والخرائط الذهنية وإيجاد روابط لمواقع تعليمية أخرى، ولا يتطلب هذا القسم تسجيل الدخول."
+        "text": "يوجد على الموقع خمسة أقسام رئيسية: مشاهدة الفيديوهات التعليمية داخل الموقع مباشرة، الكتب والملخصات المدرسية والخرائط الذهنية، شروحات تعلّم البرمجة والذكاء الاصطناعي، مكتبة روابط تفيد الطالب الجامعي، وألعاب تعليمية تفاعلية كالبطاقات التعليمية."
       }
     }
   ]
@@ -120,77 +123,110 @@
     </div>
   </header>
 
-  <section class="hero">
+  <!-- ==================================================================
+       HERO — editorial serif headline + a soft, full-bleed illustration
+       behind the copy, with two overlapping stat cards (à la reference
+       design). Save the attached 3D desk illustration next to index.html
+       as "moswada-hero-3d.png" for the background to appear correctly;
+       until then the section still reads fine on the plain gradient.
+       ================================================================== -->
+  <section class="hero hero--v2">
+    <div class="hero-bg" aria-hidden="true" style="background-image:url('moswada-hero-3d.png');"></div>
     <div class="container">
-      <span class="eyebrow">
-        <span class="dot"></span>
-        <span data-en="Now with an in-app, distraction-free player" data-ar="الآن مع مشغل داخلي بلا تشتيت"></span>
-      </span>
-      <h1 data-en="Save everything. Stay focused." data-ar="احفظ كل شيء. حافظ على تركيزك."></h1>
-      <p data-en="Moswada is the calm home for every link, video, and idea you don't want to lose — organized into folders, tagged for recall, and free of the feeds that pull you away." data-ar="مسودة هو المكان الهادئ لكل رابط وفيديو وفكرة لا تريد أن تفقدها — منظّمة في مجلدات، موسومة لسهولة التذكر، وخالية من الخلاصات التي تشتت انتباهك."></p>
+      <span class="kicker" data-en="A completely free Arabic study platform" data-ar="منصّة عربية تعليمية مجانية بالكامل"></span>
+      <h1 class="serif-heading" data-en="Study without distraction. Remember more." data-ar="ادرس بلا تشتّت، وتذكّر أكثر."></h1>
+      <p data-en="Get books, summaries, and mind maps, watch your study videos right inside the site, and browse a library of links that help you through university or lectures — all in one calm place." data-ar="احصل على كتب وملخصات وخرائط ذهنية، وشاهد فيديوهاتك التعليمية داخل الموقع مباشرة، إلى جانب مكتبة روابط تفيدك في الجامعة أو أثناء الشرح — كل هذا في مكان هادئ واحد."></p>
       <div class="hero-actions">
-        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="رتب فيديوهاتك"></button>
-        <button class="btn btn-outline" onclick="location.href='downloads.html'" data-en="Books and PDFs" 
-data-ar="الكتب والملخصات"></button>
+        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="ابدأ مجاناً"></button>
+        <button class="btn btn-outline" onclick="location.href='downloads.html'" data-en="Books and PDFs" data-ar="الكتب والملخصات"></button>
       </div>
-      <p class="hero-note" data-en="Get the books and summaries • study without distractions" data-ar="أحصل على الكتب والملخصات • ادرس بلا تشتت"></p>
+      <p class="hero-note" data-en="No credit card • No sign-in needed for the books section" data-ar="بدون بطاقة ائتمان • بدون تسجيل دخول لقسم الكتب"></p>
 
-<!-- Hero visual — the illustrated desk/laptop graphic supplied for the
-     new design. Save the attached image as "moswada-hero-illustration.jpg"
-     next to index.html on the server for it to show up here. -->
-<img class="info-img"
- src="info-photo.png"
- alt="Illustration of a laptop showing the Moswada dashboard next to folders, a video player, and books">
+      <div class="hero-visual-wrap">
+        <img class="info-img"
+         src="info-photo.png"
+         alt="Illustration of a laptop showing the Moswada dashboard next to folders, a video player, and books">
 
+        <div class="hero-pill-badge">
+          <span class="hero-pill-dot"></span>
+          <span data-en="100% Free" data-ar="١٠٠٪ مجاني"></span>
+        </div>
+
+        <div class="hero-stat-card">
+          <span class="hero-stat-number">٥</span>
+          <span class="hero-stat-label" data-en="Study sections in one place" data-ar="أقسام تعليمية في مكان واحد"></span>
+        </div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================================
+       FEATURES — 5 sections from the site brief, each with a small
+       colored "illustration badge" (layered SVG), a soft shadow at
+       rest, and a lift/tilt animation on hover.
+       ================================================================== -->
   <section class="section" id="features">
     <div class="container">
-        
+
       <div class="section-head">
-        <span class="eyebrow"><span class="dot"></span><span data-en="Why Moswada" data-ar="لماذا مسودة"></span></span>
-        <h2 data-en="Built to hold your attention, not steal it" data-ar="مصمم ليحافظ على انتباهك، لا ليسرقه"></h2>
-        <p data-en="Every choice — from the muted palette to the in-app player — is designed to keep saved content useful instead of overwhelming." data-ar="كل تفصيلة — من الألوان الهادئة إلى المشغل الداخلي — صُممت لتبقي المحتوى المحفوظ مفيداً بدلاً من أن يكون مرهقاً."></p>
+        <span class="kicker" data-en="Why Moswada" data-ar="لماذا مسودة"></span>
+        <h2 class="serif-heading" data-en="Everything you need to study, in one place" data-ar="كل ما تحتاجه للدراسة، في مكان واحد"></h2>
+        <p data-en="Five focused sections — nothing more, nothing distracting — designed to keep studying useful instead of overwhelming." data-ar="خمسة أقسام مركّزة — لا أكثر ولا مشتت — صُممت لتبقي دراستك مفيدة بدلاً من أن تكون مرهقة."></p>
       </div>
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></div>
-          <h3 data-en="Folders that make sense" data-ar="مجلدات منطقية"></h3>
-          <p data-en="Group links by project or topic — Recipes, Coding, Work — so nothing gets buried in one giant list." data-ar="جمّع الروابط حسب المشروع أو الموضوع — وصفات، برمجة، عمل — حتى لا يضيع شيء في قائمة واحدة ضخمة."></p>
+
+      <div class="feature-grid feature-grid--5">
+
+        <div class="feature-card feature-card--v2">
+          <div class="feature-illustration feature-illustration--1" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle class="blob" cx="24" cy="24" r="20"/><polygon class="glyph" points="18 14 34 24 18 34 18 14"/></svg>
+          </div>
+          <h3 data-en="Watch your videos, right inside Moswada" data-ar="شاهد فيديوهاتك من الموقع مباشرة"></h3>
+          <p data-en="Forgetting what you meant to watch on YouTube, or losing focus to the platform's algorithm? This is the fix." data-ar="إذا كنت تنسى ما كنت ستشاهده على يوتيوب أو لا تستطيع التركيز في الفيديو بسبب خوارزميات المنصة، فهنا الحل."></p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
-          <h3 data-en="Videos, without the rabbit hole" data-ar="فيديوهات بلا تشتت"></h3>
-          <p data-en="Saved videos play right inside Moswada . No autoplay suggestions, no comments — just the video you meant to watch." data-ar="الفيديوهات المحفوظة تُشغَّل مباشرة داخل مسودة. بلا اقتراحات تشغيل تلقائي، وبلا تعليقات — فقط الفيديو الذي أردت مشاهدته."></p>
+
+        <div class="feature-card feature-card--v2">
+          <div class="feature-illustration feature-illustration--2" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle class="blob" cx="24" cy="24" r="20"/><rect class="glyph" x="14" y="12" width="20" height="24" rx="2"/><line class="glyph-line" x1="19" y1="19" x2="29" y2="19"/><line class="glyph-line" x1="19" y1="25" x2="29" y2="25"/></svg>
+          </div>
+          <h3 data-en="School books, summaries &amp; mind maps" data-ar="الكتب والملخصات المدرسية"></h3>
+          <p data-en="Real, direct links to most of the school books and summaries you're looking for, alongside mind maps exclusive to Moswada." data-ar="روابط مباشرة وحقيقية لأغلب الكتب والملخصات المدرسية التي تبحث عنها، إلى جانب خرائط ذهنية حصرية على موقعنا."></p>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20l-7-4V8l7-4 7 4v8z"/><path d="M12 12l7-4M12 12v8M12 12L5 8"/></svg></div>
-          <h3 data-en="Notes that capture the takeaway" data-ar="ملاحظات تلخّص الفكرة"></h3>
-          <p data-en="Attach a quick note to any link so future-you remembers why you saved it in the first place." data-ar="أضف ملاحظة سريعة لأي رابط ليتذكر «أنت المستقبلي» لماذا حفظته أساساً."></p>
+
+        <div class="feature-card feature-card--v2">
+          <div class="feature-illustration feature-illustration--3" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle class="blob" cx="24" cy="24" r="20"/><path class="glyph" d="M18 16l-7 8 7 8" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path class="glyph" d="M30 16l7 8-7 8" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 data-en="Learn to code" data-ar="تتعلّم البرمجة"></h3>
+          <p data-en="Explanations and educational visuals on programming and AI skills that help you learn and stay productive with AI." data-ar="توجد شروحات وصور تعليمية عن البرمجة ومهارات الذكاء الاصطناعي تساعدك على التعلم والإنتاجية مع الذكاء الاصطناعي."></p>
         </div>
-    
-     
-              <div class="feature-card">
-          <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20l-7-4V8l7-4 7 4v8z"/><path d="M12 12l7-4M12 12v8M12 12L5 8"/></svg></div>
-        <h3 data-en="Books , Summaries and Mind maps" 
-        data-ar="كتب وملخصات وخرائط ذهنية"></h3>
-        <p data-en="Looking for books, educational summaries, or mind maps? You'll find them here."
-         data-ar="تبحث عن كتب أو ملخصات تعليمية أو خرائط ذهنية سوف تجدها هنا"></p>
+
+        <div class="feature-card feature-card--v2">
+          <div class="feature-illustration feature-illustration--4" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle class="blob" cx="24" cy="24" r="20"/><path class="glyph" d="M24 14l12 5-12 5-12-5 12-5z" fill="none" stroke-width="2.4" stroke-linejoin="round"/><path class="glyph" d="M16 21v6c0 2.2 3.6 4 8 4s8-1.8 8-4v-6" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 data-en="A university student?" data-ar="طالب جامعي؟"></h3>
+          <p data-en="Moswada links out to sites that will help with your studies, whatever college you're in." data-ar="يوفر الموقع روابط لمواقع ستساعدك في دراستك سواء أكنت في أي كلية."></p>
         </div>
+
+        <div class="feature-card feature-card--v2">
+          <div class="feature-illustration feature-illustration--5" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle class="blob" cx="24" cy="24" r="20"/><rect class="glyph" x="13" y="16" width="15" height="18" rx="3" transform="rotate(-8 20 25)"/><rect class="glyph glyph-alt" x="20" y="14" width="15" height="18" rx="3" transform="rotate(6 27 23)"/></svg>
+          </div>
+          <h3 data-en="Educational games" data-ar="ألعاب تعليمية"></h3>
+          <p data-en="Study interactively through educational games such as flashcards." data-ar="ادرس بطريقة تفاعلية من خلال الألعاب التعليمية كالبطاقات التعليمية."></p>
+        </div>
+
       </div>
-      
     </div>
   </section>
 
   <section class="section showcase" id="showcase">
     <div class="container showcase-inner">
       <div class="showcase-copy">
-        <span class="eyebrow"><span class="dot"></span><span data-en="Your dashboard" data-ar="لوحتك الخاصة"></span></span>
-        <h2 data-en="What are the benefits of using our website?" 
-        data-ar="ماذا تستفيد من موقعنا ؟"></h2>
-        <p data-en="Don't waste time on distracting videos or searching for your books." data-ar="لا تضيع الوقت في فيديوهات مشتتة أو في البحث عن كتبك"></p>
+        <span class="kicker" data-en="Your dashboard" data-ar="لوحتك الخاصة"></span>
+        <h2 class="serif-heading" data-en="What are the benefits of using our website?" 
+        data-ar="ماذا تستفيد من موقعنا؟"></h2>
+        <p data-en="Don't waste time on distracting videos or searching for your books." data-ar="لا تضيع الوقت في فيديوهات مشتتة أو في البحث عن كتبك."></p>
         <ul class="check-list">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-en="Auto-fetched titles and thumbnails" data-ar="عناوين وصور مصغّرة تُجلب تلقائياً"></span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span data-en="Tags and folders for fast recall" data-ar="وسوم ومجلدات لاسترجاع سريع"></span></li>
@@ -205,58 +241,90 @@ data-ar="الكتب والملخصات"></button>
     </div>
   </section>
 
-  <section class="section" id="about">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow"><span class="dot"></span><span data-en="About Moswada" data-ar="عن مسودة"></span></span>
-        <h2 data-en="Who we are" data-ar="مَن نحن"></h2>
+  <!-- ==================================================================
+       ABOUT — редesigned as an editorial two-column "who we are" panel:
+       copy + highlight bullets on one side, a framed visual + quick
+       facts card on the other, instead of two plain text cards.
+       ================================================================== -->
+  <section class="section about-v2" id="about">
+    <div class="container about-v2-inner">
+      <div class="about-v2-copy">
+        <span class="kicker" data-en="About Moswada" data-ar="عن مسودة"></span>
+        <h2 class="serif-heading" data-en="Who we are" data-ar="مَن نحن"></h2>
+        <p data-en="Moswada (moswada-edu) is a free Arabic educational website built to help you study on your own — without wasting time getting pulled into distracting YouTube videos while studying, or endlessly searching for books, summaries, and mind maps." data-ar="موقع مسودة (moswada-edu) هو موقع عربي تعليمي مجاني، بُني لمساعدتك على الدراسة الذاتية — بلا تضييع للوقت في التشتت بفيديوهات اليوتيوب أثناء الدراسة، أو البحث الدائم عن كتب وملخصات وخرائط ذهنية."></p>
+        <p data-en="It also links out to other educational sites and tools — for programming, AI, and university life — to make your studying more efficient." data-ar="كما يوفّر روابط لمواقع وأدوات تعليمية أخرى — في البرمجة والذكاء الاصطناعي والحياة الجامعية — لتجعل دراستك أكثر كفاءة."></p>
+
+        <ul class="about-v2-list">
+          <li><span class="about-v2-list-icon">✓</span><span data-en="Videos section requires a free account; books &amp; downloads need no sign-in at all." data-ar="قسم الفيديوهات يتطلب حساباً مجانياً؛ أما الكتب والتنزيلات فلا يحتاج أي تسجيل دخول."></span></li>
+          <li><span class="about-v2-list-icon">✓</span><span data-en="Built and maintained for the Arabic-speaking student community." data-ar="مُصمَّم ويُدار لخدمة مجتمع الطلاب الناطقين بالعربية."></span></li>
+        </ul>
       </div>
-      <div class="feature-grid about-grid">
-        <div class="feature-card">
-          <h3 data-en="Who we are" data-ar="مَن نحن"></h3>
-          <p data-en="Moswada (moswada-edu) is a free Arabic educational website built to help you study on your own, without wasting time getting pulled into distracting YouTube videos while studying, or endlessly searching for books, summaries, and mind maps to help you learn. It also links out to other educational sites to make your studying more efficient." data-ar="موقع مسودة moswada-edu هو موقع عربي تعليمي مجاني لمساعدتك على الدراسة الذاتية و عدم تضييع الوقت في التشتت بالفيديوهات أثناء الدراسة من اليوتيوب أو البحث طوال الوقت عن كتب وملخصات وخرائط ذهنية تساعدك على التعلم و توجد أيضاً روابط لمواقع تعليمية أخرى تجعل دراستك أكثر كفاءة."></p>
+
+      <div class="about-v2-visual">
+        <div class="about-v2-frame">
+          <img src="moswada-hero-illustration.jpg" alt="Moswada preview">
         </div>
-        <div class="feature-card">
-          <h3 data-en="What's on the site" data-ar="ما هو محتوى الموقع"></h3>
-          <p data-en="The site has two sections: a section for saving YouTube video links to watch them in-app with the site's full features (requires sign-in), and a Books &amp; Summaries section for downloading books, summaries, and mind maps, plus links to other educational sites — no sign-in required." data-ar="يوجد قسمان في الموقع: أ. قسم إضافة روابط فيديوهات اليوتيوب لمشاهدتها في الموقع و التمتع بكامل مميزات الموقع (يتطلب تسجيل الدخول) ، ب. قسم الكتب والملخصات لتحميل الكتب والملخصات والخرائط الذهنية و إيجاد روابط للمواقع التعليمية الأخرى التي فيه (لا يتطلب تسجيل الدخول)"></p>
+        <div class="about-v2-fact-card">
+          <span class="about-v2-fact-number">2</span>
+          <span data-en="Sections need no sign-in: Downloads &amp; educational links" data-ar="قسمان لا يحتاجان تسجيل دخول: التنزيلات والروابط التعليمية"></span>
         </div>
       </div>
     </div>
   </section>
 
   <section class="section">
-    <div class="cta-band">
-      <h2 data-en="Give your links a calmer home" data-ar="امنح روابطك بيتاً أكثر هدوءاً"></h2>
+    <div class="cta-band cta-band--v2">
+      <span class="kicker kicker--on-accent" data-en="Don't miss out" data-ar="لا تفوّت عليك"></span>
+      <h2 class="serif-heading" data-en="Don't miss out on any of this — start free, right now" data-ar="لا تفوت عليك كل هذه الأشياء، ابدأ مجاناً الآن"></h2>
       <p data-en="Free to start. Your first folder is one click away." data-ar="مجاني للبدء. مجلدك الأول على بُعد نقرة واحدة."></p>
-      <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="رتب فيديوهاتك"></button>
+      <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="ابدأ مجاناً الآن"></button>
     </div>
   </section>
 
-  <footer class="landing-footer" id="footer">
-    <div class="container">
-      <div class="logo">
-        <span class="logo-mark" aria-hidden="true">
-          <img src="moswada-logo.png" alt="Moswada logo">
-        </span>
-        
+  <!-- ==================================================================
+       FOOTER — professional multi-column layout: brand + social,
+       quick links, legal, then a slim bottom bar with the copyright
+       line and the developer credit.
+       ================================================================== -->
+  <footer class="landing-footer landing-footer--v2" id="footer">
+    <div class="container footer-v2-grid">
+      <div class="footer-v2-brand">
+        <div class="logo">
+          <span class="logo-mark" aria-hidden="true">
+            <img src="moswada-logo.png" alt="Moswada logo">
+          </span>
+        </div>
+        <p class="footer-muted" data-en="Moswada-edu — a free Arabic study platform: study without distraction, with books, summaries, mind maps, and a library of links for university and lectures." data-ar="مسودة التعليمي — منصة عربية تعليمية مجانية: ادرس بلا تشتت، مع كتب وملخصات وخرائط ذهنية ومكتبة روابط للجامعة والشرح."></p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/share/186chKu8po/" target="_blank" rel="noopener noreferrer"
+             aria-label="Moswada on Facebook"
+             data-en-title="Follow us on Facebook" data-ar-title="تابعنا على فيسبوك" title="Follow us on Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.51 17.52 2 12 2S2 6.51 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z"/></svg>
+          </a>
+        </div>
       </div>
-      <p class="footer-muted" data-en="© 2026 Moswada . Built for distraction-free saving." data-ar="© 2026 مسودة. صُمم للحفظ بلا تشتيت."></p>
-      <p class="footer-muted">
-        <a href="https://www.termsfeed.com/live/b03e19b5-97e6-468b-876a-89cb6c8a6dfb" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;" data-en="Privacy Policy" data-ar="سياسة الخصوصية"></a>
-      </p>
-      <div class="footer-social">
-        <a href="https://www.facebook.com/share/186chKu8po/" target="_blank" rel="noopener noreferrer"
-           aria-label="Moswada on Facebook"
-           data-en-title="Follow us on Facebook" data-ar-title="تابعنا على فيسبوك" title="Follow us on Facebook">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.51 17.52 2 12 2S2 6.51 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z"/></svg>
-        </a>
+
+      <div class="footer-v2-col">
+        <h4 data-en="Explore" data-ar="استكشف"></h4>
+        <a href="#features" data-en="Features" data-ar="المزايا"></a>
+        <a href="#showcase" data-en="How it works" data-ar="كيف يعمل"></a>
+        <a href="#about" data-en="About" data-ar="حول"></a>
+        <a href="downloads.html" data-en="Downloads" data-ar="التنزيلات"></a>
+      </div>
+
+      <div class="footer-v2-col">
+        <h4 data-en="Legal" data-ar="قانوني"></h4>
+        <a href="https://www.termsfeed.com/live/b03e19b5-97e6-468b-876a-89cb6c8a6dfb" target="_blank" rel="noopener noreferrer" data-en="Privacy Policy" data-ar="سياسة الخصوصية"></a>
       </div>
     </div>
-    <div> <center>
-    <a href="https://ziad-basha-website.vercel.app/">
-         <p>Developed by <span style="font-weight: bold;">Ziad Basha</span>
-         </p>
-    </a> </center> 
+
+    <div class="footer-v2-bottom">
+      <div class="container footer-v2-bottom-inner">
+        <p class="footer-muted" data-en="© 2026 Moswada-edu. All rights reserved." data-ar="© 2026 مسودة التعليمي. جميع الحقوق محفوظة."></p>
+        <a class="footer-v2-credit" href="https://ziad-basha-website.vercel.app/">
+          <span data-en="Developed by" data-ar="تطوير"></span> <span style="font-weight:700;">Ziad Basha</span>
+        </a>
+      </div>
     </div>
   </footer>
 </div>
