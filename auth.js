@@ -25,6 +25,7 @@ import { auth, db, googleProvider, t, setDynamicTranslationHook } from "./shared
    ------------------------------------------------------------ */
 const BANNED_EMAILS_COLLECTION = 'bannedEmails';
 const BANNED_USERS_COLLECTION = 'bannedUsers';
+const PASSWORD_MAX_LIN = 25 ;
 
 /**
  * Returns true if bannedEmails/{email} exists. Fails open on network errors.
@@ -257,7 +258,7 @@ async function handleAuthSubmit(e){
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if(!emailPattern.test(email)){ showAuthError(t('validEmail')); return; }
-  if(password.length < 8 || password.length > 11){ showAuthError(t('passwordLen')); return; }
+  if(password.length < 8 || password.length > PASSWORD_MAX_LIN){ showAuthError(t('passwordLen')); return; }
   if(authMode === 'signup' && !name){ showAuthError(t('enterName')); return; }
 
   const submitBtn = document.getElementById('authSubmitBtn');
