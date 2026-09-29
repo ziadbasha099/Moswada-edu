@@ -108,7 +108,7 @@ const I18N = {
     haveAccount: 'Already have an account? ',
     signInLink: 'Sign in',
     validEmail: 'Enter a valid email address.',
-    passwordLen: 'Password must be between 8 and 11 characters.',
+    passwordLen: 'Password must be between 8 and 25 characters.',
     enterName: 'Enter your name to create an account.',
     tooManyAttemptsLockout: seconds => `Too many incorrect attempts. Try again in ${seconds} second${seconds===1?'':'s'}.`,
      
@@ -168,7 +168,7 @@ const I18N = {
     linkLimitReachedToast: "You've reached the 200 saved links limit. Remove some links to add new ones.",
     accountBannedError: 'This account has been suspended. Contact support if you believe this is a mistake.',
     reportSubmittedToast: 'Report submitted — this link is now disabled',
-    reportAlreadySubmittedToast: 'This folder has already been reported and is under review',
+    reportAlreadySubmittedToast: 'This folder has already been reported and is under review', 
 
   },
   ar: {
@@ -201,7 +201,7 @@ const I18N = {
     haveAccount: 'لديك حساب بالفعل؟ ',
     signInLink: 'تسجيل الدخول',
     validEmail: 'أدخل بريداً إلكترونياً صحيحاً.',
-    passwordLen: 'يجب أن تتكوّن كلمة المرور من 8 إلى 11 حرفًا على الأقل.',
+    passwordLen: 'يجب أن تتكوّن كلمة المرور من 8 إلى 25 حرفًا.',
     enterName: 'أدخل اسمك لإنشاء حساب.',
     tooManyAttemptsLockout: seconds => `عدد كبير من المحاولات الخاطئة. حاول مرة أخرى بعد ${seconds} ثانية.`,
      
