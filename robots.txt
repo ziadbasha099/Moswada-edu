@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin-reports.html
+Disallow: /app.html
+Disallow: /settings.html
+Disallow: /games.html
+Disallow: /share.html
+
+Sitemap: https://moswada-edu.vercel.app/sitemap.xml

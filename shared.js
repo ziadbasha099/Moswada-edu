@@ -75,7 +75,23 @@ if(window.matchMedia){
    (Static markup text lives in the HTML via data-en/data-ar
    attributes; anything generated in JS is translated from here.)
    ============================================================ */
-export let currentLang = 'en';
+/* ---------- Language defaults ---------- */
+const DEFAULT_LANGUAGE = 'ar';
+const SUPPORTED_LANGUAGES = ['ar', 'en'];
+const LANGUAGE_STORAGE_KEY = 'preferred-language';
+
+/**
+ * Returns the saved language, falling back to Arabic when nothing
+ * (or an invalid value) is stored.
+ * @returns {string}
+ */
+function getStoredLanguage(){
+  const storedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return SUPPORTED_LANGUAGES.includes(storedLanguage) ? storedLanguage : DEFAULT_LANGUAGE;
+}
+
+// Read at module load so t() is correct even before DOMContentLoaded.
+export let currentLang = getStoredLanguage();
 
 const I18N = {
   en: {
@@ -310,7 +326,7 @@ export function setLanguage(lang){
   applyStaticTranslations(lang);
   if(dynamicTranslationHook) dynamicTranslationHook();
 
-  localStorage.setItem('preferred-language', lang);
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
 }
 
 // Applies the saved theme immediately, wires up the language button
@@ -325,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setLanguage(currentLang === 'en' ? 'ar' : 'en');
     });
   }
-  setLanguage(localStorage.getItem('preferred-language') || 'en');
+  setLanguage(getStoredLanguage());
 });
 
 /* ============================================================

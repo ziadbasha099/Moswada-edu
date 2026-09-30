@@ -6,7 +6,11 @@
    ============================================================ */
 const I18N = {
   en: {
-    title: "Downloads",
+    title: "Free Books, Summaries & Mind Maps — Downloads",
+    metaTitle: "Free Books, Summaries & Mind Maps PDF — Moswada",
+    metaDescription: "Download free school books, summaries and mind maps as PDF from Moswada, organized in folders with direct links and no sign-in.",
+    seoTitle: "A free library of study files with direct links",
+    seoBody: "Moswada brings school books, summaries and mind maps (PDF) together in one place, organized into folders by subject. Every file has a direct download link and requires no account, so you spend less time searching and more time studying.",
     sub: "Browse ready-made files, organized into folders. Search by name or pick a folder to narrow things down.",
     search: "Search files...",
     back: "Back to home",
@@ -19,7 +23,11 @@ const I18N = {
     setupNeeded: "Downloads aren't set up yet — connect Firebase in firebase-config.js.",
   },
   ar: {
-    title: "التنزيلات",
+    title: "تحميل الكتب والملخصات والخرائط الذهنية مجاناً",
+    metaTitle: "تحميل كتب وملخصات وخرائط ذهنية مجاناً PDF — مسودة التعليمي",
+    metaDescription: "حمّل مجاناً كتباً مدرسية وملخصات وخرائط ذهنية بصيغة PDF من مسودة التعليمي، مرتّبة في مجلدات وبروابط مباشرة وبدون تسجيل دخول.",
+    seoTitle: "مكتبة ملفات تعليمية مجانية بروابط مباشرة",
+    seoBody: "تجمع مسودة التعليمي كتباً مدرسية وملخصات وخرائط ذهنية بصيغة PDF في مكان واحد، مرتّبة في مجلدات حسب المادة. كل ملف له رابط تحميل مباشر ولا يحتاج إلى حساب أو تسجيل دخول، لتوفّر وقتك في البحث وتركّز على المذاكرة.",
     sub: "تصفّح ملفات جاهزة، منظّمة في مجلدات. ابحث بالاسم أو اختر مجلداً لتضييق النتائج.",
     search: "ابحث عن ملف...",
     back: "العودة للرئيسية",
@@ -33,7 +41,7 @@ const I18N = {
   }
 };
 
-let lang = localStorage.getItem("preferred-language") || "en";
+let lang = localStorage.getItem("preferred-language") || "ar";
 let allItems = [];
 let activeFolder = "all";
 let searchQuery = "";
@@ -70,6 +78,11 @@ function applyLanguage(){
   document.getElementById("loadingTitle").textContent = t("loading");
   document.getElementById("emptyTitle").textContent = t("emptyTitle");
   document.getElementById("emptyMsg").textContent = t("emptyMsg");
+  document.title = t("metaTitle");
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if(metaDescription) metaDescription.setAttribute("content", t("metaDescription"));
+  document.getElementById("seoTitle").textContent = t("seoTitle");
+  document.getElementById("seoBody").textContent = t("seoBody");
   renderChips();
   renderGrid();
 }
@@ -94,6 +107,43 @@ function escapeHtml(str){
 // href, so re-validate here too before ever writing it into the DOM.
 function isSafeUrl(url){
   return /^https?:\/\/.+/i.test(String(url || '').trim());
+}
+
+const ITEM_LIST_SCRIPT_ID = "downloadsItemListJsonLd";
+const MAX_STRUCTURED_ITEMS = 100;
+
+/**
+ * Publishes the current files as schema.org ItemList JSON-LD so search
+ * engines can understand the page content even though cards are rendered
+ * client-side from Firestore.
+ * @param {Array<{title?: string, url?: string}>} items
+ * @returns {void}
+ */
+function updateItemListStructuredData(items){
+  const listItems = items
+    .filter(item => item.title && isSafeUrl(item.url))
+    .slice(0, MAX_STRUCTURED_ITEMS)
+    .map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.title,
+      "url": item.url
+    }));
+
+  let scriptEl = document.getElementById(ITEM_LIST_SCRIPT_ID);
+  if(!scriptEl){
+    scriptEl = document.createElement("script");
+    scriptEl.type = "application/ld+json";
+    scriptEl.id = ITEM_LIST_SCRIPT_ID;
+    document.head.appendChild(scriptEl);
+  }
+  scriptEl.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "ملفات التنزيل — مسودة التعليمي",
+    "numberOfItems": listItems.length,
+    "itemListElement": listItems
+  });
 }
 
 function renderChips(){
@@ -138,11 +188,13 @@ function renderGrid(){
           ${iconMarkup(i.icon)}
         </div>
         <div>
-          <p class="dl-card-title">${escapeHtml(i.title)}</p>
+          <h3 class="dl-card-title">${escapeHtml(i.title)}</h3>
           ${i.folder ? `<span class="dl-card-folder"><span class="dot" style="background:${folderColor(i.folder)}"></span>${escapeHtml(i.folder)}</span>` : ""}
         </div>
       </div>
-      <a class="dl-card-btn" href="${isSafeUrl(i.url) ? escapeHtml(i.url) : '#'}" target="_blank" rel="noopener noreferrer">
+      <a class="dl-card-btn" href="${isSafeUrl(i.url) ? escapeHtml(i.url) : '#'}" target="_blank" rel="noopener noreferrer"
+         title="${escapeHtml(t('download'))} ${escapeHtml(i.title)}"
+         aria-label="${escapeHtml(t('download'))} ${escapeHtml(i.title)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         ${t("download")}
       </a>
@@ -183,6 +235,7 @@ async function loadDownloads(){
     const q = query(collection(db, DOWNLOADS_COLLECTION), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
       allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateItemListStructuredData(allItems);
       renderChips();
       renderGrid();
     }, (err) => {
