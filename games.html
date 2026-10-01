@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -140,6 +140,13 @@
 
       <div class="study-question-view" id="studyQuestionView">
         <div class="study-term-wrap">
+          <button type="button" class="study-speak-btn" id="studySpeakBtn" onclick="speakCurrentTerm()" aria-label="Listen" data-en-title="Listen" data-ar-title="استماع" title="Listen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+              <path d="M15.54 8.46a5 5 0 010 7.07"/>
+              <path d="M18.36 5.64a9 9 0 010 12.73"/>
+            </svg>
+          </button>
           <p class="study-term" id="studyTerm"></p>
           <p class="study-definition hidden" id="studyDefinition"></p>
         </div>

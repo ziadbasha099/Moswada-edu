@@ -178,6 +178,25 @@
   justify-content: center;
   width: 100%;
 }
+.study-speak-btn{
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  color: #c9d1cf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+.study-speak-btn:hover{ background: rgba(255,255,255,.16); color: #f5f3f1; }
+.study-speak-btn:active{ transform: scale(0.92); }
+.study-speak-btn svg{ width: 20px; height: 20px; }
+
 .study-term{
   text-align: center;
   font-size: 21px;

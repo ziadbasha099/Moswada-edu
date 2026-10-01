@@ -446,6 +446,29 @@ function startStudySession(cards){
   document.getElementById('studyModalBackdrop').classList.add('show');
 }
 
+/**
+ * Speaks text aloud using the browser's built-in speech synthesis
+ * (Web Speech API) — the simplest option since it needs no external
+ * service, API key, or extra dependency, and works fully offline in
+ * every modern browser. Silently no-ops where unsupported.
+ * @param {string} text
+ */
+function speakText(text){
+  if(!text || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel(); // stop any utterance already playing
+  const utterance = new SpeechSynthesisUtterance(text);
+  // Naive but effective language guess: Arabic script vs. everything else,
+  // so the term is read with a matching voice/accent when one is available.
+  utterance.lang = /[\u0600-\u06FF]/.test(text) ? 'ar-SA' : 'en-US';
+  window.speechSynthesis.speak(utterance);
+}
+
+/** Reads the current study card's term aloud (the speaker button above it). */
+function speakCurrentTerm(){
+  const card = studyCards[studyIndex];
+  if(card) speakText(card.term);
+}
+
 /** Renders the card at studyIndex and resets its reveal state. */
 function renderCurrentCard(){
   const card = studyCards[studyIndex];
@@ -570,7 +593,7 @@ Object.assign(window, {
   openFlashcardModal, closeFlashcardModal,
   handleSubjectSelectChange, handleFolderSelectChange,
   handleDoneClick, handleStartPlayingClick,
-  toggleStudyMenu, endStudySession,
+  toggleStudyMenu, endStudySession, speakCurrentTerm,
   revealAnswer, markCorrect, markWrong, prevCard, nextCard,
   restartSession, closeStudyModal,
 });
