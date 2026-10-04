@@ -7,13 +7,14 @@
    filed automatically under a folder named after the shared
    folder (reused if they already have one with that name).
 
-   Also lets any visitor (signed in or not) report the folder.
-   A report is a single Firestore doc keyed by shareId itself
-   (see submitReport()) — firestore.rules then blocks read access
-   to that sharedFolders/{shareId} doc and its links the instant
-   the report exists, with no server code required. An admin
-   reviews reports/{shareId} manually in the Firebase console or
-   a simple admin page and decides whether to ban the owner.
+   Reporting: a signed-in, verified visitor can report the folder.
+   Each account can report a folder only once (reports/{shareId}/
+   reporters/{uid} is create-only), and every report raises
+   reports/{shareId}.count by exactly 1 in the same transaction.
+   The link keeps working until count reaches REPORTS_TO_DISABLE
+   (3); firestore.rules then blocks reads of sharedFolders/{shareId}
+   and its links with no server code. An admin reviews reports in
+   admin-reports.html and decides whether to ban the owner.
 
    Security notes:
    - Everything under sharedFolders/* is written by the folder owner,
@@ -24,7 +25,7 @@
      200-link limit in firestore.rules is enforced.
    ============================================================ */
 import {
-  collection, doc, getDoc, getDocs, addDoc, setDoc, query, where, serverTimestamp
+  collection, doc, getDoc, getDocs, addDoc, query, where, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook } from "./shared.js";
@@ -34,6 +35,10 @@ import {
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 
 const REPORTS_COLLECTION = "reports";
+const REPORTERS_SUBCOLLECTION = "reporters";
+/** Must match the "< 3" check in isShareVisible() inside firestore.rules. */
+const REPORTS_TO_DISABLE = 3;
+const REPORT_STATUS_PENDING = "pending";
 
 const DEFAULT_FOLDER_COLOR = '#226864';
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
@@ -101,10 +106,9 @@ async function loadSharedFolder(){
     const folderSnap = await getDoc(doc(db, SHARED_FOLDERS_COLLECTION, shareId));
     if(!folderSnap.exists()){
       // Either the link never existed, the owner stopped sharing it, OR
-      // it was just reported — firestore.rules denies read access to a
-      // reported sharedFolders/{shareId} doc, so this same "not found"
-      // branch is what a reported link falls into too. That's fine: we
-      // don't want visitors to be able to tell the difference.
+      // it reached REPORTS_TO_DISABLE reports — firestore.rules then denies
+      // read access, so this same "not found" branch is what a disabled
+      // link falls into too. Visitors can't tell the difference.
       loading.classList.add('hidden');
       notFound.classList.remove('hidden');
       return;
@@ -417,17 +421,17 @@ async function getOrCreateImportFolder(name, color){
 /* ------------------------------------------------------------
    REPORT CONTENT
    ------------------------------------------------------------
-   Writes reports/{shareId} (doc ID = the shareId itself, not an
-   auto ID). That's what lets firestore.rules block reads on
-   sharedFolders/{shareId} the instant this doc exists — no
-   server-side code needed. It also means a second report on the
-   same shareId is a Firestore "update" rather than "create",
-   which the rules reject — so this naturally caps it at one
-   report per folder and we surface that as a friendly message
-   instead of a raw permission error.
+   One transaction per report:
+     1. reports/{shareId}/reporters/{uid}  → created (create-only; if this
+        account already reported, the write is an update and firestore.rules
+        rejects the whole transaction → "already reported" message).
+     2. reports/{shareId}                  → created with count 1, or
+        count incremented by exactly 1.
+   Once count reaches REPORTS_TO_DISABLE the rules stop serving the folder.
    ------------------------------------------------------------ */
 function openReportModal(){
   if(!folderMeta) return;
+  if(redirectToSignInIfAnonymous()) return;
   document.getElementById('reportError').classList.add('hidden');
   document.getElementById('reportModalBackdrop').classList.add('show');
 }
@@ -435,32 +439,58 @@ function closeReportModal(){
   document.getElementById('reportModalBackdrop').classList.remove('show');
 }
 
+/**
+ * Records this account's report and raises the folder's report counter.
+ * @param {string} reporterUid
+ * @returns {Promise<void>}
+ */
+async function recordReport(reporterUid){
+  const reportRef = doc(db, REPORTS_COLLECTION, shareId);
+  const reporterRef = doc(db, REPORTS_COLLECTION, shareId, REPORTERS_SUBCOLLECTION, reporterUid);
+
+  await runTransaction(db, async (transaction) => {
+    const reportSnap = await transaction.get(reportRef);
+
+    transaction.set(reporterRef, { createdAt: serverTimestamp() });
+
+    if(reportSnap.exists()){
+      const currentCount = Number(reportSnap.data().count) || 0;
+      transaction.update(reportRef, { count: currentCount + 1 });
+    } else {
+      transaction.set(reportRef, {
+        shareId,
+        folderId: folderMeta.folderId || null,
+        ownerUid: folderMeta.ownerUid,
+        folderName: folderMeta.name || '',
+        status: REPORT_STATUS_PENDING,
+        count: 1,
+        createdAt: serverTimestamp()
+      });
+    }
+  });
+}
+
 async function submitReport(){
-  if(!shareId || !folderMeta) return;
+  if(!shareId || !folderMeta || !currentUser) return;
   const btn = document.getElementById('confirmReportBtn');
   const errEl = document.getElementById('reportError');
   errEl.classList.add('hidden');
   btn.disabled = true;
 
   try{
-    await setDoc(doc(db, REPORTS_COLLECTION, shareId), {
-      shareId,
-      folderId: folderMeta.folderId || null,
-      ownerUid: folderMeta.ownerUid,
-      folderName: folderMeta.name || '',
-      status: 'pending',
-      createdAt: serverTimestamp()
-    });
+    await recordReport(currentUser.uid);
     showToast(t('reportSubmittedToast'));
     closeReportModal();
   }catch(err){
+    console.error(err);
     if(err.code === 'permission-denied'){
-      // Most likely: this folder was already reported once before.
+      // Most likely: this account already reported this folder, or its
+      // email isn't verified yet.
       errEl.textContent = t('reportAlreadySubmittedToast');
-      errEl.classList.remove('hidden');
     } else {
-      console.error(err);
+      errEl.textContent = t('authGeneric');
     }
+    errEl.classList.remove('hidden');
   }finally{
     btn.disabled = false;
   }

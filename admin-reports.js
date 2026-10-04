@@ -3,28 +3,30 @@
    ------------------------------------------------------------
    Lets the admin review reported shared folders and permanently
    ban the accounts behind them. Two independent lists:
-     - reports/{shareId}      → pending reports awaiting review
+     - reports/{shareId}      → reports awaiting review (with a count)
      - bannedUsers/{uid}      → accounts currently banned
+
+   A shared folder stays visible until its report count reaches
+   REPORTS_TO_DISABLE (3); see isShareVisible() in firestore.rules.
+   Each report also has reports/{shareId}/reporters/{uid} docs (one
+   per reporting account) which are removed when a report is dismissed
+   so the folder can be reported again later.
 
    Real access control for both collections lives in
    firestore.rules (only ADMIN_EMAIL may read/write reports and
    write bannedUsers) — the ADMIN_EMAIL check below is a friendly
-   client-side gate, not the security boundary itself. See the
-   note in firestore.rules about keeping that check in sync with
-   ADMIN_EMAIL in firebase-config.js.
+   client-side gate, not the security boundary itself.
 
-   Banning writes bannedUsers/{uid}. The owner's UID is stored in every
-   report (share.js), whereas the email cannot be looked up from a UID
-   with the browser SDK. Enforcement lives in auth.js (isUserBanned() on
-   sign-in) and in firestore.rules (isBanned() on every users/{uid} write);
-   this page only creates/removes that one document.
+   Banning writes bannedUsers/{uid}. Enforcement lives in auth.js
+   (isUserBanned() on sign-in) and in firestore.rules (isBanned() on
+   every users/{uid} write); this page only creates/removes that document.
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, doc, deleteDoc, onSnapshot, writeBatch,
+  getFirestore, collection, doc, deleteDoc, onSnapshot, writeBatch, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
@@ -48,10 +50,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const REPORTS_COLLECTION = "reports";
+const REPORTERS_SUBCOLLECTION = "reporters";
 const BANNED_COLLECTION = "bannedUsers";
 const REPORT_STATUS_PENDING = "pending";
 const REPORT_STATUS_BANNED = "banned";
 const OWNER_UID_PREVIEW_LENGTH = 8;
+/** Must match the "< 3" check in isShareVisible() inside firestore.rules. */
+const REPORTS_TO_DISABLE = 3;
+/** Reports created before the counter existed count as already disabled. */
+const LEGACY_REPORT_COUNT = REPORTS_TO_DISABLE;
 
 /* ---------------- i18n ---------------- */
 const lang = localStorage.getItem("preferred-language") || "en";
@@ -62,7 +69,7 @@ const I18N = {
     invalidLogin: "Incorrect email or password.",
     dashTitle: "Reports & bans", signOut: "Sign out", backToDownloads: "Manage downloads",
     pendingTitle: "Pending reports",
-    pendingSub: "Folders flagged by visitors. Banning an owner blocks their whole account immediately; dismissing restores the folder without banning anyone.",
+    pendingSub: "Folders flagged by visitors. A share link is disabled automatically at 3 reports. Banning an owner blocks their whole account immediately; dismissing restores the folder without banning anyone.",
     noPending: "No pending reports right now.",
     bannedTitle: "Banned accounts",
     bannedSub: "These accounts can no longer sign in or use the app.",
@@ -75,6 +82,8 @@ const I18N = {
     dismissedToast: "Report dismissed",
     genericError: "Something went wrong. Please try again.",
     reportedOn: "Reported", bannedOn: "Banned", folderLabel: "Folder", ownerLabel: "Owner",
+    reportsLabel: "Reports",
+    linkActive: "link still active", linkDisabled: "link disabled",
   },
   ar: {
     loginTitle: "تسجيل دخول المدير", loginSub: "سجّل الدخول بحساب المدير لمراجعة البلاغات.",
@@ -82,7 +91,7 @@ const I18N = {
     invalidLogin: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
     dashTitle: "البلاغات والحظر", signOut: "تسجيل الخروج", backToDownloads: "إدارة التنزيلات",
     pendingTitle: "البلاغات قيد المراجعة",
-    pendingSub: "مجلدات أبلغ عنها الزوار. حظر المالك يوقف حسابه بالكامل فوراً، بينما تجاهل البلاغ يعيد إظهار المجلد دون حظر أحد.",
+    pendingSub: "مجلدات أبلغ عنها الزوار. يُعطَّل رابط المشاركة تلقائياً عند 3 بلاغات. حظر المالك يوقف حسابه بالكامل فوراً، بينما تجاهل البلاغ يعيد إظهار المجلد دون حظر أحد.",
     noPending: "لا توجد بلاغات قيد المراجعة حالياً.",
     bannedTitle: "الحسابات المحظورة",
     bannedSub: "لم يعد بإمكان هذه الحسابات تسجيل الدخول أو استخدام التطبيق.",
@@ -95,6 +104,8 @@ const I18N = {
     dismissedToast: "تم تجاهل البلاغ",
     genericError: "حدث خطأ ما. حاول مرة أخرى.",
     reportedOn: "تاريخ البلاغ", bannedOn: "تاريخ الحظر", folderLabel: "المجلد", ownerLabel: "المالك",
+    reportsLabel: "عدد البلاغات",
+    linkActive: "الرابط ما زال فعّالاً", linkDisabled: "الرابط معطّل",
   }
 };
 function t(k){ return I18N[lang][k]; }
@@ -138,6 +149,16 @@ function formatDate(ts){
   try{
     return ts.toDate().toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" });
   }catch(err){ return "—"; }
+}
+
+/**
+ * Report count for a report document; older reports without the field are
+ * treated as already at the disable threshold (matches firestore.rules).
+ * @param {{count?: number}} report
+ * @returns {number}
+ */
+function reportCountOf(report){
+  return typeof report.count === "number" ? report.count : LEGACY_REPORT_COUNT;
 }
 
 /* ---------------- Auth ---------------- */
@@ -211,6 +232,17 @@ function describeOwner(report){
   return t("unknownOwner");
 }
 
+/**
+ * Describes a report's counter, e.g. "2/3 — link still active".
+ * @param {{count?: number}} report
+ * @returns {string}
+ */
+function describeReportCount(report){
+  const count = reportCountOf(report);
+  const state = count >= REPORTS_TO_DISABLE ? t("linkDisabled") : t("linkActive");
+  return `${count}/${REPORTS_TO_DISABLE} — ${state}`;
+}
+
 /** Renders only reports still awaiting a decision (banned ones are hidden). */
 function renderReports(){
   const list = document.getElementById("reportsList");
@@ -228,7 +260,7 @@ function renderReports(){
     <div class="admin-row report-row">
       <div class="meta">
         <div class="t">${escapeHtml(r.folderName || r.id)}</div>
-        <div class="f">${t("ownerLabel")}: ${escapeHtml(describeOwner(r))} · ${t("reportedOn")}: ${formatDate(r.createdAt)}</div>
+        <div class="f">${t("ownerLabel")}: ${escapeHtml(describeOwner(r))} · ${t("reportsLabel")}: ${escapeHtml(describeReportCount(r))} · ${t("reportedOn")}: ${formatDate(r.createdAt)}</div>
       </div>
       <button type="button" class="admin-btn secondary small" data-action="dismiss" data-share-id="${escapeHtml(r.id)}">${t("dismissBtn")}</button>
       <button type="button" class="admin-btn danger small" data-action="ban"
@@ -362,12 +394,24 @@ function closeDismissModal(){
   document.getElementById("dismissModalBackdrop").classList.remove("show");
   pendingDismissId = null;
 }
+
+/**
+ * Dismisses a report: deletes every reporter record and the report itself in
+ * one batch, so the folder becomes visible again and can be reported anew.
+ */
 async function confirmDismiss(){
   if(!pendingDismissId) return;
   const btn = document.getElementById("confirmDismissBtn");
   btn.disabled = true;
   try{
-    await deleteDoc(doc(db, REPORTS_COLLECTION, pendingDismissId));
+    const reportRef = doc(db, REPORTS_COLLECTION, pendingDismissId);
+    const reportersSnap = await getDocs(collection(db, REPORTS_COLLECTION, pendingDismissId, REPORTERS_SUBCOLLECTION));
+
+    const batch = writeBatch(db);
+    reportersSnap.docs.forEach(reporterDoc => batch.delete(reporterDoc.ref));
+    batch.delete(reportRef);
+    await batch.commit();
+
     showToast(t("dismissedToast"));
     closeDismissModal();
   }catch(err){

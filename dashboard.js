@@ -12,6 +12,14 @@
    Firestore security rules (Firebase console) must restrict
    users/{uid}/** to request.auth.uid == uid — see the setup
    notes inside firebase-config.js.
+
+   Security notes:
+   - User-entered text (tags, titles...) is never placed inside inline
+     onclick="..." code. HTML-escaping cannot make a value safe inside a
+     JS string (the browser decodes &#39; back to ' before running the
+     handler). Tags use data-* attributes + delegated listeners instead.
+   - firestore.rules requires email_verified, so after verification we
+     force-refresh the ID token (getIdToken(true)) to pick up the claim.
  ============================================================ */
 import { signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
@@ -123,6 +131,22 @@ async function ensureLinksCounter(uid){
   }
 }
 
+/**
+ * Forces Firebase to issue a fresh ID token so the `email_verified` claim
+ * that firestore.rules checks is up to date. Without this, a user who just
+ * verified their email would keep getting permission-denied until the old
+ * token expired (up to an hour). Failure is logged, never fatal.
+ * @param {import('firebase/auth').User} user
+ * @returns {Promise<void>}
+ */
+async function refreshAuthToken(user){
+  try{
+    await user.getIdToken(true);
+  }catch(err){
+    console.error('Failed to refresh ID token:', err);
+  }
+}
+
 /* ------------------------------------------------------------
    ROUTE GUARD — this page is only for signed-in users. A visitor
    with no session gets sent straight back to the landing/auth
@@ -131,7 +155,7 @@ async function ensureLinksCounter(uid){
    quietly resumes without repeating it.
    ------------------------------------------------------------ */
 let hasEnteredOnce = false;
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if(user){
     if(!user.emailVerified){
       // Signed in, but the email isn't verified yet — hold this user on
@@ -147,7 +171,12 @@ onAuthStateChanged(auth, (user) => {
 
     document.getElementById('verifyView').classList.add('hidden');
     currentUser = user;
+    // Make sure the token carries email_verified=true before the first
+    // Firestore read, otherwise the rules would reject the listeners.
+    await refreshAuthToken(user);
+    if(currentUser !== user) return; // signed out / switched while refreshing
     updateUserRow(user);
+    stopListening();
     startListening(user.uid);
     updateTopbarTitle();
     if(!hasEnteredOnce){
@@ -192,8 +221,11 @@ async function checkVerification(){
   try{
     await currentUser.reload(); // refreshes emailVerified from Firebase
     if(currentUser.emailVerified){
+      // Pick up the email_verified claim required by firestore.rules.
+      await refreshAuthToken(currentUser);
       document.getElementById('verifyView').classList.add('hidden');
       updateUserRow(currentUser);
+      stopListening();
       startListening(currentUser.uid);
       updateTopbarTitle();
       document.getElementById('app').classList.remove('hidden');
@@ -256,11 +288,11 @@ function renderFolderNav(){
   const nav = document.getElementById('folderNav');
   nav.innerHTML = folders.map(f => {
     const count = links.filter(l => l.folder === f.id).length;
-    return `<div class="nav-item ${activeFolder===f.id?'active':''}" data-folder="${f.id}" onclick="selectFolder('${f.id}')">
-      <span class="folder-dot" style="background:${f.color}"></span>
+    return `<div class="nav-item ${activeFolder===f.id?'active':''}" data-folder="${escapeAttr(f.id)}" onclick="selectFolder('${escapeAttr(f.id)}')">
+      <span class="folder-dot" style="background:${escapeAttr(f.color)}"></span>
       <span>${escapeHtml(f.name)}</span>
       <span class="count">${count}</span>
-      <button type="button" class="folder-share-btn" onclick="event.stopPropagation(); openShareModal('${f.id}')" title="${t('shareFolder')}" aria-label="${t('shareFolder')}">
+      <button type="button" class="folder-share-btn" onclick="event.stopPropagation(); openShareModal('${escapeAttr(f.id)}')" title="${t('shareFolder')}" aria-label="${t('shareFolder')}">
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
       </button>
     </div>`;
@@ -313,6 +345,11 @@ function currentList(){
   return list;
 }
 
+/**
+ * Renders the tag filter chips. Tag text goes in a data-tag attribute and is
+ * read back by the delegated click listener below — never inside inline
+ * onclick code (see the security note at the top of this file).
+ */
 function renderTagChips(){
   const allTags = [...new Set(links.flatMap(l => l.tags || []))].sort();
   const chips = document.getElementById('tagChips');
@@ -322,15 +359,25 @@ function renderTagChips(){
   const visibleTags = tagsExpanded ? allTags : allTags.slice(0, TAG_LIMIT);
 
   let html = visibleTags.map(tag =>
-    `<button class="chip ${activeTag===tag?'active':''}" onclick="toggleTag('${escapeAttr(tag)}')">#${escapeHtml(tag)}</button>`
+    `<button type="button" class="chip ${activeTag===tag?'active':''}" data-action="filter-tag" data-tag="${escapeAttr(tag)}">#${escapeHtml(tag)}</button>`
   ).join('');
 
   if(allTags.length > TAG_LIMIT){
-    html += `<button class="chip chip-more" onclick="toggleTagsExpanded()">${tagsExpanded ? t('showLessTags') : t('showMoreTags')}</button>`;
+    html += `<button type="button" class="chip chip-more" data-action="toggle-more-tags">${tagsExpanded ? t('showLessTags') : t('showMoreTags')}</button>`;
   }
 
   chips.innerHTML = html;
 }
+
+/** Single delegated click handler for the tag filter chips. */
+function handleTagChipsClick(event){
+  const chip = event.target.closest('[data-action]');
+  if(!chip) return;
+  if(chip.dataset.action === 'filter-tag') toggleTag(chip.dataset.tag);
+  else if(chip.dataset.action === 'toggle-more-tags') toggleTagsExpanded();
+}
+document.getElementById('tagChips').addEventListener('click', handleTagChipsClick);
+
 function toggleTag(tag){
   activeTag = activeTag === tag ? null : tag;
   renderLinks();
@@ -368,8 +415,8 @@ function renderLinks(){
     const playBadge = l.type === 'video'
       ? `<div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>`
       : '';
-    return `<div class="link-card" onclick="openCard('${l.id}')">
-      <div class="thumb"><img src="${thumbFor(l, folderObj)}" onerror="handleThumbError(this, '${extractYouTubeId(l.url) || ''}', '${placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}')" alt="">${playBadge}</div>
+    return `<div class="link-card" onclick="openCard('${escapeAttr(l.id)}')">
+      <div class="thumb"><img src="${escapeAttr(thumbFor(l, folderObj))}" onerror="handleThumbError(this, '${escapeAttr(extractYouTubeId(l.url) || '')}', '${placeholderThumb(l.title, folderObj ? hashCode(folderObj.id)%360 : undefined)}')" alt="">${playBadge}</div>
       <div class="card-body">
         <div class="card-top">
           <div>
@@ -554,7 +601,7 @@ function populateFolderSelect(){
   const sel = document.getElementById('fFolder');
   if(!sel) return;
   const current = sel.value;
-  sel.innerHTML = folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+  sel.innerHTML = folders.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.name)}</option>`).join('');
   if([...sel.options].some(o => o.value === current)) sel.value = current;
 }
 function openLinkModal(){
@@ -602,16 +649,32 @@ function removeTag(tg){
   composingTags = composingTags.filter(x => x !== tg);
   renderTagRow();
 }
+
+/**
+ * Builds one removable tag "pill" with DOM APIs (textContent + addEventListener)
+ * so the tag text can never be interpreted as HTML or JavaScript.
+ * @param {string} tagText
+ * @param {(tag: string) => void} onRemove
+ * @returns {HTMLSpanElement}
+ */
+function createTagPill(tagText, onRemove){
+  const pill = document.createElement('span');
+  pill.className = 'tag-pill';
+  pill.appendChild(document.createTextNode(`#${tagText} `));
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.textContent = '\u00d7';
+  removeButton.addEventListener('click', () => onRemove(tagText));
+  pill.appendChild(removeButton);
+  return pill;
+}
+
 function renderTagRow(){
   const row = document.getElementById('tagRow');
   const input = document.getElementById('fTagInput');
   row.querySelectorAll('.tag-pill').forEach(el => el.remove());
-  composingTags.forEach(tg => {
-    const pill = document.createElement('span');
-    pill.className = 'tag-pill';
-    pill.innerHTML = `#${escapeHtml(tg)} <button type="button" onclick="removeTag('${escapeAttr(tg)}')">&times;</button>`;
-    row.insertBefore(pill, input);
-  });
+  composingTags.forEach(tg => row.insertBefore(createTagPill(tg, removeTag), input));
 }
 
 // Only http/https links are ever allowed to be stored or opened. Without
@@ -941,12 +1004,7 @@ function renderPlayerTagRow(){
   const input = document.getElementById('playerTagInput');
   if(!row || !input) return;
   row.querySelectorAll('.tag-pill').forEach(el => el.remove());
-  playerComposingTags.forEach(tg => {
-    const pill = document.createElement('span');
-    pill.className = 'tag-pill';
-    pill.innerHTML = `#${escapeHtml(tg)} <button type="button" onclick="removePlayerTag('${escapeAttr(tg)}')">&times;</button>`;
-    row.insertBefore(pill, input);
-  });
+  playerComposingTags.forEach(tg => row.insertBefore(createTagPill(tg, removePlayerTag), input));
 }
 
 function handlePlayerTagKey(e){
@@ -1115,7 +1173,7 @@ function renderTimeNotes(l){
   const canSeek = !!ytPlayer;
   list.innerHTML = notes.map((n, i) => `
     <div class="time-note-item">
-      <button type="button" class="time-note-badge" ${canSeek ? `onclick="seekToTime(${n.time})"` : 'disabled'}>${formatTime(n.time)}</button>
+      <button type="button" class="time-note-badge" ${canSeek ? `onclick="seekToTime(${Number(n.time) || 0})"` : 'disabled'}>${formatTime(n.time)}</button>
       <span class="time-note-text">${escapeHtml(n.text)}</span>
       <button type="button" class="time-note-delete" onclick="deleteTimeNote(${i})" title="${t('deleteTimeNoteTitle')}" aria-label="${t('deleteTimeNoteTitle')}">
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1204,16 +1262,18 @@ setDynamicTranslationHook(() => {
 });
 
 /* ============================================================
-   Expose functions for inline HTML event handlers
+   Expose functions for inline HTML event handlers.
+   (toggleTag / removeTag / removePlayerTag are no longer exposed:
+   tag interactions go through delegated listeners and DOM-built
+   buttons instead of inline onclick strings.)
    ============================================================ */
 Object.assign(window, {
-  toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch, toggleTag,
-  toggleTagsExpanded,
-  openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey, removeTag,
+  toggleTheme, openSidebar, closeSidebar, selectFolder, handleSearch,
+  openCard, openLinkModal, closeLinkModal, autoFillTitle, handleTagKey,
   saveLink, openFolderModal, closeFolderModal, createFolder, toggleVideoZoom,
   useCurrentTime, addTimeNote, deleteTimeNote, seekToTime, closeDetailModal,
   saveDetailNotes, savePlayerNotes, closePlayerModal, exitApp,
-  handlePlayerTagKey, removePlayerTag,
+  handlePlayerTagKey,
   toggleVideoLock, handleLockOverlayTap,
   openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder,
   resendVerification, checkVerification, verifyExitApp,
