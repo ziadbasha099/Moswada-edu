@@ -810,7 +810,7 @@ async function fetchPlaylist(playlistId){
     headers: { Authorization: `Bearer ${idToken}` },
   });
   const body = await response.json().catch(() => ({}));
-  if(!response.ok) throw Object.assign(new Error('Playlist request failed'), { apiCode: body.error || 'internal_error' });
+  if(!response.ok) throw Object.assign(new Error('Playlist request failed'), { apiCode: body.error || `http_${response.status}` });
   return body;
 }
 
@@ -867,7 +867,10 @@ async function importPlaylist(){
     showToast(playlist.truncated ? message + t('playlistTruncatedNote') : message);
   }catch(err){
     console.error(err);
-    showToast(t(PLAYLIST_ERROR_TOASTS[err && err.apiCode] || 'playlistFailedToast'));
+    const knownToastKey = PLAYLIST_ERROR_TOASTS[err && err.apiCode];
+    // Unknown failures show their short code so the real cause can be diagnosed.
+    const debugCode = knownToastKey ? '' : ` [${(err && (err.apiCode || err.message)) || 'unknown'}]`;
+    showToast(t(knownToastKey || 'playlistFailedToast') + debugCode);
   }finally{
     playlistImportRunning = false;
     button.disabled = false;
