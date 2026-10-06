@@ -41,7 +41,7 @@ async function requireSignedInUser(req) {
   const header = req.headers.authorization || '';
   const idToken = header.startsWith('Bearer ') ? header.slice(7) : '';
   const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
-  if (!firebaseKey) throw new ApiError(HTTP.SERVER, 'server_not_configured');
+  if (!firebaseKey) throw new ApiError(HTTP.SERVER, 'missing_firebase_web_api_key');
   if (!idToken) throw new ApiError(HTTP.UNAUTHORIZED, 'unauthorized');
 
   const response = await fetch(`${TOKEN_LOOKUP_URL}?key=${encodeURIComponent(firebaseKey)}`, {
@@ -108,7 +108,7 @@ async function fetchPlaylistVideos(playlistId) {
 module.exports = async function handler(req, res) {
   try {
     if (req.method !== 'GET') throw new ApiError(HTTP.METHOD, 'method_not_allowed');
-    if (!process.env.YOUTUBE_API_KEY) throw new ApiError(HTTP.SERVER, 'server_not_configured');
+    if (!process.env.YOUTUBE_API_KEY) throw new ApiError(HTTP.SERVER, 'missing_youtube_api_key');
 
     const playlistId = req.query.id;
     if (!isValidPlaylistId(playlistId)) throw new ApiError(HTTP.BAD_REQUEST, 'invalid_playlist_id');
