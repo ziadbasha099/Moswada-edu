@@ -105,28 +105,10 @@ async function fetchPlaylistVideos(playlistId) {
 }
 
 
-/**
- * TEMPORARY diagnostics (remove once the import works): reports which
- * deployment answered and whether the env vars exist. Never returns values.
- * @param {import('http').ServerResponse} res
- */
-function sendDiagnostics(res) {
-  const envNames = Object.keys(process.env).filter((name) => /YOUTUBE|FIREBASE/i.test(name));
-  res.status(HTTP.OK).json({
-    vercelEnv: process.env.VERCEL_ENV || null,
-    commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
-    nodeVersion: process.version,
-    matchingEnvNames: envNames.map((name) => JSON.stringify(name)),
-    youtubeKeyLength: (process.env.YOUTUBE_API_KEY || '').length,
-    firebaseKeyLength: (process.env.FIREBASE_WEB_API_KEY || '').length,
-  });
-}
-
 /** Vercel entry point. */
 module.exports = async function handler(req, res) {
   try {
     if (req.method !== 'GET') throw new ApiError(HTTP.METHOD, 'method_not_allowed');
-    if (req.query.diag === '1') return sendDiagnostics(res);
     if (!process.env.YOUTUBE_API_KEY) throw new ApiError(HTTP.SERVER, 'missing_youtube_api_key');
 
     const playlistId = req.query.id;
