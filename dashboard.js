@@ -614,12 +614,14 @@ function openLinkModal(){
   populateFolderSelect();
   if(activeFolder !== 'all' && activeFolder !== 'videos'){ document.getElementById('fFolder').value = activeFolder; }
   renderTagRow();
+  updatePlaylistImportVisibility();
   document.getElementById('linkModalBackdrop').classList.add('show');
   setTimeout(()=>document.getElementById('fUrl').focus(), 50);
 }
 function closeLinkModal(){ document.getElementById('linkModalBackdrop').classList.remove('show'); }
 
 function autoFillTitle(){
+  updatePlaylistImportVisibility();
   const titleField = document.getElementById('fTitle');
   const url = document.getElementById('fUrl').value.trim();
   if(!titleField.value && url){
@@ -760,6 +762,116 @@ async function createLinkWithCounter(uid, data){
   });
 
   return newLinkRef.id;
+}
+
+/* ============================================================
+   YOUTUBE PLAYLIST IMPORT
+   ------------------------------------------------------------
+   The YouTube API key lives only on the server (/api/playlist).
+   Here we send the playlist ID plus the user's Firebase ID token,
+   then save every returned video as its own link card through
+   createLinkWithCounter(), so the 200-link limit still applies.
+   ============================================================ */
+const PLAYLIST_API_PATH = '/api/playlist';
+const PLAYLIST_FOLDER_COLORS = ['#226864','#e07a5f','#9c6644','#3e6563','#5f7161','#8d6a9f'];
+const PLAYLIST_ID_IN_URL = /^[A-Za-z0-9_-]{13,64}$/;
+const YOUTUBE_HOSTS = new Set(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com']);
+const PLAYLIST_ERROR_TOASTS = {
+  playlist_not_found: 'playlistNotFoundToast',
+  invalid_playlist_id: 'playlistNotFoundToast',
+  quota_exceeded: 'playlistQuotaToast',
+};
+let playlistImportRunning = false;
+
+/** Returns the playlist ID from a YouTube URL's ?list= parameter, or '' if none. */
+function extractPlaylistId(rawUrl){
+  try{
+    const parsed = new URL(String(rawUrl || '').trim());
+    if(!YOUTUBE_HOSTS.has(parsed.hostname)) return '';
+    const listId = parsed.searchParams.get('list') || '';
+    return PLAYLIST_ID_IN_URL.test(listId) ? listId : '';
+  }catch(e){
+    return '';
+  }
+}
+
+/** Shows the import button only while the URL field holds a playlist link (add mode only). */
+function updatePlaylistImportVisibility(){
+  const box = document.getElementById('playlistImportBox');
+  const urlField = document.getElementById('fUrl');
+  if(!box || !urlField) return;
+  box.style.display = (editingLinkId === null && extractPlaylistId(urlField.value)) ? '' : 'none';
+}
+
+/** Asks our serverless function for the playlist's title and videos. */
+async function fetchPlaylist(playlistId){
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch(`${PLAYLIST_API_PATH}?id=${encodeURIComponent(playlistId)}`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  const body = await response.json().catch(() => ({}));
+  if(!response.ok) throw Object.assign(new Error('Playlist request failed'), { apiCode: body.error || 'internal_error' });
+  return body;
+}
+
+/** Finds a folder with this name (case-insensitive) or creates it; returns its ID. */
+async function getOrCreatePlaylistFolder(title){
+  const wanted = title.trim().toLowerCase();
+  const existing = folders.find(f => String(f.name || '').trim().toLowerCase() === wanted);
+  if(existing) return existing.id;
+  const color = PLAYLIST_FOLDER_COLORS[folders.length % PLAYLIST_FOLDER_COLORS.length];
+  const ref = await addDoc(collection(db, 'users', currentUser.uid, 'folders'), { name: title, color, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+/** Saves each new video as a link card; stops cleanly at the link limit. */
+async function saveVideosAsLinks(videos, folderId){
+  const knownUrls = new Set(links.map(l => l.url));
+  let added = 0;
+  let skipped = 0;
+  let hitLimit = false;
+  for(const video of videos){
+    const url = `https://www.youtube.com/watch?v=${video.videoId}`;
+    if(knownUrls.has(url)){ skipped++; continue; }
+    if(links.length + added >= MAX_LINKS_PER_USER){ hitLimit = true; break; }
+    const data = { url, title: video.title || t('untitledFrom')('youtube.com'), folder: folderId, notes: '', tags: [], type: detectType(url), domain: domainOf(url), timeNotes: [], progress: 0 };
+    try{
+      const newLinkId = await createLinkWithCounter(currentUser.uid, data);
+      await mirrorLinkIfShared(folderId, newLinkId, data);
+      added++;
+    }catch(err){
+      if(err && err.code === 'permission-denied'){ hitLimit = true; break; }
+      throw err;
+    }
+  }
+  return { added, skipped, hitLimit };
+}
+
+/** Click handler of the "Import the whole playlist" button. */
+async function importPlaylist(){
+  if(!currentUser || playlistImportRunning) return;
+  const playlistId = extractPlaylistId(document.getElementById('fUrl').value);
+  if(!playlistId) return;
+
+  const button = document.getElementById('importPlaylistBtn');
+  playlistImportRunning = true;
+  button.disabled = true;
+  showToast(t('playlistImporting'));
+  try{
+    const playlist = await fetchPlaylist(playlistId);
+    if(!Array.isArray(playlist.videos) || playlist.videos.length === 0){ showToast(t('playlistEmptyToast')); return; }
+    const folderId = await getOrCreatePlaylistFolder(playlist.title);
+    const { added, skipped, hitLimit } = await saveVideosAsLinks(playlist.videos, folderId);
+    closeLinkModal();
+    const message = hitLimit ? t('playlistPartialToast')(added) : t('playlistImportedToast')(added, skipped);
+    showToast(playlist.truncated ? message + t('playlistTruncatedNote') : message);
+  }catch(err){
+    console.error(err);
+    showToast(t(PLAYLIST_ERROR_TOASTS[err && err.apiCode] || 'playlistFailedToast'));
+  }finally{
+    playlistImportRunning = false;
+    button.disabled = false;
+  }
 }
 
 /* ============================================================
@@ -1277,4 +1389,5 @@ Object.assign(window, {
   toggleVideoLock, handleLockOverlayTap,
   openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder,
   resendVerification, checkVerification, verifyExitApp,
+  importPlaylist,
 });
