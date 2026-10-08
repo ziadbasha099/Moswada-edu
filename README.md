@@ -1,5 +1,19 @@
 # Moswada-edu
-Website for studying from YouTube 
-<!--
-[![Netlify Status](https://api.netlify.com/api/v1/badges/e1bd8094-330e-4d54-9345-87393acb23ed/deploy-status)](https://app.netlify.com/projects/moswada-edu/deploys)
--->
+<H2>FEATURES :</H2>
+<p>
+  • Watch YouTube videos directly on our website and write notes for each video.
+  • MindMaps and Study summaries Free.
+  • Dictionary for Educational websites can help you At the university .
+  • Educational games like Flash cards.
+</p>
+<H2> INFO :</H2>
+<p>
+  • Country: Egypt 
+  • Founder: ZiadBasha 
+  • Languages: Arabic, English 
+  • Since: 2026/6/6
+</p>
+<H2>SOCIAL MEDIA :</H2>
+<p>
+  <a href="https://www.facebook.com/share/1E3AhLt32z/">Facebook</a>
+</p>
