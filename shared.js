@@ -193,6 +193,11 @@ const I18N = {
     accountBannedError: 'This account has been suspended. Contact support if you believe this is a mistake.',
     reportSubmittedToast: 'Report submitted — this link is now disabled',
     reportAlreadySubmittedToast: 'This folder has already been reported and is under review', 
+    deleteFolderBody: (name, count) => count
+      ? `"${name}" and its ${count} link${count===1?'':'s'} will be permanently deleted. This cannot be undone.`
+      : `"${name}" will be permanently deleted. This cannot be undone.`,
+    folderDeletedToast: 'Folder deleted',
+    folderMenuLabel: 'Folder options',
 
   },
   ar: {
@@ -294,6 +299,11 @@ const I18N = {
     accountBannedError: 'تم تعليق هذا الحساب. راسل الدعم إذا كنت تعتقد أن هذا خطأ.',
     reportSubmittedToast: 'تم إرسال البلاغ — تم تعطيل هذا الرابط',
     reportAlreadySubmittedToast: 'تم الإبلاغ عن هذا المجلد بالفعل وهو قيد المراجعة',
+    deleteFolderBody: (name, count) => count
+      ? `سيتم حذف "${name}" و${count} رابط بداخله نهائياً. لا يمكن التراجع عن هذا الإجراء.`
+      : `سيتم حذف "${name}" نهائياً. لا يمكن التراجع عن هذا الإجراء.`,
+    folderDeletedToast: 'تم حذف المجلد',
+    folderMenuLabel: 'خيارات المجلد',
   }
 };
 export function t(key){ return I18N[currentLang][key]; }
