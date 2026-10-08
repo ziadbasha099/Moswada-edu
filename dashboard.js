@@ -69,6 +69,15 @@ let composingTags = [];
 let currentDetailLinkId = null;
 let tagsExpanded = false;
 
+/** عدد المجلدات الظاهرة قبل زر "عرض المزيد". */
+const VISIBLE_FOLDERS_LIMIT = 5;
+const FOLDER_MENU_GAP_PX = 4;
+const FOLDER_MENU_VIEWPORT_MARGIN_PX = 8;
+
+let foldersExpanded = false;
+let folderMenuTargetId = null;
+let deleteFolderTargetId = null;
+
 /* Tags being edited live from the video player modal (kept separate
    from `composingTags`, which belongs to the Add/Edit link modal). */
 let playerComposingTags = [];
@@ -284,21 +293,161 @@ function closeSidebar(){
 /* ============================================================
    FOLDER NAV
    ============================================================ */
-function renderFolderNav(){
-  const nav = document.getElementById('folderNav');
-  nav.innerHTML = folders.map(f => {
-    const count = links.filter(l => l.folder === f.id).length;
-    return `<div class="nav-item ${activeFolder===f.id?'active':''}" data-folder="${escapeAttr(f.id)}" onclick="selectFolder('${escapeAttr(f.id)}')">
-      <span class="folder-dot" style="background:${escapeAttr(f.color)}"></span>
-      <span>${escapeHtml(f.name)}</span>
+/**
+ * Returns the folders to display. When collapsed, only the first
+ * VISIBLE_FOLDERS_LIMIT are shown, but the active folder is always kept
+ * visible so the user never loses track of where they are.
+ * @returns {Array<object>}
+ */
+function getVisibleFolders(){
+  if(foldersExpanded) return folders;
+  return folders.filter((f, index) => index < VISIBLE_FOLDERS_LIMIT || f.id === activeFolder);
+}
+
+/** Builds the HTML for one folder row. Ids go in data-* attributes (never inline JS). */
+function folderRowHtml(folder){
+  const count = links.filter(l => l.folder === folder.id).length;
+  return `<div class="nav-item ${activeFolder===folder.id?'active':''}" data-action="select-folder" data-folder="${escapeAttr(folder.id)}">
+      <span class="folder-dot" style="background:${escapeAttr(folder.color)}"></span>
+      <span>${escapeHtml(folder.name)}</span>
       <span class="count">${count}</span>
-      <button type="button" class="folder-share-btn" onclick="event.stopPropagation(); openShareModal('${escapeAttr(f.id)}')" title="${t('shareFolder')}" aria-label="${t('shareFolder')}">
-        <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+      <button type="button" class="folder-menu-btn" data-action="toggle-folder-menu" data-folder-id="${escapeAttr(folder.id)}" title="${t('folderMenuLabel')}" aria-label="${t('folderMenuLabel')}" aria-haspopup="menu">
+        <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
       </button>
     </div>`;
-  }).join('');
+}
+
+function renderFolderNav(){
+  const nav = document.getElementById('folderNav');
+  let html = getVisibleFolders().map(folderRowHtml).join('');
+
+  if(folders.length > VISIBLE_FOLDERS_LIMIT){
+    html += `<button type="button" class="chip chip-more folder-more-btn" data-action="toggle-more-folders">${foldersExpanded ? t('showLessTags') : t('showMoreTags')}</button>`;
+  }
+  nav.innerHTML = html;
+
   document.getElementById('countAll').textContent = links.length;
   document.getElementById('countVideos').textContent = links.filter(l => l.type === 'video').length;
+}
+
+/** Single delegated click handler for the whole folder list. */
+function handleFolderNavClick(event){
+  const actionEl = event.target.closest('[data-action]');
+  if(!actionEl) return;
+  const { action } = actionEl.dataset;
+
+  if(action === 'toggle-folder-menu'){
+    event.stopPropagation();
+    toggleFolderMenu(actionEl.dataset.folderId, actionEl);
+  } else if(action === 'toggle-more-folders'){
+    foldersExpanded = !foldersExpanded;
+    renderFolderNav();
+  } else if(action === 'select-folder'){
+    selectFolder(actionEl.dataset.folder);
+  }
+}
+document.getElementById('folderNav').addEventListener('click', handleFolderNavClick);
+
+/* ============================================================
+   FOLDER ⋮ MENU (share / delete)
+   One floating element positioned with fixed coordinates, so the
+   sidebar's overflow never clips it.
+   ============================================================ */
+function closeFolderMenu(){
+  document.getElementById('folderMenu').classList.add('hidden');
+  folderMenuTargetId = null;
+}
+
+/**
+ * Opens the menu next to the clicked ⋮ button (or closes it if already open for that folder).
+ * @param {string} folderId
+ * @param {HTMLElement} anchorButton
+ */
+function toggleFolderMenu(folderId, anchorButton){
+  const menu = document.getElementById('folderMenu');
+  if(folderMenuTargetId === folderId){ closeFolderMenu(); return; }
+
+  folderMenuTargetId = folderId;
+  menu.classList.remove('hidden'); // must be visible to be measured
+
+  const anchor = anchorButton.getBoundingClientRect();
+  const size = menu.getBoundingClientRect();
+  const isRtl = document.documentElement.dir === 'rtl';
+
+  const unclampedLeft = isRtl ? anchor.left : anchor.right - size.width;
+  const maxLeft = window.innerWidth - size.width - FOLDER_MENU_VIEWPORT_MARGIN_PX;
+  const left = Math.min(Math.max(unclampedLeft, FOLDER_MENU_VIEWPORT_MARGIN_PX), maxLeft);
+
+  let top = anchor.bottom + FOLDER_MENU_GAP_PX;
+  if(top + size.height > window.innerHeight - FOLDER_MENU_VIEWPORT_MARGIN_PX){
+    top = anchor.top - size.height - FOLDER_MENU_GAP_PX; // flip upward near the bottom edge
+  }
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+}
+
+document.getElementById('folderMenu').addEventListener('click', (event) => {
+  const actionEl = event.target.closest('[data-action]');
+  if(!actionEl || !folderMenuTargetId) return;
+  const folderId = folderMenuTargetId;
+  closeFolderMenu();
+  if(actionEl.dataset.action === 'share-folder') openShareModal(folderId);
+  else if(actionEl.dataset.action === 'delete-folder') openDeleteFolderModal(folderId);
+});
+
+// Close on outside click, Escape, or when the sidebar scrolls.
+document.addEventListener('click', (event) => {
+  if(!event.target.closest('#folderMenu, .folder-menu-btn')) closeFolderMenu();
+});
+document.addEventListener('keydown', (event) => { if(event.key === 'Escape') closeFolderMenu(); });
+document.getElementById('sidebar').addEventListener('scroll', closeFolderMenu);
+
+/* ============================================================
+   DELETE FOLDER — removes the folder, every link inside it
+   (decrementing users/{uid}.linksCount in the same batch), and
+   its public share mirror if it was shared.
+   ============================================================ */
+function openDeleteFolderModal(folderId){
+  const folder = folders.find(f => f.id === folderId);
+  if(!folder) return;
+  deleteFolderTargetId = folderId;
+  const linksCount = links.filter(l => l.folder === folderId).length;
+  document.getElementById('deleteFolderBody').textContent = t('deleteFolderBody')(folder.name, linksCount);
+  document.getElementById('deleteFolderModalBackdrop').classList.add('show');
+}
+function closeDeleteFolderModal(){
+  document.getElementById('deleteFolderModalBackdrop').classList.remove('show');
+  deleteFolderTargetId = null;
+}
+
+async function confirmDeleteFolder(){
+  if(!currentUser || !deleteFolderTargetId) return;
+  const folder = folders.find(f => f.id === deleteFolderTargetId);
+  if(!folder) return;
+
+  const button = document.getElementById('confirmDeleteFolderBtn');
+  button.disabled = true;
+  try{
+    if(folder.shared && folder.shareId) await removeSharedMirror(folder);
+
+    const folderLinks = links.filter(l => l.folder === folder.id);
+    const batch = writeBatch(db); // max 200 links + 2 writes, under the 500 batch limit
+    folderLinks.forEach(l => batch.delete(doc(db, 'users', currentUser.uid, 'links', l.id)));
+    batch.delete(doc(db, 'users', currentUser.uid, 'folders', folder.id));
+    if(folderLinks.length){
+      batch.set(doc(db, 'users', currentUser.uid), { linksCount: increment(-folderLinks.length) }, { merge: true });
+    }
+    await batch.commit();
+
+    if(activeFolder === folder.id) selectFolder('all');
+    closeDeleteFolderModal();
+    showToast(t('folderDeletedToast'));
+  }catch(err){
+    console.error('Failed to delete folder:', err);
+    showToast(t('authGeneric'));
+  }finally{
+    button.disabled = false;
+  }
 }
 
 function updateTopbarTitle(){
@@ -523,15 +672,20 @@ async function createShareLink(){
   }catch(err){ console.error(err); }
 }
 
+/** Deletes a folder's public mirror (sharedFolders/{shareId} and its links). */
+async function removeSharedMirror(folder){
+  const linksSnap = await getDocs(collection(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links'));
+  await Promise.all(linksSnap.docs.map(d => deleteDoc(d.ref)));
+  await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId));
+}
+
 async function stopSharingFolder(){
   if(!currentUser || !shareModalFolderId) return;
   const folder = folders.find(f => f.id === shareModalFolderId);
   if(!folder || !folder.shareId) return;
 
   try{
-    const linksSnap = await getDocs(collection(db, SHARED_FOLDERS_COLLECTION, folder.shareId, 'links'));
-    await Promise.all(linksSnap.docs.map(d => deleteDoc(d.ref)));
-    await deleteDoc(doc(db, SHARED_FOLDERS_COLLECTION, folder.shareId));
+    await removeSharedMirror(folder);
     await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folder.id), { shared: false, shareId: null });
     renderShareModal();
     showToast(t('shareStoppedToast'));
@@ -1393,4 +1547,5 @@ Object.assign(window, {
   openShareModal, closeShareModal, copyShareUrl, createShareLink, stopSharingFolder,
   resendVerification, checkVerification, verifyExitApp,
   importPlaylist,
+  closeDeleteFolderModal, confirmDeleteFolder,
 });

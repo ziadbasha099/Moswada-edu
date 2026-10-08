@@ -365,6 +365,35 @@
   </div>
 </div>
 
+<!-- قائمة المجلد العائمة (⋮) — خارج الـ sidebar حتى لا يقصّها overflow -->
+<div class="folder-menu hidden" id="folderMenu" role="menu">
+  <button type="button" class="folder-menu-item" role="menuitem" data-action="share-folder">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+    <span data-en="Share folder" data-ar="مشاركة المجلد"></span>
+  </button>
+  <button type="button" class="folder-menu-item danger" role="menuitem" data-action="delete-folder">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
+    <span data-en="Delete folder" data-ar="حذف المجلد"></span>
+  </button>
+</div>
+
+<!-- تأكيد حذف المجلد -->
+<div class="modal-backdrop" id="deleteFolderModalBackdrop" onclick="if(event.target===this) closeDeleteFolderModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 data-en="Delete this folder?" data-ar="حذف هذا المجلد؟"></h2>
+      <button class="btn-icon" onclick="closeDeleteFolderModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><p id="deleteFolderBody"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteFolderModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn settings-delete-btn" id="confirmDeleteFolderBtn" onclick="confirmDeleteFolder()" data-en="Yes, delete" data-ar="نعم، احذف"></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <datalist id="existingTags"></datalist>
 <!-- YouTube IFrame API is now loaded from inside dashboard.js, right after
