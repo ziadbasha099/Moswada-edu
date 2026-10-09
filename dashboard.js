@@ -35,6 +35,24 @@ import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 const MAX_LINKS_PER_USER = 200;
 
 /* ============================================================
+   ★ اقتراحات رسالة الترحيب (للمستخدم الجديد) ★
+   ------------------------------------------------------------
+   لإضافة اقتراح جديد: أضف سطراً جديداً في المصفوفة بالأسفل.
+     shareId = قيمة id من رابط المشاركة (الجزء بعد share.html?id=)
+     title   = العنوان بالعربية والإنجليزية
+   لا حاجة لتعديل أي كود آخر.
+   ============================================================ */
+const WELCOME_SUGGESTIONS = [
+  { shareId: '43630afd-2065-4e66-8c65-6111e0249ccd', title: { ar: 'كيف تنظم وقتك', en: 'How to organize your time' } },
+  // { shareId: 'ضع-المعرّف-هنا', title: { ar: 'العنوان', en: 'Title' } },
+];
+
+const NEW_USER_WINDOW_DAYS = 7;            // الحساب الأحدث من هذه المدة يُعتبر "جديداً"
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const WELCOME_FLAG_FIELD = 'welcomeSeen';  // حقل في users/{uid} يمنع تكرار الرسالة
+const WELCOME_OPEN_LABEL = { ar: 'فتح', en: 'Open' };
+
+/* ============================================================
    MOCK IMAGE HELPERS (generates a lightweight branded SVG
    placeholder thumbnail when a link has no real thumbnail yet)
    ============================================================ */
@@ -192,6 +210,7 @@ onAuthStateChanged(auth, async (user) => {
       hasEnteredOnce = true;
       document.getElementById('app').classList.remove('hidden');
       showToast(t('welcomeToast')(user.displayName || (user.email ? user.email.split('@')[0] : '')));
+      maybeShowWelcome(user);
     }
   } else {
     currentUser = null;
@@ -240,6 +259,7 @@ async function checkVerification(){
       document.getElementById('app').classList.remove('hidden');
       hasEnteredOnce = true;
       showToast(t('welcomeToast')(currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '')));
+      maybeShowWelcome(currentUser);
     } else {
       errEl.textContent = t('stillNotVerifiedToast');
       errEl.classList.remove('hidden');
@@ -1518,11 +1538,75 @@ async function exitApp(){
 }
 
 /* ============================================================
+   WELCOME DIALOG — تظهر مرة واحدة فقط للمستخدم الجديد، وفيها
+   اقتراحات (WELCOME_SUGGESTIONS في أعلى الملف) يمكن تجاهلها.
+   المستخدم الجديد = حسابه أُنشئ خلال NEW_USER_WINDOW_DAYS ولم يُسجَّل
+   له welcomeSeen في users/{uid}. يُسجَّل الحقل لحظة ظهور الرسالة.
+   ============================================================ */
+function currentUiLanguage(){
+  return document.documentElement.lang === 'en' ? 'en' : 'ar';
+}
+
+function isRecentlyCreated(user){
+  const createdAtMs = Date.parse(user.metadata && user.metadata.creationTime);
+  return !Number.isNaN(createdAtMs) && (Date.now() - createdAtMs) <= NEW_USER_WINDOW_DAYS * MS_PER_DAY;
+}
+
+/** Builds the suggestion rows with DOM APIs (titles are never parsed as HTML). */
+function renderWelcomeList(){
+  const list = document.getElementById('welcomeList');
+  if(!list) return;
+  const lang = currentUiLanguage();
+  list.replaceChildren(...WELCOME_SUGGESTIONS.map(suggestion => {
+    const item = document.createElement('li');
+    item.className = 'welcome-item';
+
+    const title = document.createElement('span');
+    title.className = 'welcome-item-title';
+    title.textContent = suggestion.title[lang] || suggestion.title.ar;
+
+    const link = document.createElement('a');
+    link.className = 'btn btn-primary btn-sm';
+    link.href = shareUrlFor(encodeURIComponent(suggestion.shareId));
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = WELCOME_OPEN_LABEL[lang];
+
+    item.append(title, link);
+    return item;
+  }));
+}
+
+function openWelcomeModal(){
+  renderWelcomeList();
+  document.getElementById('welcomeModalBackdrop').classList.add('show');
+}
+function closeWelcomeModal(){
+  document.getElementById('welcomeModalBackdrop').classList.remove('show');
+}
+document.addEventListener('keydown', (event) => { if(event.key === 'Escape') closeWelcomeModal(); });
+
+/** Shows the welcome dialog once for a new, verified user. Never blocks the dashboard on failure. */
+async function maybeShowWelcome(user){
+  if(WELCOME_SUGGESTIONS.length === 0 || !isRecentlyCreated(user)) return;
+  try{
+    const userRef = doc(db, 'users', user.uid);
+    const snapshot = await getDoc(userRef);
+    if(snapshot.exists() && snapshot.data()[WELCOME_FLAG_FIELD]) return;
+    await setDoc(userRef, { [WELCOME_FLAG_FIELD]: true }, { merge: true }); // mark first: never shown twice
+    openWelcomeModal();
+  }catch(err){
+    console.error('Welcome dialog check failed:', err);
+  }
+}
+
+/* ============================================================
    i18n
    ============================================================ */
 setDynamicTranslationHook(() => {
   updateTopbarTitle();
   renderLinks();
+  renderWelcomeList();
   if(currentUser){ updateUserRow(currentUser); }
   if(activePlayerLink){
     renderTimeNotes(activePlayerLink);
@@ -1548,4 +1632,5 @@ Object.assign(window, {
   resendVerification, checkVerification, verifyExitApp,
   importPlaylist,
   closeDeleteFolderModal, confirmDeleteFolder,
+  closeWelcomeModal,
 });

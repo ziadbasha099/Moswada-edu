@@ -394,6 +394,35 @@
   </div>
 </div>
 
+<!-- ======================================================================
+     WELCOME DIALOG — يظهر مرة واحدة للمستخدم الجديد (المنطق والاقتراحات
+     في dashboard.js → WELCOME_SUGGESTIONS)
+     ====================================================================== -->
+<style>
+  .welcome-intro{ color:var(--on-surface-variant); font-size:14.5px; line-height:24px; }
+  .welcome-list{ list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .welcome-item{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--r-md);
+    background:var(--surface-low); border:1px solid var(--outline-variant); }
+  .welcome-item-title{ flex:1; min-width:0; font-weight:700; font-size:14.5px; }
+</style>
+<div class="modal-backdrop" id="welcomeModalBackdrop" onclick="if(event.target===this) closeWelcomeModal()">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <h2 data-en="Welcome to Moswada 👋" data-ar="أهلاً بك في مسودة 👋"></h2>
+      <button class="btn-icon" onclick="closeWelcomeModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="welcome-intro" data-en="Glad you're here! Here are a few suggestions to start with — feel free to skip them." data-ar="سعداء بانضمامك! هذه بعض الاقتراحات لتبدأ بها — يمكنك تجاهلها في أي وقت."></p>
+      <ul class="welcome-list" id="welcomeList"></ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeWelcomeModal()" data-en="Skip" data-ar="تجاهل"></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <datalist id="existingTags"></datalist>
 <!-- YouTube IFrame API is now loaded from inside dashboard.js, right after
