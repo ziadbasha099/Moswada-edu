@@ -23,8 +23,9 @@
   • CSS <br>
   • Firebase <br>
   • reCAPCHA <br>
-  • Vercel 
+  • Vercel <br>
   [![My Skills](https://skillicons.dev/icons?i=html,css,js,firebase)](https://skillicons.dev)
+
 </p>
 <H2>SOCIAL MEDIA :</H2>
 <p>
