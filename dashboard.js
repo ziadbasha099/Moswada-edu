@@ -44,13 +44,13 @@ const MAX_LINKS_PER_USER = 200;
    ============================================================ */
 const WELCOME_SUGGESTIONS = [
   { shareId: '43630afd-2065-4e66-8c65-6111e0249ccd', title: { ar: 'كيف تنظم وقتك', en: 'How to organize your time' } },
-  { shareId: '59677794-9f37-4500-a9f1-3aa490d09950', title: { ar: 'التعلم الفعال وتقنيات المذاكرة', en: 'Effective learning and study techniques' } },
-  // { shareId: '', title: { ar: '', en: '' } },
+  // { shareId: 'ضع-المعرّف-هنا', title: { ar: 'العنوان', en: 'Title' } },
 ];
 
 const NEW_USER_WINDOW_DAYS = 7;            // الحساب الأحدث من هذه المدة يُعتبر "جديداً"
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const WELCOME_FLAG_FIELD = 'welcomeSeen';  // حقل في users/{uid} يمنع تكرار الرسالة
+const WELCOME_QUERY_PARAM = 'welcome'; // ?welcome=1 → manual re-open (from Settings)
 const WELCOME_OPEN_LABEL = { ar: 'فتح', en: 'Open' };
 
 /* ============================================================
@@ -1588,7 +1588,19 @@ function closeWelcomeModal(){
 document.addEventListener('keydown', (event) => { if(event.key === 'Escape') closeWelcomeModal(); });
 
 /** Shows the welcome dialog once for a new, verified user. Never blocks the dashboard on failure. */
+/** True (once) when the page was opened with ?welcome=1; the param is removed so a refresh won't re-open it. */
+function consumeWelcomeRequest(){
+  const params = new URLSearchParams(window.location.search);
+  if(!params.has(WELCOME_QUERY_PARAM)) return false;
+  params.delete(WELCOME_QUERY_PARAM);
+  const query = params.toString();
+  history.replaceState(null, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
+  return true;
+}
+
 async function maybeShowWelcome(user){
+  // Manual request from Settings: always show, regardless of account age or welcomeSeen.
+  if(consumeWelcomeRequest()){ openWelcomeModal(); return; }
   if(WELCOME_SUGGESTIONS.length === 0 || !isRecentlyCreated(user)) return;
   try{
     const userRef = doc(db, 'users', user.uid);
