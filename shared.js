@@ -12,7 +12,7 @@
    in auth.js and dashboard.js instead.
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 import { firebaseConfig, RECAPTCHA_V3_SITE_KEY } from "./firebase-config.js";
@@ -38,6 +38,19 @@ if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
 export const auth = getAuth(fbApp);
 export const db = getFirestore(fbApp);
 export const googleProvider = new GoogleAuthProvider();
+
+/* علامة خفيفة ومتزامنة في localStorage تخلّي index.html يحوّل المستخدم
+   المسجّل فوراً قبل رسم الصفحة الرئيسية. مجرد تلميح UX — الحماية
+   الحقيقية في Firebase Auth و firestore.rules. */
+export const SESSION_FLAG_KEY = 'moswada-has-session';
+onAuthStateChanged(auth, (user) => {
+  try {
+    if (user) localStorage.setItem(SESSION_FLAG_KEY, '1');
+    else localStorage.removeItem(SESSION_FLAG_KEY);
+  } catch (err) {
+    console.error('Could not update session hint:', err);
+  }
+});
 
 /* ============================================================
    THEME — light / dark / system, persisted across every page

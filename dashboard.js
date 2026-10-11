@@ -27,7 +27,7 @@ import {
   getCountFromServer, runTransaction, writeBatch, increment,
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
+import { auth, db, SESSION_FLAG_KEY, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 
 // الحد الأقصى لعدد الروابط لكل حساب — يجب أن يطابق القيمة (200) المكتوبة
@@ -177,6 +177,29 @@ async function refreshAuthToken(user){
 }
 
 /* ------------------------------------------------------------
+   BAN CHECK — كان بيتم في auth.js قبل الدخول. بعد التحويل الفوري
+   من الصفحة الرئيسية بقى بيتم هنا في الخلفية بدون ما يعطّل الواجهة.
+   لو فشل الاتصال بنكمل (fail-open) والـ firestore.rules هي الحماية الفعلية.
+   ------------------------------------------------------------ */
+async function enforceNotBanned(user){
+  try {
+    // نفس مفتاح auth.js بالظبط (user.email كما هو)، وبنجرّب النسخة lowercase كمان لو مختلفة.
+    const emailKeys = [...new Set([user.email, (user.email || '').toLowerCase()].filter(Boolean))];
+    const checks = [
+      getDoc(doc(db, 'bannedUsers', user.uid)),
+      ...emailKeys.map(emailKey => getDoc(doc(db, 'bannedEmails', emailKey))),
+    ];
+    const snaps = await Promise.all(checks);
+    if(snaps.some(snap => snap.exists())){
+      stopListening();
+      await signOut(auth); // يشغّل فرع "no user" ويحوّل لـ index.html
+    }
+  } catch (err) {
+    console.error('Ban check failed:', err);
+  }
+}
+
+/* ------------------------------------------------------------
    ROUTE GUARD — this page is only for signed-in users. A visitor
    with no session gets sent straight back to the landing/auth
    page. A first-time arrival (coming from sign-in) shows the
@@ -208,6 +231,7 @@ onAuthStateChanged(auth, async (user) => {
     stopListening();
     startListening(user.uid);
     updateTopbarTitle();
+    enforceNotBanned(user); // في الخلفية بدون await
     if(!hasEnteredOnce){
       hasEnteredOnce = true;
       document.getElementById('app').classList.remove('hidden');
@@ -217,6 +241,7 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     stopListening();
+    try { localStorage.removeItem(SESSION_FLAG_KEY); } catch (err) { console.error(err); } // امنع حلقة التحويل
     window.location.href = 'index.html';
   }
 });
