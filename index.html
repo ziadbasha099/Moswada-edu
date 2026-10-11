@@ -24,6 +24,19 @@
 <link rel="icon" type="image/svg+xml" href="moswada logo home.jpg">
 <link rel="apple-touch-icon" sizes="180x180" href="moswada logo home.jpg">
 
+<script>
+  /* تحويل فوري للمستخدم المسجّل قبل رسم الصفحة الرئيسية (علامة UX فقط) */
+  (function redirectReturningUser() {
+    try {
+      if (localStorage.getItem('moswada-has-session') === '1') {
+        location.replace('app.html');
+      }
+    } catch (err) {
+      console.error('Session pre-check failed:', err);
+    }
+  })();
+</script>
+  
 <!-- ربط ملف الـ CSS الخارجي -->
 <link rel="stylesheet" href="style.css">
 <!-- تحديث شكل الصفحة الرئيسية ليتوافق مع التصميم الجديد (أزرار،
