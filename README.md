@@ -1,3 +1,4 @@
+<img width="1241" height="1754" alt="moswada-edu - user journey sitemap" src="https://github.com/user-attachments/assets/217f1029-a976-43f8-9707-b2ada2bf7c7e" />
 # Moswada-edu
 <H2>FEATURES :</H2>
 <p>
