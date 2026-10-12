@@ -185,6 +185,42 @@ function resetLoginLockout(){
   currentLockoutMs = 4000;
 }
 
+/* ------------------------------------------------------------
+   PASSWORD VISIBILITY TOGGLE (eye icon inside the password field)
+   ------------------------------------------------------------ */
+const PASSWORD_INPUT_ID = 'authPassword';
+const PASSWORD_TOGGLE_LABELS = {
+  en: { show: 'Show password', hide: 'Hide password' },
+  ar: { show: 'إظهار كلمة المرور', hide: 'إخفاء كلمة المرور' },
+};
+
+/** Returns the toggle label for the current page language (defaults to Arabic like the UI). */
+function getPasswordToggleLabel(isVisible){
+  const language = document.documentElement.lang === 'en' ? 'en' : 'ar';
+  return PASSWORD_TOGGLE_LABELS[language][isVisible ? 'hide' : 'show'];
+}
+
+/** Shows or hides the typed password and syncs icon, tooltip and ARIA state. */
+function setPasswordVisibility(shouldShow){
+  const input = document.getElementById(PASSWORD_INPUT_ID);
+  const toggleBtn = document.getElementById('passwordToggleBtn');
+  if(!input || !toggleBtn) return;
+  input.type = shouldShow ? 'text' : 'password';
+  document.getElementById('eyeIconShow').classList.toggle('hidden', shouldShow);
+  document.getElementById('eyeIconHide').classList.toggle('hidden', !shouldShow);
+  const label = getPasswordToggleLabel(shouldShow);
+  toggleBtn.title = label;
+  toggleBtn.setAttribute('aria-label', label);
+  toggleBtn.setAttribute('aria-pressed', String(shouldShow));
+}
+
+/** Click handler: flips between hidden and visible. */
+function togglePasswordVisibility(){
+  const input = document.getElementById(PASSWORD_INPUT_ID);
+  if(!input) return;
+  setPasswordVisibility(input.type === 'password');
+}
+
 function showAuth(mode){
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('auth').classList.remove('hidden');
@@ -208,6 +244,7 @@ function switchAuthMode(mode){
   document.getElementById('authNameField').classList.toggle('hidden', !isSignUp);
   document.getElementById('authName').required = isSignUp;
   document.getElementById('authPassword').setAttribute('autocomplete', isSignUp ? 'new-password' : 'current-password');
+  setPasswordVisibility(false);
   document.getElementById('authSubmitBtn').textContent = isSignUp ? t('signUpFree') : t('signIn');
   document.getElementById('forgotPasswordRow').classList.toggle('hidden', isSignUp);
    
@@ -385,4 +422,5 @@ setDynamicTranslationHook(() => {
    ============================================================ */
 Object.assign(window, {
   showAuth, backToLanding, switchAuthMode, handleAuthSubmit, handleGoogleSignIn, handleForgotPassword,
+  togglePasswordVisibility,
 });

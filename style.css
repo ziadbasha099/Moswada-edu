@@ -387,6 +387,19 @@ input, textarea, select{font-family:inherit; color:inherit;}
 }
 .auth-form{ margin-top:22px; display:flex; flex-direction:column; gap:14px; }
 .auth-form .field input{ height:44px; padding:0 14px; }
+/* Password field with show/hide eye button inside the input */
+.password-input-wrap{ position:relative; display:flex; }
+.password-input-wrap input{ width:100%; }
+.auth-form .field .password-input-wrap input{ padding-inline-end:44px; }
+.password-toggle-btn{
+  position:absolute; inset-block:0; inset-inline-end:6px; margin:auto 0;
+  width:32px; height:32px; padding:0; border:none; border-radius:var(--r-full);
+  background:transparent; color:var(--on-surface-variant); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:background var(--transition), color var(--transition);
+}
+.password-toggle-btn:hover{ background:var(--surface-high); color:var(--primary); }
+.password-toggle-btn .icon{ width:18px; height:18px; }
 .auth-form button[type="submit"]{ margin-top:6px; width:100%; }
 .auth-form button[type="submit"]:disabled{ opacity:.65; cursor:not-allowed; }
 .auth-divider{ display:flex; align-items:center; gap:10px; margin:22px 0; color:var(--on-surface-variant); font-size:12.5px; font-family:var(--font-label); }
