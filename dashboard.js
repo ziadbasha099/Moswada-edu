@@ -45,6 +45,7 @@ const MAX_LINKS_PER_USER = 200;
 const WELCOME_SUGGESTIONS = [
   { shareId: '43630afd-2065-4e66-8c65-6111e0249ccd', title: { ar: 'كيف تنظم وقتك', en: 'How to organize your time' } },
   { shareId: '59677794-9f37-4500-a9f1-3aa490d09950', title: { ar: 'التعلم الفعال وتقنيات المذاكرة', en: 'Effective learning and study techniques' } },
+  { shareId: '4ba5b5b9-7703-47d7-8754-d6326be164ac', title: { ar: 'تعلم أساسيات البرمجة من الصفر', en: 'Learn the basics of programming from scratch' } },
   // { shareId: 'ضع-المعرّف-هنا', title: { ar: 'العنوان', en: 'Title' } },
 ];
 
