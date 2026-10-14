@@ -413,7 +413,11 @@ setDynamicTranslationHook(() => {
     switchAuthMode(authMode);
   }
 });
-
+/* For open guests page*/
+const requestedAuthMode = new URLSearchParams(location.search).get('auth');
+if (requestedAuthMode === 'signin' || requestedAuthMode === 'signup') {
+  showAuth(requestedAuthMode);
+}
 /* ============================================================
    Expose functions used as inline HTML event handlers (onclick=...)
    Required because this file is loaded as an ES module — module
