@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6DK191VFN4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6DK191VFN4');
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>مسودة التعليمية (moswada-edu) - جرّب بدون حساب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="moswada logo home.jpg">
+<link rel="apple-touch-icon" sizes="180x180" href="moswada logo home.jpg">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Local-storage notice shown at the top of the content area. */
+  .guest-notice{
+    display:flex; align-items:flex-start; gap:12px; padding:14px 16px; margin-bottom:20px;
+    border-radius:var(--r-md); background:var(--secondary-container); color:var(--on-secondary-container);
+    border:1px solid var(--outline-variant); font-size:14px; line-height:22px; font-weight:600;
+  }
+  .guest-notice svg{ width:20px; height:20px; flex-shrink:0; margin-top:1px; }
+  .guest-signin-btn{ width:100%; justify-content:center; }
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ======================================================================
+     GUEST DASHBOARD — same layout as app.html, but nothing is sent to
+     Firebase: folders/links live in this browser's localStorage only.
+     ====================================================================== -->
+<div id="app">
+  <div class="sidebar-scrim" id="scrim" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo-mark" aria-hidden="true">
+        <img src="moswada-logo.png" alt="Moswada logo">
+      </span>
+      <button class="btn-icon sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="sidebar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="sidebarSearch" data-en-placeholder="Quick search..." data-ar-placeholder="بحث سريع..." placeholder="Quick search..." oninput="handleSearch(this.value)">
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label" data-en="Library" data-ar="المكتبة"></div>
+      <div class="nav-item active" data-folder="all" onclick="selectFolder('all')">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+        <span data-en="All Links" data-ar="كل الروابط"></span> <span class="count" id="countAll">0</span>
+      </div>
+      <div class="nav-item" data-folder="videos" onclick="selectFolder('videos')">
+        <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span data-en="Videos" data-ar="الفيديوهات"></span> <span class="count" id="countVideos">0</span>
+      </div>
+      <a class="nav-item" href="downloads.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span data-en="Downloads" data-ar="التنزيلات"></span>
+      </a>
+      <!-- Games require an account: send guests to the sign-in page -->
+      <a class="nav-item" href="index.html?auth=signin">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 7H7a5 5 0 00-4.8 6.5l.6 1.9A3 3 0 005.6 18h.1a3 3 0 002.7-1.7L9 15h6l.6 1.3A3 3 0 0018.3 18h.1a3 3 0 002.8-3.6l-.6-1.9A5 5 0 0017 7z"/>
+          <path d="M8 10.5v3M6.5 12h3"/>
+          <circle cx="15" cy="10.5" r="0.9" fill="currentColor" stroke="none"/>
+          <circle cx="17.5" cy="13" r="0.9" fill="currentColor" stroke="none"/>
+        </svg>
+        <span data-en="Educational games" data-ar="الألعاب التعليمية"></span>
+      </a>
+    </div>
+
+    <div class="nav-group" style="flex:1;">
+      <div class="nav-group-label" data-en="Folders" data-ar="المجلدات"></div>
+      <div id="folderNav"></div>
+      <button class="add-folder-btn" onclick="openFolderModal()" style="margin-top:6px;">
+        <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-en="New folder" data-ar="مجلد جديد"></span>
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="theme-toggle-row">
+        <span data-en="Dark mode" data-ar="الوضع الداكن"></span>
+        <button class="switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+      </div>
+      <!-- Where the user's name is in app.html: a sign-in button for guests -->
+      <div class="user-row">
+        <a class="btn btn-primary btn-sm guest-signin-btn" href="index.html?auth=signin" data-en="Sign in" data-ar="تسجيل الدخول"></a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="btn-icon hamburger" onclick="openSidebar()" aria-label="Open menu">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h1 id="topbarTitle">All Links</h1>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="topbarSearch" data-en-placeholder="Search your links..." data-ar-placeholder="ابحث في روابطك..." placeholder="Search your links..." oninput="handleSearch(this.value)">
+      </div>
+      <div class="topbar-actions">
+        <button id="lang-btn" aria-label="Switch language">
+          <svg class="lang-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>
+          </svg>
+          <span class="lang-btn-label">العربية</span>
+        </button>
+        <a class="btn-icon" href="downloads.html" data-en-title="Downloads" data-ar-title="التنزيلات" title="Downloads" aria-label="Downloads">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </a>
+        <a class="btn-icon" href="index.html?auth=signin" data-en-title="Educational games (sign in required)" data-ar-title="الألعاب التعليمية (تتطلب تسجيل الدخول)" title="Educational games" aria-label="Educational games">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 7H7a5 5 0 00-4.8 6.5l.6 1.9A3 3 0 005.6 18h.1a3 3 0 002.7-1.7L9 15h6l.6 1.3A3 3 0 0018.3 18h.1a3 3 0 002.8-3.6l-.6-1.9A5 5 0 0017 7z"/>
+            <path d="M8 10.5v3M6.5 12h3"/>
+            <circle cx="15" cy="10.5" r="0.9" fill="currentColor" stroke="none"/>
+            <circle cx="17.5" cy="13" r="0.9" fill="currentColor" stroke="none"/>
+          </svg>
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="openLinkModal()">
+          <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span data-en="Add link" data-ar="إضافة رابط"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="guest-notice" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span data-en="Your videos are saved on this device only. So you don't lose them, sign in. Features like importing playlists and sharing videos are not available in guest mode." data-ar="الفيديوهات تُخزَّن على هذا الجهاز فقط. حتى لا تفقد فيديوهاتك، قم بتسجيل الدخول. ميزات مثل استيراد قوائم التشغيل ومشاركة الفيديوهات غير متاحة في وضع الضيف."></span>
+      </div>
+      <div class="content-head">
+        <div>
+          <p id="resultCount">0 saved links</p>
+        </div>
+      </div>
+      <div class="filter-chips" id="tagChips"></div>
+      <div class="link-grid" id="linkGrid"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+        <h3 data-en="Nothing here yet" data-ar="لا يوجد شيء هنا بعد"></h3>
+        <p data-en="Try a different folder, or add your first link to get started." data-ar="جرّب مجلداً آخر، أو أضف رابطك الأول للبدء."></p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ADD LINK MODAL -->
+<div class="modal-backdrop" id="linkModalBackdrop" onclick="if(event.target===this) closeLinkModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="linkModalTitle">Add a link</h2>
+      <button class="btn-icon" onclick="closeLinkModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fUrl" data-en="URL" data-ar="الرابط"></label>
+        <input type="url" id="fUrl" placeholder="https://example.com/article" oninput="autoFillTitle()">
+        <span class="hint" data-en="Paste any link — articles, videos or pages. YouTube links play in-app." data-ar="الصق أي رابط — مقالات أو فيديوهات أو صفحات. روابط يوتيوب تُشغَّل داخل التطبيق."></span>
+      </div>
+      <div class="field">
+        <label for="fTitle" data-en="Title" data-ar="العنوان"></label>
+        <input type="text" id="fTitle" data-en-placeholder="Give it a clear title" data-ar-placeholder="اكتب عنواناً واضحاً" placeholder="Give it a clear title">
+      </div>
+      <div class="field">
+        <label for="fFolder" data-en="Folder" data-ar="المجلد"></label>
+        <select id="fFolder"></select>
+      </div>
+      <div class="field">
+        <label for="fTagInput" data-en="Tags" data-ar="الوسوم"></label>
+        <div class="tag-input-row" id="tagRow">
+          <input type="text" id="fTagInput" list="existingTags" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handleTagKey(event)">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fNotes" data-en="Notes" data-ar="الملاحظات"></label>
+        <textarea id="fNotes" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟" placeholder="Why did you save this? What's the takeaway?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLinkModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn btn-primary" onclick="saveLink()" data-en="Save link" data-ar="حفظ الرابط"></button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW FOLDER MODAL -->
+<div class="modal-backdrop" id="folderModalBackdrop" onclick="if(event.target===this) closeFolderModal()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h2 data-en="New folder" data-ar="مجلد جديد"></h2>
+      <button class="btn-icon" onclick="closeFolderModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="fFolderName" data-en="Folder name" data-ar="اسم المجلد"></label>
+        <input type="text" id="fFolderName" data-en-placeholder="e.g. Recipes" data-ar-placeholder="مثال: وصفات" placeholder="e.g. Recipes" onkeydown="if(event.key==='Enter') createFolder()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFolderModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn btn-primary" onclick="createFolder()" data-en="Create folder" data-ar="إنشاء المجلد"></button>
+    </div>
+  </div>
+</div>
+
+<!-- LINK DETAIL / NOTES MODAL (non-video) -->
+<div class="modal-backdrop" id="detailModalBackdrop" onclick="if(event.target===this) closeDetailModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailTitle">Link</h2>
+      <button class="btn-icon" onclick="closeDetailModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="thumb" style="border-radius:var(--r-md);">
+        <img id="detailThumb" src="" alt="">
+      </div>
+      <p class="card-domain" id="detailDomain"></p>
+      <div class="card-tags" id="detailTags"></div>
+      <div class="field">
+        <label data-en="Notes" data-ar="الملاحظات"></label>
+        <textarea id="detailNotes" rows="4" onblur="saveDetailNotes()" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟"></textarea>
+        <span class="hint" data-en="Saves automatically when you click away." data-ar="تُحفظ تلقائياً عند الخروج من الحقل."></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="deleteLinkBtn" data-en="Remove" data-ar="إزالة"></button>
+      <a class="btn btn-primary" id="detailOpenBtn" href="#" target="_blank" rel="noopener noreferrer" data-en="Open original" data-ar="فتح الأصلي"></a>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEO PLAYER MODAL (in-app, never redirects out) -->
+<div class="modal-backdrop" id="playerModalBackdrop" onclick="if(event.target===this) closePlayerModal()">
+  <div class="modal player-modal">
+    <div class="player-video-container" id="playerVideoContainer">
+      <div class="player-wrap" id="playerWrap"></div>
+
+      <div class="player-lock-overlay" id="playerLockOverlay" onclick="handleLockOverlayTap()"></div>
+
+      <button type="button" class="player-zoom-btn" id="playerZoomBtn" onclick="toggleVideoZoom()" data-en-title="Fullscreen" data-ar-title="ملء الشاشة" title="Fullscreen" aria-label="Toggle fullscreen">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/>
+        </svg>
+      </button>
+
+      <button type="button" class="player-lock-btn" id="playerLockBtn" onclick="toggleVideoLock(event)" data-en-title="Lock controls" data-ar-title="قفل أزرار التحكم" title="Lock controls" aria-label="Lock controls">
+        <svg class="icon" id="lockIconOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.87-1"/>
+        </svg>
+        <svg class="icon hidden" id="lockIconClosed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>
+        </svg>
+      </button>
+    </div>
+    <div class="player-info">
+      <h2 id="playerTitle">Video</h2>
+      <p class="card-domain" id="playerDomain"></p>
+      <span class="player-notes-label" data-en="Notes" data-ar="الملاحظات"></span>
+      <textarea class="player-notes" id="playerNotes" rows="3" onblur="savePlayerNotes()" data-en-placeholder="Why did you save this? What's the takeaway?" data-ar-placeholder="لماذا حفظت هذا؟ ما الفائدة منه؟"></textarea>
+      <span class="hint" data-en="Saves automatically when you click away." data-ar="تُحفظ تلقائياً عند الخروج من الحقل."></span>
+
+      <div class="time-notes-section">
+        <span class="player-notes-label" data-en="Timestamped notes" data-ar="ملاحظات موقوتة"></span>
+        <p class="hint" data-en="Pin a note to a moment in the video." data-ar="ثبّت ملاحظة عند لحظة معينة في الفيديو."></p>
+        <div class="time-note-add-row">
+          <input type="text" id="timeNoteTime" class="time-note-time-input" placeholder="0:00" inputmode="numeric" aria-label="Timestamp">
+          <button type="button" class="btn btn-ghost btn-sm" id="useCurrentTimeBtn" onclick="useCurrentTime()" data-en="Use current time" data-ar="استخدام الوقت الحالي"></button>
+        </div>
+        <div class="time-note-add-row">
+          <input type="text" id="timeNoteText" data-en-placeholder="Add a note at this moment..." data-ar-placeholder="أضف ملاحظة عند هذه اللحظة..." placeholder="Add a note at this moment..." onkeydown="if(event.key==='Enter') addTimeNote()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="addTimeNote()" data-en="Add" data-ar="إضافة"></button>
+        </div>
+        <div class="time-notes-list" id="timeNotesList"></div>
+      </div>
+
+      <div class="player-tags-section">
+        <span class="player-notes-label" data-en="Tags" data-ar="الوسوم"></span>
+        <div class="tag-input-row" id="playerTagRow">
+          <input type="text" id="playerTagInput" list="existingTags" data-en-placeholder="Type a tag and press Enter" data-ar-placeholder="اكتب وسماً واضغط Enter" placeholder="Type a tag and press Enter" onkeydown="handlePlayerTagKey(event)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="deleteVideoBtn" data-en="Remove" data-ar="إزالة"></button>
+      <button class="btn btn-primary" onclick="closePlayerModal()" data-en="Done" data-ar="تم"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating folder menu (⋮) — delete only for guests (sharing needs an account) -->
+<div class="folder-menu hidden" id="folderMenu" role="menu">
+  <button type="button" class="folder-menu-item danger" role="menuitem" data-action="delete-folder">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
+    <span data-en="Delete folder" data-ar="حذف المجلد"></span>
+  </button>
+</div>
+
+<!-- DELETE FOLDER CONFIRMATION -->
+<div class="modal-backdrop" id="deleteFolderModalBackdrop" onclick="if(event.target===this) closeDeleteFolderModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 data-en="Delete this folder?" data-ar="حذف هذا المجلد؟"></h2>
+      <button class="btn-icon" onclick="closeDeleteFolderModal()" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body"><p id="deleteFolderBody"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteFolderModal()" data-en="Cancel" data-ar="إلغاء"></button>
+      <button class="btn settings-delete-btn" id="confirmDeleteFolderBtn" onclick="confirmDeleteFolder()" data-en="Yes, delete" data-ar="نعم، احذف"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<datalist id="existingTags"></datalist>
+
+<!-- shared.js: theme, language and toast only. No Firestore is used on this page. -->
+<script type="module" src="shared.js"></script>
+<script type="module" src="guest.js"></script>
+
+</body>
+</html>
