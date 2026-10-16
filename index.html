@@ -42,6 +42,7 @@
 <!-- تحديث شكل الصفحة الرئيسية ليتوافق مع التصميم الجديد (أزرار،
      كروت، ألوان) بدون التأثير على شاشات لوحة التحكم أو الإعدادات -->
 <link rel="stylesheet" href="landing-refresh.css">
+<link rel="stylesheet" href="features-carousel.css">
 
 <!-- صورة المعاينة لفيسبوك، لينكد إن، وواتساب -->
 <meta property="og:image" content="https://moswada-edu.vercel.app/info-photo.png">
@@ -131,7 +132,7 @@
           <span class="lang-btn-label">العربية</span>
         </button>
 
-        <button class="btn btn-primary" onclick="location.href='guest.html'"  data-en="Study Now" data-ar="ابدأ الدراسة"></button>
+        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Study Now" data-ar="ابدأ الدراسة"></button>
       </div>
     </div>
   </header>
@@ -150,7 +151,7 @@
       <h1 class="serif-heading" data-en="Study without distraction. Remember more." data-ar="ادرس بلا تشتّت، وتذكّر أكثر."></h1>
       <p data-en="Get books, summaries, and mind maps, watch your study videos right inside the site, and browse a library of links that help you through university or lectures — all in one calm place." data-ar="احصل على كتب وملخصات وخرائط ذهنية، وشاهد فيديوهاتك التعليمية داخل الموقع مباشرة، إلى جانب مكتبة روابط تفيدك في الجامعة أو أثناء الشرح — كل هذا في مكان هادئ واحد."></p>
       <div class="hero-actions">
-        <button class="btn btn-primary" onclick="location.href='guest.html'" data-en="Start studying for free" data-ar="ابدأ الدراسة مجاناً"></button>
+        <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Start studying for free" data-ar="ابدأ الدراسة مجاناً"></button>
         <button class="btn btn-outline" onclick="location.href='downloads.html'" data-en="Books and PDFs" data-ar="الكتب والملخصات"></button>
       </div>
       <p class="hero-note" data-en="Get the books and summaries • Study without distraction" data-ar="احصل على الكتب والملخصات • ادرس بدون تشتيت"></p>
@@ -228,6 +229,82 @@
     </div>
   </section>
 
+  <section class="section fc-section" id="tour" aria-labelledby="fcHeading">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-en="A quick look" data-ar="لمحة سريعة"></span>
+      <h2 class="serif-heading" id="fcHeading" data-en="See Moswada in action" data-ar="شاهد مسودة وهي تعمل"></h2>
+      <p data-en="Swipe through the features that keep your study calm and organized." data-ar="اسحب بين المزايا التي تجعل دراستك هادئة ومنظّمة."></p>
+    </div>
+  </div>
+
+  <div class="fc-carousel" id="fcCarousel">
+    <ul class="fc-track" id="fcTrack" tabindex="0" aria-label="Moswada features">
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-1.jpg" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">01</span>
+          <p data-en="Organize your videos in one calm place, free of distraction." data-ar="نظّم فيديوهاتك في مكان واحد هادئ بدون تشتت."></p>
+        </div>
+      </li>
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-2.jpg" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">02</span>
+          <p data-en="Watch your videos right here and add your notes on them." data-ar="شاهد فيديوهاتك مباشرة من هنا وضع ملاحظاتك عليها."></p>
+        </div>
+      </li>
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-3.jpg" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">03</span>
+          <p data-en="Flashcards to review your new words and terms." data-ar="بطاقات تعليمية لمراجعة الكلمات والمصطلحات الجديدة لديك."></p>
+        </div>
+      </li>
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-4.jpg" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">04</span>
+          <p data-en="Instead of copying each video link one by one, import a whole playlist at once." data-ar="بدلًا من نسخ رابط كل فيديو على حدة يمكنك استيراد كل الفيديوهات في قائمة التشغيل مباشرة مرة واحدة."></p>
+        </div>
+      </li>
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-5.jpg" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">05</span>
+          <p data-en="Summaries for every Thanaweya Amma subject, plus a library of helpful educational sites for all university students." data-ar="ملخصات لكل المواد للصف الثالث الثانوي، ومكتبة روابط للمواقع التعليمية المفيدة لكل الطلاب الجامعيين."></p>
+        </div>
+      </li>
+
+      <li class="fc-card">
+        <figure class="fc-figure"><img src="screen-6.png" alt="" loading="lazy" draggable="false"></figure>
+        <div class="fc-body">
+          <span class="fc-step">06</span>
+          <p data-en="Share videos with your friends using the folder sharing feature." data-ar="شارك الفيديوهات مع أصدقائك عن طريق ميزة مشاركة المجلدات."></p>
+        </div>
+      </li>
+
+    </ul>
+
+    <div class="container fc-controls">
+      <div class="fc-dots" id="fcDots" role="tablist" aria-label="Slides"></div>
+      <div class="fc-arrows">
+        <button type="button" class="fc-arrow" id="fcPrev" data-en-title="Previous" data-ar-title="السابق" title="Previous" aria-label="Previous">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button type="button" class="fc-arrow" id="fcNext" data-en-title="Next" data-ar-title="التالي" title="Next" aria-label="Next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
   <section class="section showcase" id="showcase">
     <div class="container showcase-inner">
       <div class="showcase-copy">
@@ -281,7 +358,7 @@
       <span class="kicker kicker--on-accent" data-en="Don't miss out" data-ar="لا تفوّت عليك"></span>
       <h2 class="serif-heading" data-en="Don't miss out on any of this — start free, right now" data-ar="لا تفوت عليك كل هذه الأشياء، ابدأ مجاناً الآن"></h2>
       <p data-en="Free to start. Your first folder is one click away." data-ar="مجاني للبدء. مجلدك الأول على بُعد نقرة واحدة."></p>
-      <button class="btn btn-primary" onclick="location.href='guest.html'" data-en="Get started free" data-ar="ابدأ مجاناً الآن"></button>
+      <button class="btn btn-primary" onclick="showAuth('signup')" data-en="Get started free" data-ar="ابدأ مجاناً الآن"></button>
     </div>
   </section>
 
@@ -410,6 +487,7 @@
 <!-- ربط ملفات الـ JavaScript الخارجية: shared.js أولاً (Firebase + i18n) ثم auth.js -->
 <script type="module" src="shared.js"></script>
 <script type="module" src="auth.js"></script>
+<script type="module" src="features-carousel.js"></script>
 
 
 </body>

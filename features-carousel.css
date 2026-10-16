@@ -1,0 +1,129 @@
+/* ==================================================================
+   FEATURES CAROUSEL — horizontal scroll-snap cards (image + caption)
+   Uses the tokens already defined in style.css / landing-refresh.css,
+   so light/dark mode and RTL/LTR work with no extra rules.
+   ================================================================== */
+
+.fc-section{ padding-bottom:72px; overflow:hidden; }
+
+.fc-carousel{ position:relative; }
+
+/* Track: native scrolling + snapping (works with touch, trackpad, keyboard). */
+.fc-track{
+  --fc-card-width:min(84vw, 400px);
+  --fc-gap:24px;
+  --fc-edge:max(24px, calc((100vw - 1232px) / 2 + 24px)); /* aligns first card with .container */
+
+  list-style:none;
+  display:flex;
+  gap:var(--fc-gap);
+  padding:12px var(--fc-edge) 28px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:var(--fc-edge);
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  cursor:grab;
+  outline:none;
+}
+.fc-track::-webkit-scrollbar{ display:none; }
+.fc-track.is-dragging{ cursor:grabbing; scroll-snap-type:none; scroll-behavior:auto; }
+.fc-track:focus-visible{ box-shadow:inset 0 0 0 2px var(--landing-accent); border-radius:var(--r-lg); }
+
+/* Card */
+.fc-card{
+  flex:0 0 var(--fc-card-width);
+  scroll-snap-align:start;
+  display:flex;
+  flex-direction:column;
+  background:var(--surface-lowest);
+  border:1px solid var(--outline-variant);
+  border-radius:1.25rem;
+  overflow:hidden;
+  box-shadow:var(--landing-card-shadow);
+  transition:transform 260ms cubic-bezier(.2,.8,.2,1), box-shadow 260ms ease;
+  user-select:none;
+}
+.fc-card:hover{ transform:translateY(-4px); box-shadow:var(--landing-card-shadow-hover); }
+
+/* Image area: fixed ratio so every card has identical dimensions. */
+.fc-figure{
+  margin:0;
+  aspect-ratio:4 / 3;
+  background:linear-gradient(135deg, var(--landing-accent-soft), var(--surface-container));
+  border-bottom:1px solid var(--outline-variant);
+  overflow:hidden;
+}
+.fc-figure img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:top center;   /* screenshots read best from the top */
+  pointer-events:none;
+}
+
+/* Caption: equal min-height keeps text blocks aligned across cards. */
+.fc-body{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:20px 22px 24px;
+  min-height:148px;
+}
+.fc-step{
+  align-self:flex-start;
+  font-family:var(--font-label);
+  font-weight:800;
+  font-size:12px;
+  letter-spacing:0.1em;
+  color:var(--landing-accent);
+  background:var(--landing-accent-soft);
+  padding:4px 12px;
+  border-radius:var(--r-full);
+}
+.fc-body p{
+  font-size:15.5px;
+  line-height:1.75;
+  font-weight:600;
+  color:var(--on-surface);
+}
+
+/* Controls */
+.fc-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.fc-dots{ display:flex; gap:8px; align-items:center; }
+.fc-dot{
+  width:8px; height:8px; padding:0; border:none; border-radius:var(--r-full);
+  background:var(--outline-variant);
+  transition:width 220ms ease, background 220ms ease;
+}
+.fc-dot.is-active{ width:26px; background:var(--landing-accent); }
+
+.fc-arrows{ display:flex; gap:10px; }
+.fc-arrow{
+  width:44px; height:44px; border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-lowest);
+  color:var(--landing-accent);
+  border:1.5px solid var(--outline-variant);
+  transition:background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+.fc-arrow svg{ width:20px; height:20px; }
+.fc-arrow:hover:not(:disabled){ background:var(--landing-accent-soft); border-color:var(--landing-accent); }
+.fc-arrow:disabled{ opacity:.35; cursor:not-allowed; }
+html[dir="rtl"] .fc-arrow svg{ transform:scaleX(-1); } /* arrows point the reading direction */
+
+@media (max-width: 640px){
+  .fc-track{ --fc-gap:16px; --fc-edge:20px; }
+  .fc-body{ min-height:0; padding:18px 18px 22px; }
+  .fc-body p{ font-size:15px; }
+  .fc-arrows{ display:none; } /* touch users swipe; dots remain */
+}
+
+@media (prefers-reduced-motion: reduce){
+  .fc-card, .fc-dot{ transition:none; }
+}
