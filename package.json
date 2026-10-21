@@ -1,0 +1,14 @@
+{
+  "name": "moswada-edu",
+  "private": true,
+  "description": "Moswada educational site: static pages + Vercel serverless functions in api/.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test",
+    "migrate:dry-run": "node scripts/migrate-downloads.mjs",
+    "migrate:apply": "node scripts/migrate-downloads.mjs --apply"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  }
+}
