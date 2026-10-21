@@ -50,7 +50,22 @@ service cloud.firestore {
           && !isBanned();
     }
 
+    /* أنواع التنزيلات المسموحة (تطابق DOWNLOAD_KINDS في الواجهة). */
+    function isValidDownloadKind(kind) {
+      return kind in ['summary', 'mindmap', 'book', 'files', 'website'];
+    }
+
+    /* التنزيلات: قراءة عامة، وكتابة للأدمن فقط. الحقل kind اختياري الآن
+       (الأدمن القديم لا يرسله)، لكن إن وُجد يجب أن يكون من القائمة. */
     match /downloads/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && (!('kind' in request.resource.data) || isValidDownloadKind(request.resource.data.kind));
+      allow delete: if isAdmin();
+    }
+
+    /* مجلدات التنزيلات (id = slug): قراءة عامة، وكتابة للأدمن فقط. */
+    match /downloadFolders/{folderId} {
       allow read: if true;
       allow write: if isAdmin();
     }
