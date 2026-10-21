@@ -1,41 +1,38 @@
 /* ============================================================
-   MOSWADA — Admin page
-   Real password protection via Firebase Authentication (not a
-   client-side password check). Only a signed-in admin user can
-   write to Firestore — enforce that with these security rules
-   in the Firebase console (Firestore → Rules):
+   MOSWADA — Admin page (downloads + download folders)
+   ------------------------------------------------------------
+   Real password protection via Firebase Authentication. The check
+   in this file only decides which UI to show; the actual protection
+   is the Firestore rules (isAdmin() on downloads/downloadFolders).
+   All validation/sanitising lives in download-kinds.js (tested).
 
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /downloads/{docId} {
-         allow read: if true;
-         allow write: if request.auth != null;
-       }
-     }
-   }
-
-   Create the admin's login (email + password) once, manually,
-   in Firebase console → Authentication → Users → Add user.
-   See README-Firebase-Setup.md for the full walkthrough.
+   Create the admin's login (email + password) once, manually, in
+   Firebase console → Authentication → Users → Add user.
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot,
+  getFirestore, collection, addDoc, updateDoc, setDoc, deleteDoc, doc, onSnapshot,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 import { firebaseConfig, DOWNLOADS_COLLECTION, RECAPTCHA_V3_SITE_KEY, ADMIN_EMAIL } from "./firebase-config.js";
+import {
+  DOWNLOAD_KINDS, KIND_KEYS, FOLDER_COLORS, FOLDER_COLOR_KEYS,
+  slugify, validateDownloadForm, buildDownloadFields, validateFolderForm
+} from "./download-kinds.js";
+
+const DOWNLOAD_FOLDERS_COLLECTION = "downloadFolders";
+const TOAST_DURATION_MS = 2200;
+const DEFAULT_FOLDER_COLOR = FOLDER_COLOR_KEYS[0];
+const FALLBACK_KIND_KEY = KIND_KEYS[0];
 
 const app = initializeApp(firebaseConfig);
 
-/* App Check (reCAPTCHA v3) — نفس الحماية المستخدمة في shared.js.
-   لوحة الأدمن أهم صفحة على الإطلاق لتفعيل الحماية دي عليها، لأنها
-   البوابة الوحيدة اللي بتكتب على مجموعة downloads العامة. راجع
-   التعليق في firebase-config.js لخطوات التفعيل من الـ Console. */
+/* App Check (reCAPTCHA v3) — same protection used in shared.js. See the
+   comment in firebase-config.js for the Console steps. */
 if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
   try {
     initializeAppCheck(app, {
@@ -50,290 +47,497 @@ if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("PASTE_")) {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const lang = localStorage.getItem("preferred-language") || "en";
+/* ---------------- Language ---------------- */
+const lang = localStorage.getItem("preferred-language") === "ar" ? "ar" : "en";
 const I18N = {
   en: {
     loginTitle: "Admin sign in", loginSub: "Sign in with the admin account to manage download links.",
     email: "Email", password: "Password", signIn: "Sign in",
     invalidLogin: "Incorrect email or password.",
-    dashTitle: "Manage downloads", signOut: "Sign out",
-    addTitle: "Add a download", addSub: "Give it a title and paste the MediaFire link — it appears on the downloads page instantly.",
-    fileTitle: "File title", folder: "Folder", newFolder: "+ New folder", url: "MediaFire link",
-    urlHint: "Only MediaFire links are accepted.", addBtn: "Add download",
-    onlyMediafire: "Please paste a valid MediaFire link (mediafire.com).",
-    missingTitle: "Give the file a title.", missingFolder: "Name the new folder, or pick an existing one.",
-    added: "Download added", removed: "Download removed", removeTitle: "Remove",
-    icon: "Icon", color: "Color",
-    editTitle: "Edit", saveChanges: "Save changes", cancel: "Cancel",
-    updated: "Download updated", editHeading: "Edit a download",
+    manageReports: "Manage reports", dashTitle: "Manage downloads", signOut: "Sign out",
+    tabItems: "Downloads", tabFolders: "Folders",
+    addTitle: "Add a download", editHeading: "Edit a download",
+    addSub: "Fill in the details — it appears on the downloads page.",
+    fileTitle: "File title", folder: "Folder", kind: "Type", chooseFolder: "Choose a folder…",
+    kindHint: "Website shows a \"Visit site\" button; every other type shows \"Download\".",
+    slug: "Page address (slug)", slugHint: "English letters, numbers and dashes only. Changing it later changes the page URL.",
+    description: "Description", descHint: "One or two sentences: what it is, what it covers, who it helps.",
+    tags: "Tags", tagsHint: "Separate with commas. Up to 8 tags.",
+    url: "Link", urlHint: "Any http(s) link (Mega, Google Drive, a website...).",
+    addBtn: "Add download", saveChanges: "Save changes", cancel: "Cancel", saving: "Saving…",
+    added: "Download added", updated: "Download updated", removed: "Download removed",
+    editTitle: "Edit", removeTitle: "Remove", confirmRemove: "Remove this download permanently?",
+    folderSub: "Each folder has its own color and appears as a card on the downloads page.",
+    addFolderTitle: "Add a folder", editFolderTitle: "Edit a folder",
+    folderName: "Folder name", folderSlugHint: "Cannot be changed after the folder is created.",
+    color: "Color", order: "Order", keywords: "Search keywords",
+    keywordsHint: "Phrases students search for, separated by commas. Up to 10.",
+    addFolderBtn: "Add folder", folderAdded: "Folder added", folderUpdated: "Folder updated",
+    folderRemoved: "Folder removed", confirmRemoveFolder: "Remove this folder?",
+    folderNotEmpty: "This folder still has downloads. Move or remove them first.",
+    itemsCount: "downloads", noFolder: "(no folder)",
+    saveFailed: "Could not save. Check your connection and try again.",
+    removeFailed: "Could not remove. Try again.",
+    errors: {
+      title: "Give the file a title.", titleTooLong: "The title is too long (120 characters max).",
+      folder: "Choose a folder.", kind: "Choose a type.",
+      slug: "The slug must use English letters, numbers and single dashes (e.g. physics-summary).",
+      slugTaken: "This slug is already used. Choose another one.",
+      description: "Write a short description.", descriptionTooLong: "The description is too long (400 characters max).",
+      tagsTooMany: "Use 8 tags at most.", tagTooLong: "A tag is too long (30 characters max).",
+      url: "Paste a valid http(s) link.",
+      folderName: "Give the folder a name.", folderNameTooLong: "The folder name is too long (60 characters max).",
+      color: "Choose a color.", order: "Order must be a whole number from 1 to 999.",
+      keywordsTooMany: "Use 10 keywords at most.", keywordTooLong: "A keyword is too long (60 characters max).",
+    },
   },
   ar: {
     loginTitle: "تسجيل دخول المدير", loginSub: "سجّل الدخول بحساب المدير لإدارة روابط التحميل.",
     email: "البريد الإلكتروني", password: "كلمة المرور", signIn: "تسجيل الدخول",
     invalidLogin: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-    dashTitle: "إدارة التنزيلات", signOut: "تسجيل الخروج",
-    addTitle: "إضافة تنزيل", addSub: "أدخل عنواناً والصق رابط MediaFire — سيظهر في صفحة التنزيلات فوراً.",
-    fileTitle: "عنوان الملف", folder: "المجلد", newFolder: "+ مجلد جديد", url: "رابط MediaFire",
-    urlHint: "تُقبل روابط MediaFire فقط.", addBtn: "إضافة التنزيل",
-    onlyMediafire: "الرجاء لصق رابط MediaFire صحيح (mediafire.com).",
-    missingTitle: "أعطِ الملف عنواناً.", missingFolder: "سمِّ المجلد الجديد، أو اختر مجلداً موجوداً.",
-    added: "تمت إضافة التنزيل", removed: "تمت إزالة التنزيل", removeTitle: "إزالة",
-    icon: "الأيقونة", color: "اللون",
-    editTitle: "تعديل", saveChanges: "حفظ التعديلات", cancel: "إلغاء",
-    updated: "تم تحديث التنزيل", editHeading: "تعديل تنزيل",
-  }
+    manageReports: "إدارة البلاغات", dashTitle: "إدارة التنزيلات", signOut: "تسجيل الخروج",
+    tabItems: "التنزيلات", tabFolders: "المجلدات",
+    addTitle: "إضافة تنزيل", editHeading: "تعديل تنزيل",
+    addSub: "املأ البيانات وسيظهر التنزيل في صفحة التنزيلات.",
+    fileTitle: "عنوان الملف", folder: "المجلد", kind: "النوع", chooseFolder: "اختر مجلداً…",
+    kindHint: "نوع «موقع» يعرض زر «عرض الموقع»، وبقية الأنواع تعرض زر «تحميل».",
+    slug: "عنوان الصفحة (slug)", slugHint: "حروف إنجليزية وأرقام وشرطات فقط. تغييره لاحقاً يغيّر رابط الصفحة.",
+    description: "الوصف", descHint: "جملة أو جملتان: ما هو، ماذا يغطي، ولمن يفيد.",
+    tags: "الوسوم", tagsHint: "افصل بينها بفواصل. حتى 8 وسوم.",
+    url: "الرابط", urlHint: "أي رابط http(s) (Mega أو Google Drive أو موقع...).",
+    addBtn: "إضافة التنزيل", saveChanges: "حفظ التعديلات", cancel: "إلغاء", saving: "جارٍ الحفظ…",
+    added: "تمت إضافة التنزيل", updated: "تم تحديث التنزيل", removed: "تمت إزالة التنزيل",
+    editTitle: "تعديل", removeTitle: "إزالة", confirmRemove: "هل تريد إزالة هذا التنزيل نهائياً؟",
+    folderSub: "لكل مجلد لونه الخاص، ويظهر كبطاقة في صفحة التنزيلات.",
+    addFolderTitle: "إضافة مجلد", editFolderTitle: "تعديل مجلد",
+    folderName: "اسم المجلد", folderSlugHint: "لا يمكن تغييره بعد إنشاء المجلد.",
+    color: "اللون", order: "الترتيب", keywords: "كلمات البحث",
+    keywordsHint: "عبارات يبحث بها الطلاب، تفصل بينها فواصل. حتى 10 كلمات.",
+    addFolderBtn: "إضافة المجلد", folderAdded: "تمت إضافة المجلد", folderUpdated: "تم تحديث المجلد",
+    folderRemoved: "تمت إزالة المجلد", confirmRemoveFolder: "هل تريد إزالة هذا المجلد؟",
+    folderNotEmpty: "ما زال في هذا المجلد تنزيلات. انقلها أو أزلها أولاً.",
+    itemsCount: "تنزيل", noFolder: "(بدون مجلد)",
+    saveFailed: "تعذّر الحفظ. تحقق من الاتصال وحاول مرة أخرى.",
+    removeFailed: "تعذّرت الإزالة. حاول مرة أخرى.",
+    errors: {
+      title: "أعطِ الملف عنواناً.", titleTooLong: "العنوان طويل (120 حرفاً كحد أقصى).",
+      folder: "اختر مجلداً.", kind: "اختر النوع.",
+      slug: "يجب أن يتكون الـ slug من حروف إنجليزية وأرقام وشرطات مفردة (مثل physics-summary).",
+      slugTaken: "هذا الـ slug مستخدم. اختر غيره.",
+      description: "اكتب وصفاً قصيراً.", descriptionTooLong: "الوصف طويل (400 حرف كحد أقصى).",
+      tagsTooMany: "الحد الأقصى 8 وسوم.", tagTooLong: "أحد الوسوم طويل (30 حرفاً كحد أقصى).",
+      url: "الصق رابطاً صحيحاً يبدأ بـ http أو https.",
+      folderName: "أعطِ المجلد اسماً.", folderNameTooLong: "اسم المجلد طويل (60 حرفاً كحد أقصى).",
+      color: "اختر لوناً.", order: "الترتيب رقم صحيح من 1 إلى 999.",
+      keywordsTooMany: "الحد الأقصى 10 كلمات.", keywordTooLong: "إحدى الكلمات طويلة (60 حرفاً كحد أقصى).",
+    },
+  },
 };
-function t(k){ return I18N[lang][k]; }
 
-function applyStaticText(){
-  document.documentElement.lang = lang;
-  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-  document.getElementById("loginTitle").textContent = t("loginTitle");
-  document.getElementById("loginSub").textContent = t("loginSub");
-  document.getElementById("emailLabel").textContent = t("email");
-  document.getElementById("passLabel").textContent = t("password");
-  document.getElementById("loginBtn").textContent = t("signIn");
-  document.getElementById("dashTitle").textContent = t("dashTitle");
-  document.getElementById("logoutBtn").textContent = t("signOut");
-  document.getElementById("addTitle").textContent = t("addTitle");
-  document.getElementById("addSub").textContent = t("addSub");
-  document.getElementById("fileTitleLabel").textContent = t("fileTitle");
-  document.getElementById("folderLabel").textContent = t("folder");
-  document.getElementById("newFolderOption").textContent = t("newFolder");
-  document.getElementById("urlLabel").textContent = t("url");
-  document.getElementById("urlHint").textContent = t("urlHint");
-  document.getElementById("addBtn").textContent = t("addBtn");
-  document.getElementById("iconLabel").textContent = t("icon");
-  document.getElementById("colorLabel").textContent = t("color");
-  document.getElementById("cancelEditBtn").textContent = t("cancel");
-}
-applyStaticText();
+/** @param {string} key @returns {string} */
+function t(key) { return I18N[lang][key] ?? key; }
+/** @param {string[]} codes @returns {string} Messages joined, one per line. */
+function errorText(codes) { return codes.map((code) => I18N[lang].errors[code] ?? code).join("\n"); }
 
-/* ---------------- Icon / color catalogue ---------------- */
-const ICON_SVGS = {
-  file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>`,
-  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 10-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 107.07 7.07l1.4-1.4"/></svg>`,
-  mindmap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M8.2 7l7.6 3.8M8.2 17l7.6-3.8"/></svg>`,
-};
-const VALID_ICONS = ["file", "link", "mindmap"];
-const VALID_COLORS = ["green", "blue", "yellow"];
-function iconMarkup(type){ return ICON_SVGS[VALID_ICONS.includes(type) ? type : "file"]; }
-function colorClass(color){ return `icon-color-${VALID_COLORS.includes(color) ? color : "green"}`; }
+/* ---------------- Small DOM helpers ---------------- */
+/** @param {string} id @returns {HTMLElement} */
+function byId(id) { return document.getElementById(id); }
 
-let selectedIcon = "file";
-let selectedColor = "green";
-let editingId = null;
-
-function setActiveIcon(val){
-  selectedIcon = VALID_ICONS.includes(val) ? val : "file";
-  document.querySelectorAll("#iconPicker .icon-opt").forEach(b => b.classList.toggle("active", b.dataset.icon === selectedIcon));
-}
-function setActiveColor(val){
-  selectedColor = VALID_COLORS.includes(val) ? val : "green";
-  document.querySelectorAll("#colorPicker .color-opt").forEach(b => b.classList.toggle("active", b.dataset.color === selectedColor));
-}
-document.querySelectorAll("#iconPicker .icon-opt").forEach(btn => {
-  btn.addEventListener("click", () => setActiveIcon(btn.dataset.icon));
-});
-document.querySelectorAll("#colorPicker .color-opt").forEach(btn => {
-  btn.addEventListener("click", () => setActiveColor(btn.dataset.color));
-});
-setActiveIcon(selectedIcon);
-setActiveColor(selectedColor);
-
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+/** @param {unknown} str @returns {string} HTML-escaped text. */
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 }
 
 let toastTimer;
-function showToast(msg){
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.classList.add("show");
+/** @param {string} message */
+function showToast(message) {
+  const toast = byId("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), TOAST_DURATION_MS);
 }
 
-/* ---------------- Auth ---------------- */
-const loginView = document.getElementById("loginView");
-const dashView = document.getElementById("dashView");
-const loginError = document.getElementById("loginError");
+/** Shows (or clears, when message is empty) an error box. */
+function setError(element, message) {
+  element.textContent = message || "";
+  element.style.whiteSpace = "pre-line";
+  element.classList.toggle("hidden", !message);
+}
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  loginError.classList.add("hidden");
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+/** Applies all translations to elements marked with data-i18n. */
+function applyStaticText() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+}
+applyStaticText();
+
+/* ---------------- State ---------------- */
+let items = [];
+let folders = [];
+let editingItemId = null;
+let editingFolderSlug = null;
+let selectedFolderColor = DEFAULT_FOLDER_COLOR;
+let isSlugEditedByHand = false;
+let listenersStarted = false;
+
+/* ---------------- Auth ---------------- */
+const loginView = byId("loginView");
+const dashView = byId("dashView");
+const loginError = byId("loginError");
+
+byId("loginForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setError(loginError, "");
+  const email = byId("email").value.trim();
+  const password = byId("password").value;
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    /* التحقق الحقيقي من عدم تسريب البيانات لغير الأدمن بيتم في
-       Firestore rules (write مرفوض لغير هذا البريد). لكن من غير
-       هذا الفحص هنا، أي حساب عادي في الموقع كان هيقدر "يسجّل
-       دخول" هنا ويشوف واجهة لوحة الأدمن (القائمة، الأزرار...)
-       حتى لو مش هيقدر يحفظ حاجة فعلياً. الفحص ده بيمنع الدخول
-       من الأساس. */
-    if (cred.user.email !== ADMIN_EMAIL) {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    /* The real protection is the Firestore rules. This check only stops a
+       regular account from seeing the admin UI. */
+    if (credential.user.email !== ADMIN_EMAIL) {
       await signOut(auth);
-      loginError.textContent = t("invalidLogin");
-      loginError.classList.remove("hidden");
+      setError(loginError, t("invalidLogin"));
     }
   } catch (err) {
-    console.error(err);
-    loginError.textContent = t("invalidLogin");
-    loginError.classList.remove("hidden");
+    console.error("Admin sign-in failed:", err.code || err.message);
+    setError(loginError, t("invalidLogin"));
   }
 });
 
-document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+byId("logoutBtn").addEventListener("click", () => signOut(auth));
 
 onAuthStateChanged(auth, (user) => {
   if (user && user.email === ADMIN_EMAIL) {
     loginView.classList.add("hidden");
     dashView.classList.remove("hidden");
-    listenDownloads();
+    startListeners();
   } else {
     dashView.classList.add("hidden");
     loginView.classList.remove("hidden");
-    // حساب مسجّل دخول لكنه مش الأدمن (مثلاً لو دخل عبر تبويب تاني
-    // بحساب عادي، أو الجلسة قديمة) — نسجّل خروجه تلقائياً بدل ما
-    // نسيبه معلّق على شاشة تسجيل الدخول وهو فعلياً "مسجّل دخول".
-    if (user && user.email !== ADMIN_EMAIL) {
-      signOut(auth);
-    }
+    // Signed in but not the admin (stale session, another tab): sign out.
+    if (user) signOut(auth);
   }
 });
 
-/* ---------------- Data ---------------- */
-let items = [];
+/* ---------------- Tabs ---------------- */
+/** @param {"items" | "folders"} name */
+function showTab(name) {
+  const isItems = name === "items";
+  byId("panelItems").classList.toggle("hidden", !isItems);
+  byId("panelFolders").classList.toggle("hidden", isItems);
+  byId("tabItemsBtn").classList.toggle("active", isItems);
+  byId("tabFoldersBtn").classList.toggle("active", !isItems);
+}
+byId("tabItemsBtn").addEventListener("click", () => showTab("items"));
+byId("tabFoldersBtn").addEventListener("click", () => showTab("folders"));
 
-function listenDownloads(){
-  const q = query(collection(db, DOWNLOADS_COLLECTION), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snap) => {
-    items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFolderOptions();
-    renderList();
-  });
+/* ---------------- Live data ---------------- */
+/** Subscribes once to both collections (auth changes must not duplicate listeners). */
+function startListeners() {
+  if (listenersStarted) return;
+  listenersStarted = true;
+  const onListenError = (err) => {
+    listenersStarted = false;
+    console.error("Firestore listener failed:", err.code || err.message);
+    showToast(t("saveFailed"));
+  };
+
+  onSnapshot(query(collection(db, DOWNLOAD_FOLDERS_COLLECTION), orderBy("order", "asc")), (snapshot) => {
+    folders = snapshot.docs.map((d) => ({ slug: d.id, ...d.data() }));
+    renderFolderSelect();
+    renderFolderList();
+    renderItemList();
+    if (!editingFolderSlug) byId("folderOrder").value ||= String(nextFolderOrder());
+  }, onListenError);
+
+  onSnapshot(query(collection(db, DOWNLOADS_COLLECTION), orderBy("createdAt", "desc")), (snapshot) => {
+    items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderFolderList();
+    renderItemList();
+  }, onListenError);
 }
 
-function renderFolderOptions(){
-  const select = document.getElementById("folderSelect");
+/** @returns {number} The next free folder order (max + 1). */
+function nextFolderOrder() {
+  return folders.reduce((max, folder) => Math.max(max, Number(folder.order) || 0), 0) + 1;
+}
+
+/** @param {string} folderId @returns {string} */
+function folderName(folderId) {
+  return folders.find((folder) => folder.slug === folderId)?.name ?? t("noFolder");
+}
+
+/* ---------------- Downloads: form ---------------- */
+const addError = byId("addError");
+
+/** Fills the kind <select> once (labels follow the page language). */
+function renderKindSelect() {
+  byId("kindSelect").innerHTML = KIND_KEYS
+    .map((key) => `<option value="${key}">${escapeHtml(DOWNLOAD_KINDS[key][lang])}</option>`).join("");
+}
+renderKindSelect();
+
+/** Rebuilds the folder <select>, keeping the current choice when possible. */
+function renderFolderSelect() {
+  const select = byId("folderSelect");
   const current = select.value;
-  const folders = [...new Set(items.map(i => i.folder).filter(Boolean))].sort();
-  select.innerHTML = `<option value="__new__">${t("newFolder")}</option>` +
-    folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
-  if ([...select.options].some(o => o.value === current)) select.value = current;
-  toggleNewFolderInput();
-}
-document.getElementById("folderSelect").addEventListener("change", toggleNewFolderInput);
-function toggleNewFolderInput(){
-  const select = document.getElementById("folderSelect");
-  const input = document.getElementById("newFolderInput");
-  input.style.display = select.value === "__new__" ? "block" : "none";
+  select.innerHTML = `<option value="">${escapeHtml(t("chooseFolder"))}</option>` +
+    folders.map((folder) => `<option value="${escapeHtml(folder.slug)}">${escapeHtml(folder.name)}</option>`).join("");
+  if (folders.some((folder) => folder.slug === current)) select.value = current;
 }
 
-function renderList(){
-  const list = document.getElementById("list");
-  list.innerHTML = items.map(i => `
-    <div class="admin-row">
-      <div class="icon-preview ${colorClass(i.color)}">${iconMarkup(i.icon)}</div>
-      <div class="meta">
-        <div class="t">${escapeHtml(i.title)}</div>
-        <div class="f">${escapeHtml(i.folder || "")}</div>
-      </div>
-      <button class="edit-btn" data-id="${i.id}" title="${t("editTitle")}" aria-label="${t("editTitle")}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-      </button>
-      <button data-id="${i.id}" title="${t("removeTitle")}" aria-label="${t("removeTitle")}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>`).join("");
-  list.querySelectorAll("button.edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => enterEditMode(btn.getAttribute("data-id")));
-  });
-  list.querySelectorAll("button[data-id]:not(.edit-btn)").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = btn.getAttribute("data-id");
-      if(id === editingId) exitEditMode();
-      await deleteDoc(doc(db, DOWNLOADS_COLLECTION, id));
-      showToast(t("removed"));
-    });
-  });
+byId("fileTitle").addEventListener("input", () => {
+  if (!isSlugEditedByHand && !editingItemId) byId("slugInput").value = slugify(byId("fileTitle").value);
+});
+byId("slugInput").addEventListener("input", () => { isSlugEditedByHand = true; });
+
+/** Puts the form back to "add" mode. */
+function resetItemForm() {
+  editingItemId = null;
+  isSlugEditedByHand = false;
+  byId("addForm").reset();
+  byId("addTitle").textContent = t("addTitle");
+  byId("addBtn").textContent = t("addBtn");
+  byId("cancelEditBtn").classList.add("hidden");
+  setError(addError, "");
 }
+byId("cancelEditBtn").addEventListener("click", resetItemForm);
 
-/* ---------------- Edit an existing download ---------------- */
-function enterEditMode(id){
-  const item = items.find(i => i.id === id);
-  if(!item) return;
-  editingId = id;
-
-  document.getElementById("fileTitle").value = item.title || "";
-  document.getElementById("fileUrl").value = item.url || "";
-
-  const select = document.getElementById("folderSelect");
-  if([...select.options].some(o => o.value === item.folder)){
-    select.value = item.folder;
-  } else {
-    select.value = "__new__";
-    document.getElementById("newFolderInput").value = item.folder || "";
-  }
-  toggleNewFolderInput();
-
-  setActiveIcon(item.icon);
-  setActiveColor(item.color);
-
-  document.getElementById("addTitle").textContent = t("editHeading");
-  document.getElementById("addBtn").textContent = t("saveChanges");
-  document.getElementById("cancelEditBtn").classList.remove("hidden");
+/** Loads an existing download into the form. @param {string} id */
+function enterItemEditMode(id) {
+  const item = items.find((entry) => entry.id === id);
+  if (!item) return;
+  editingItemId = id;
+  isSlugEditedByHand = true;
+  byId("fileTitle").value = item.title || "";
+  byId("folderSelect").value = item.folderId || "";
+  byId("kindSelect").value = KIND_KEYS.includes(item.kind) ? item.kind : FALLBACK_KIND_KEY;
+  byId("slugInput").value = item.slug || "";
+  byId("descInput").value = item.description || "";
+  byId("tagsInput").value = Array.isArray(item.tags) ? item.tags.join(", ") : "";
+  byId("fileUrl").value = item.url || "";
+  byId("addTitle").textContent = t("editHeading");
+  byId("addBtn").textContent = t("saveChanges");
+  byId("cancelEditBtn").classList.remove("hidden");
+  setError(addError, "");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function exitEditMode(){
-  editingId = null;
-  document.getElementById("addTitle").textContent = t("addTitle");
-  document.getElementById("addBtn").textContent = t("addBtn");
-  document.getElementById("cancelEditBtn").classList.add("hidden");
-  document.getElementById("addForm").reset();
-  toggleNewFolderInput();
-  setActiveIcon("file");
-  setActiveColor("green");
+/** @returns {Parameters<typeof validateDownloadForm>[0]} Raw values from the form. */
+function readItemForm() {
+  return {
+    title: byId("fileTitle").value,
+    url: byId("fileUrl").value,
+    folderId: byId("folderSelect").value,
+    kind: byId("kindSelect").value,
+    slug: byId("slugInput").value,
+    description: byId("descInput").value,
+    tagsText: byId("tagsInput").value,
+  };
 }
-document.getElementById("cancelEditBtn").addEventListener("click", exitEditMode);
 
-/* ---------------- Add download ---------------- */
-const addError = document.getElementById("addError");
-document.getElementById("addForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  addError.classList.add("hidden");
-
-  const title = document.getElementById("fileTitle").value.trim();
-  const url = document.getElementById("fileUrl").value.trim();
-  const select = document.getElementById("folderSelect");
-  let folder = select.value === "__new__"
-    ? document.getElementById("newFolderInput").value.trim()
-    : select.value;
-
-  if (!title) return showAddError(t("missingTitle"));
-  if (!folder) return showAddError(t("missingFolder"));
- /* if (!/^https?:\/\/(www\.)?mediafire\.com\//i.test(url)) return showAddError(t("onlyMediafire")); */
-  if (!/^https?:\/\/.+/i.test(url)) return showAddError(t("onlyMediafire"));
-
-  const data = { title, url, folder, icon: selectedIcon, color: selectedColor };
-
-  if (editingId) {
-    await updateDoc(doc(db, DOWNLOADS_COLLECTION, editingId), data);
-    showToast(t("updated"));
-    exitEditMode();
+/** Writes (create or update) one download. @param {ReturnType<typeof validateDownloadForm>['data']} data */
+async function saveDownload(data) {
+  const existing = items.find((entry) => entry.id === editingItemId);
+  const fields = buildDownloadFields(data, {
+    folderName: folderName(data.folderId),
+    legacyFolderName: items.find((entry) => entry.folderId === data.folderId && entry.folder)?.folder,
+    existingColor: existing?.color,
+  });
+  if (existing) {
+    await updateDoc(doc(db, DOWNLOADS_COLLECTION, existing.id), { ...fields, updatedAt: serverTimestamp() });
   } else {
-    await addDoc(collection(db, DOWNLOADS_COLLECTION), { ...data, createdAt: serverTimestamp() });
-    document.getElementById("addForm").reset();
-    toggleNewFolderInput();
-    setActiveIcon("file");
-    setActiveColor("green");
-    showToast(t("added"));
+    await addDoc(collection(db, DOWNLOADS_COLLECTION), { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  }
+}
+
+byId("addForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const { errors, data } = validateDownloadForm(readItemForm(), {
+    folderIds: new Set(folders.map((folder) => folder.slug)),
+    takenSlugs: new Set(items.filter((entry) => entry.id !== editingItemId).map((entry) => entry.slug).filter(Boolean)),
+  });
+  if (errors.length) return setError(addError, errorText(errors));
+
+  const button = byId("addBtn");
+  const wasEditing = Boolean(editingItemId);
+  button.disabled = true;
+  try {
+    await saveDownload(data);
+    resetItemForm();
+    showToast(t(wasEditing ? "updated" : "added"));
+  } catch (err) {
+    console.error("Saving download failed:", err.code || err.message);
+    setError(addError, t("saveFailed"));
+  } finally {
+    button.disabled = false;
   }
 });
 
-function showAddError(msg){
-  addError.textContent = msg;
-  addError.classList.remove("hidden");
+/* ---------------- Downloads: list ---------------- */
+function renderItemList() {
+  const list = byId("list");
+  list.innerHTML = items.map((item) => {
+    const color = FOLDER_COLORS[folders.find((folder) => folder.slug === item.folderId)?.color] ?? "var(--line)";
+    const kindLabel = DOWNLOAD_KINDS[item.kind]?.[lang] ?? "—";
+    return `
+    <div class="admin-row">
+      <span class="dot-preview" style="background:${color}"></span>
+      <div class="meta">
+        <div class="t">${escapeHtml(item.title)}</div>
+        <div class="f">${escapeHtml(item.folderId ? folderName(item.folderId) : item.folder || t("noFolder"))}</div>
+      </div>
+      <span class="kind-chip">${escapeHtml(kindLabel)}</span>
+      <button class="edit-btn" data-action="edit" data-id="${escapeHtml(item.id)}" title="${t("editTitle")}" aria-label="${t("editTitle")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
+      <button data-action="remove" data-id="${escapeHtml(item.id)}" title="${t("removeTitle")}" aria-label="${t("removeTitle")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>`;
+  }).join("");
 }
+
+byId("list").addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const { action, id } = button.dataset;
+  if (action === "edit") return enterItemEditMode(id);
+  if (!window.confirm(t("confirmRemove"))) return;
+  try {
+    if (id === editingItemId) resetItemForm();
+    await deleteDoc(doc(db, DOWNLOADS_COLLECTION, id));
+    showToast(t("removed"));
+  } catch (err) {
+    console.error("Removing download failed:", err.code || err.message);
+    showToast(t("removeFailed"));
+  }
+});
+
+/* ---------------- Folders: form ---------------- */
+const folderError = byId("folderError");
+
+/** Draws the 8 color swatches. */
+function renderColorPicker() {
+  const picker = byId("folderColorPicker");
+  picker.innerHTML = "";
+  FOLDER_COLOR_KEYS.forEach((key) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "color-opt" + (key === selectedFolderColor ? " active" : "");
+    swatch.style.background = FOLDER_COLORS[key];
+    swatch.title = key;
+    swatch.setAttribute("aria-label", key);
+    swatch.addEventListener("click", () => { selectedFolderColor = key; renderColorPicker(); });
+    picker.appendChild(swatch);
+  });
+}
+renderColorPicker();
+
+/** Puts the folder form back to "add" mode. */
+function resetFolderForm() {
+  editingFolderSlug = null;
+  selectedFolderColor = DEFAULT_FOLDER_COLOR;
+  byId("folderForm").reset();
+  byId("folderSlug").disabled = false;
+  byId("folderOrder").value = String(nextFolderOrder());
+  byId("folderFormTitle").textContent = t("addFolderTitle");
+  byId("folderSaveBtn").textContent = t("addFolderBtn");
+  byId("folderCancelBtn").classList.add("hidden");
+  setError(folderError, "");
+  renderColorPicker();
+}
+byId("folderCancelBtn").addEventListener("click", resetFolderForm);
+
+/** Loads an existing folder into the form. @param {string} slug */
+function enterFolderEditMode(slug) {
+  const folder = folders.find((entry) => entry.slug === slug);
+  if (!folder) return;
+  editingFolderSlug = slug;
+  selectedFolderColor = FOLDER_COLOR_KEYS.includes(folder.color) ? folder.color : DEFAULT_FOLDER_COLOR;
+  byId("folderName").value = folder.name || "";
+  byId("folderSlug").value = folder.slug;
+  byId("folderSlug").disabled = true;
+  byId("folderOrder").value = String(folder.order ?? nextFolderOrder());
+  byId("folderDesc").value = folder.description || "";
+  byId("folderKeywords").value = Array.isArray(folder.keywords) ? folder.keywords.join(", ") : "";
+  byId("folderFormTitle").textContent = t("editFolderTitle");
+  byId("folderSaveBtn").textContent = t("saveChanges");
+  byId("folderCancelBtn").classList.remove("hidden");
+  setError(folderError, "");
+  renderColorPicker();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+byId("folderForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const isEdit = Boolean(editingFolderSlug);
+  const { errors, data } = validateFolderForm({
+    name: byId("folderName").value,
+    slug: isEdit ? editingFolderSlug : byId("folderSlug").value,
+    color: selectedFolderColor,
+    order: byId("folderOrder").value,
+    description: byId("folderDesc").value,
+    keywordsText: byId("folderKeywords").value,
+  }, { takenSlugs: new Set(folders.map((folder) => folder.slug)), isEdit });
+  if (errors.length) return setError(folderError, errorText(errors));
+
+  const button = byId("folderSaveBtn");
+  button.disabled = true;
+  try {
+    await setDoc(doc(db, DOWNLOAD_FOLDERS_COLLECTION, data.slug), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    resetFolderForm();
+    showToast(t(isEdit ? "folderUpdated" : "folderAdded"));
+  } catch (err) {
+    console.error("Saving folder failed:", err.code || err.message);
+    setError(folderError, t("saveFailed"));
+  } finally {
+    button.disabled = false;
+  }
+});
+
+/* ---------------- Folders: list ---------------- */
+function renderFolderList() {
+  byId("folderList").innerHTML = folders.map((folder) => {
+    const count = items.filter((item) => item.folderId === folder.slug).length;
+    return `
+    <div class="admin-row">
+      <span class="dot-preview" style="background:${FOLDER_COLORS[folder.color] ?? "var(--line)"}"></span>
+      <div class="meta">
+        <div class="t">${escapeHtml(folder.name)}</div>
+        <div class="f">${count} ${t("itemsCount")} · ${escapeHtml(folder.slug)}</div>
+      </div>
+      <button class="edit-btn" data-action="edit" data-slug="${escapeHtml(folder.slug)}" title="${t("editTitle")}" aria-label="${t("editTitle")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
+      <button data-action="remove" data-slug="${escapeHtml(folder.slug)}" title="${t("removeTitle")}" aria-label="${t("removeTitle")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>`;
+  }).join("");
+}
+
+byId("folderList").addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const { action, slug } = button.dataset;
+  if (action === "edit") return enterFolderEditMode(slug);
+  if (items.some((item) => item.folderId === slug)) return showToast(t("folderNotEmpty"));
+  if (!window.confirm(t("confirmRemoveFolder"))) return;
+  try {
+    if (slug === editingFolderSlug) resetFolderForm();
+    await deleteDoc(doc(db, DOWNLOAD_FOLDERS_COLLECTION, slug));
+    showToast(t("folderRemoved"));
+  } catch (err) {
+    console.error("Removing folder failed:", err.code || err.message);
+    showToast(t("removeFailed"));
+  }
+});
+
+/* Initial button labels that depend on the add/edit mode. */
+byId("addTitle").textContent = t("addTitle");
+byId("addBtn").textContent = t("addBtn");
+byId("folderFormTitle").textContent = t("addFolderTitle");
+byId("folderSaveBtn").textContent = t("addFolderBtn");
