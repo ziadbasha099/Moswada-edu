@@ -107,12 +107,12 @@ service cloud.firestore {
       }
     }
 
-    /* المجلد المشارَك يبقى متاحاً حتى يصل عدد البلاغات إلى 3 (REPORTS_TO_DISABLE
+    /* المجلد المشارَك يبقى متاحاً حتى يصل عدد البلاغات إلى 5 (REPORTS_TO_DISABLE
        في share.js و admin-reports.js). بلاغ قديم بلا حقل count يُعامل كأنه
        وصل للحد (يبقى معطّلاً كما كان). */
     function isShareVisible(shareId) {
       return !exists(/databases/$(database)/documents/reports/$(shareId))
-          || get(/databases/$(database)/documents/reports/$(shareId)).data.get('count', 3) < 3;
+          || get(/databases/$(database)/documents/reports/$(shareId)).data.get('count', 5) < 5;
     }
 
     match /sharedFolders/{shareId} {
