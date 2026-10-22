@@ -1,0 +1,11 @@
+{
+  "redirects": [
+    { "source": "/downloads.html", "destination": "/downloads", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/downloads", "destination": "/api/downloads?view=home" },
+    { "source": "/downloads/:folder", "destination": "/api/downloads?view=folder&folder=:folder" },
+    { "source": "/downloads/:folder/:slug", "destination": "/api/downloads?view=item&folder=:folder&slug=:slug" },
+    { "source": "/sitemap.xml", "destination": "/api/downloads?view=sitemap" }
+  ]
+}
