@@ -55,8 +55,8 @@ const BANNED_COLLECTION = "bannedUsers";
 const REPORT_STATUS_PENDING = "pending";
 const REPORT_STATUS_BANNED = "banned";
 const OWNER_UID_PREVIEW_LENGTH = 8;
-/** Must match the "< 3" check in isShareVisible() inside firestore.rules. */
-const REPORTS_TO_DISABLE = 3;
+/** Must match the "< 5" check in isShareVisible() inside firestore.rules. */
+const REPORTS_TO_DISABLE = 5;
 /** Reports created before the counter existed count as already disabled. */
 const LEGACY_REPORT_COUNT = REPORTS_TO_DISABLE;
 
@@ -69,7 +69,7 @@ const I18N = {
     invalidLogin: "Incorrect email or password.",
     dashTitle: "Reports & bans", signOut: "Sign out", backToDownloads: "Manage downloads",
     pendingTitle: "Pending reports",
-    pendingSub: "Folders flagged by visitors. A share link is disabled automatically at 3 reports. Banning an owner blocks their whole account immediately; dismissing restores the folder without banning anyone.",
+    pendingSub: "Folders flagged by visitors. A share link is disabled automatically at 5 reports. Banning an owner blocks their whole account immediately; dismissing restores the folder without banning anyone.",
     noPending: "No pending reports right now.",
     bannedTitle: "Banned accounts",
     bannedSub: "These accounts can no longer sign in or use the app.",
@@ -91,7 +91,7 @@ const I18N = {
     invalidLogin: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
     dashTitle: "البلاغات والحظر", signOut: "تسجيل الخروج", backToDownloads: "إدارة التنزيلات",
     pendingTitle: "البلاغات قيد المراجعة",
-    pendingSub: "مجلدات أبلغ عنها الزوار. يُعطَّل رابط المشاركة تلقائياً عند 3 بلاغات. حظر المالك يوقف حسابه بالكامل فوراً، بينما تجاهل البلاغ يعيد إظهار المجلد دون حظر أحد.",
+    pendingSub: "مجلدات أبلغ عنها الزوار. يُعطَّل رابط المشاركة تلقائياً عند 5 بلاغات. حظر المالك يوقف حسابه بالكامل فوراً، بينما تجاهل البلاغ يعيد إظهار المجلد دون حظر أحد.",
     noPending: "لا توجد بلاغات قيد المراجعة حالياً.",
     bannedTitle: "الحسابات المحظورة",
     bannedSub: "لم يعد بإمكان هذه الحسابات تسجيل الدخول أو استخدام التطبيق.",
