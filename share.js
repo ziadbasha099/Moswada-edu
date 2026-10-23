@@ -37,7 +37,7 @@ import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 const REPORTS_COLLECTION = "reports";
 const REPORTERS_SUBCOLLECTION = "reporters";
 /** Must match the "< 3" check in isShareVisible() inside firestore.rules. */
-const REPORTS_TO_DISABLE = 3;
+const REPORTS_TO_DISABLE = 5;
 const REPORT_STATUS_PENDING = "pending";
 
 const DEFAULT_FOLDER_COLOR = '#226864';
