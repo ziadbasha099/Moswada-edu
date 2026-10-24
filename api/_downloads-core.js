@@ -25,6 +25,7 @@ const OG_IMAGE_PATH = '/info-photo.png';
 const OG_IMAGE_WIDTH = 2560;
 const OG_IMAGE_HEIGHT = 1426;
 const LOGO_PATH = '/moswada-logo.png';
+const FAVICON_PATH = '/moswada-edu icon.png';
 const FACEBOOK_URL = 'https://www.facebook.com/share/186chKu8po/';
 const PRIVACY_PATH = '/privacy%20and%20policy%20of%20moswada-edu.html';
 const DEVELOPER_NAME = 'Ziad Basha';
@@ -395,8 +396,8 @@ function layout(page, catalog) {
 <meta name="twitter:title" content="${esc(page.title)}">
 <meta name="twitter:description" content="${esc(page.description)}">
 <meta name="twitter:image" content="${esc(ogImage)}">
-<link rel="icon" type="image/png" href="${LOGO_PATH}">
-<link rel="apple-touch-icon" href="${LOGO_PATH}">
+<link rel="icon" type="image/png" href="${FAVICON_PATH}">
+<link rel="apple-touch-icon" href="${FAVICON_PATH}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Manrope:wght@500;700;800&display=swap">
