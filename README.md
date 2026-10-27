@@ -1,6 +1,5 @@
-[moswada-edu_user_journey_sitemap_v2.pdf](https://github.com/user-attachments/files/34028314/moswada-edu_user_journey_sitemap_v2.pdf)
-<img width="1241" height="1754" alt="moswada-edu - user journey sitemap" src="https://github.com/user-attachments/assets/217f1029-a976-43f8-9707-b2ada2bf7c7e" />
-# Moswada-edu
+<img width="1241" height="1754" alt="moswada-edu_user_journey_sitemap_v2_img" src="https://github.com/user-attachments/assets/d147d10f-a15a-49c0-899b-78ce5a6241f7" />
+# Moswada-edu 3.1
 <H2>FEATURES :</H2>
 <p>
   • Watch YouTube videos directly on our website and write notes for each video. 
