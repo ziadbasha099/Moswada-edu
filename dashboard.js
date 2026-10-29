@@ -235,6 +235,7 @@ onAuthStateChanged(auth, async (user) => {
     startListening(user.uid);
     updateTopbarTitle();
     enforceNotBanned(user); // في الخلفية بدون await
+    recordDailyVisit(user.uid); // analytics: daily visit streak
     if(!hasEnteredOnce){
       hasEnteredOnce = true;
       document.getElementById('app').classList.remove('hidden');
@@ -286,6 +287,7 @@ async function checkVerification(){
       stopListening();
       startListening(currentUser.uid);
       updateTopbarTitle();
+      recordDailyVisit(currentUser.uid); // analytics: daily visit streak
       document.getElementById('app').classList.remove('hidden');
       hasEnteredOnce = true;
       showToast(t('welcomeToast')(currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '')));
@@ -1189,7 +1191,7 @@ function mountYouTubePlayer(l){
       onStateChange: function(e){
         if(e.data === 0){
           stopProgressAutosave();
-          resetPlaybackProgress();
+          markVideoWatched();
         }
       },
       onError: function(){
@@ -1399,16 +1401,20 @@ function stopProgressAutosave(){
   if(progressSaveInterval){ clearInterval(progressSaveInterval); progressSaveInterval = null; }
 }
 
-async function resetPlaybackProgress(){
+/**
+ * Called when a video plays to its end: flags it as watched (for the
+ * analytics page) and resets the resume position.
+ */
+async function markVideoWatched(){
   if(!currentUser || !activePlayerLink) return;
-  if(!activePlayerLink.progress) return;
   try{
-    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { progress: 0 });
+    await updateDoc(doc(db, 'users', currentUser.uid, 'links', activePlayerLink.id), { watched: true, progress: 0 });
+    activePlayerLink.watched = true;
     activePlayerLink.progress = 0;
     const link = links.find(x => x.id === activePlayerLink.id);
-    if(link) link.progress = 0;
+    if(link){ link.watched = true; link.progress = 0; }
   }catch(err){
-    console.error(err);
+    console.error('Failed to mark video as watched:', err);
   }
 }
 

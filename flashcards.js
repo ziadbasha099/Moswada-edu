@@ -409,6 +409,7 @@ async function handleStartPlayingClick(){
     return;
   }
 
+  incrementFlashcardSessions(currentUser.uid); // analytics (fire-and-forget)
   closeFlashcardModal();
   startStudySession(cardsForSession);
 }
