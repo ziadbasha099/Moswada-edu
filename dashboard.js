@@ -29,6 +29,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, SESSION_FLAG_KEY, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
+// For Analytics page 
+import { recordDailyVisit } from "./analytics.js";     // dashboard.js
 
 // الحد الأقصى لعدد الروابط لكل حساب — يجب أن يطابق القيمة (200) المكتوبة
 // في firestore.rules، لأن هذا الرقم هنا مجرد تحقّق سريع للواجهة فقط.
