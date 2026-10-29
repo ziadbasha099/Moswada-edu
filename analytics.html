@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>التحليلات — مسودة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="moswada-edu icon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="analytics.css">
+</head>
+<body>
+<div id="analyticsPage" class="hidden">
+  <div class="topbar">
+    <a class="btn-icon" href="app.html" data-en-title="Back to dashboard" data-ar-title="العودة للوحة التحكم" title="Back to dashboard" aria-label="Back to dashboard">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 data-en="Analytics" data-ar="التحليلات">التحليلات</h1>
+  </div>
+
+  <main class="analytics-shell">
+    <header class="analytics-heading">
+      <h1 data-en="Your activity" data-ar="نشاطك">نشاطك</h1>
+      <p data-en="A quiet overview of your learning habits." data-ar="نظرة هادئة على عاداتك في التعلّم.">نظرة هادئة على عاداتك في التعلّم.</p>
+    </header>
+
+    <section class="stat-card videos-card" aria-labelledby="videosLabel">
+      <div class="stat-card-head">
+        <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/></svg></span>
+        <span class="stat-label" id="videosLabel" data-en="Videos" data-ar="الفيديوهات">الفيديوهات</span>
+      </div>
+      <div class="videos-split">
+        <div>
+          <span class="stat-value" id="watchedCount">—</span>
+          <span class="stat-hint" data-en="Watched" data-ar="تمت مشاهدتها">تمت مشاهدتها</span>
+        </div>
+        <div>
+          <span class="stat-value" id="unwatchedCount">—</span>
+          <span class="stat-hint" data-en="Not watched yet" data-ar="لم تُشاهد بعد">لم تُشاهد بعد</span>
+        </div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-track" role="progressbar" id="watchedBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-en-label="Watched share" data-ar-label="نسبة المشاهدة">
+          <div class="progress-fill" id="watchedFill"></div>
+        </div>
+        <span class="progress-percent" id="watchedPercent">—</span>
+      </div>
+    </section>
+
+    <div class="stat-grid">
+      <section class="stat-card">
+        <div class="stat-card-head">
+          <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></span>
+          <span class="stat-label" data-en="Shared folders" data-ar="المجلدات المشاركة">المجلدات المشاركة</span>
+        </div>
+        <span class="stat-value" id="sharedFoldersCount">—</span>
+        <span class="stat-hint" data-en="Folders you currently share." data-ar="المجلدات التي تشاركها حاليًا.">المجلدات التي تشاركها حاليًا.</span>
+      </section>
+
+      <section class="stat-card">
+        <div class="stat-card-head">
+          <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+          <span class="stat-label" data-en="Visit streak" data-ar="أيام الدخول المتتالية">أيام الدخول المتتالية</span>
+        </div>
+        <span class="stat-value" id="streakCount">—</span>
+        <span class="stat-hint" data-en="Resets after a full day without visiting." data-ar="يعود للصفر عند تفويت يوم كامل.">يعود للصفر عند تفويت يوم كامل.</span>
+      </section>
+
+      <section class="stat-card">
+        <div class="stat-card-head">
+          <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h14v14"/></svg></span>
+          <span class="stat-label" data-en="Flashcard reviews" data-ar="مرات مراجعة الكلمات">مرات مراجعة الكلمات</span>
+        </div>
+        <span class="stat-value" id="flashcardSessionsCount">—</span>
+        <span class="stat-hint" data-en="Times you started playing flashcards." data-ar="عدد مرات بدء اللعب في البطاقات.">عدد مرات بدء اللعب في البطاقات.</span>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script type="module" src="shared.js"></script>
+<script type="module" src="analytics.js"></script>
+</body>
+</html>

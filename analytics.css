@@ -1,0 +1,59 @@
+/* ==================================================================
+   MOSWADA — Analytics page (additive; reuses the tokens in style.css,
+   so light/dark mode and RTL/LTR work with no extra rules)
+   ================================================================== */
+
+.analytics-shell{ max-width: 1000px; margin: 0 auto; padding: 40px 24px 96px; }
+
+.analytics-heading{ margin-bottom: 32px; }
+.analytics-heading h1{
+  font-family: var(--font-display); font-weight: 800; font-size: 32px;
+  letter-spacing: -0.01em; margin-bottom: 8px;
+}
+.analytics-heading p{ color: var(--on-surface-variant); font-size: 15px; line-height: 24px; max-width: 640px; }
+
+.stat-card{
+  background: var(--surface-lowest); border: 1px solid var(--outline-variant);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.stat-card-head{ display: flex; align-items: center; gap: 12px; }
+.stat-icon{
+  flex: none; width: 40px; height: 40px; border-radius: var(--r-md);
+  background: var(--secondary-container); color: var(--secondary);
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-icon .icon{ width: 20px; height: 20px; }
+.stat-label{ font-family: var(--font-label); font-weight: 700; font-size: 14.5px; color: var(--on-surface); }
+.stat-value{
+  font-family: var(--font-display); font-weight: 800; font-size: 40px; line-height: 1.1;
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+}
+.stat-hint{ font-size: 13px; line-height: 20px; color: var(--on-surface-variant); }
+
+/* Videos card: two numbers + a watched-share progress bar */
+.videos-card{ margin-bottom: 20px; }
+.videos-split{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.videos-split > div{ display: flex; flex-direction: column; gap: 4px; }
+.progress-row{ display: flex; align-items: center; gap: 12px; }
+.progress-track{
+  flex: 1; height: 10px; border-radius: var(--r-full);
+  background: var(--surface-container); overflow: hidden;
+}
+.progress-fill{
+  height: 100%; width: 0; border-radius: inherit; background: var(--primary);
+  transition: width 400ms cubic-bezier(.4, 0, .2, 1);
+}
+.progress-percent{
+  font-family: var(--font-label); font-weight: 700; font-size: 13px;
+  color: var(--on-surface-variant); font-variant-numeric: tabular-nums; min-width: 44px; text-align: end;
+}
+
+.stat-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+
+@media (max-width: 768px){
+  .analytics-shell{ padding: 28px 16px 72px; }
+  .analytics-heading h1{ font-size: 26px; }
+  .stat-value{ font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce){ .progress-fill{ transition: none; } }
