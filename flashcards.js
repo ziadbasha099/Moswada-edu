@@ -22,6 +22,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, db, showToast, setDynamicTranslationHook, currentLang } from "./shared.js";
+// For Analytics page 
+import { incrementFlashcardSessions } from "./analytics.js";  // flashcards.js
 
 /* ============================================================
    CONSTANTS
