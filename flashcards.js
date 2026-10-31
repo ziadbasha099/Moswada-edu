@@ -8,9 +8,13 @@
    Data model — every signed-in user gets their own private data,
    mirroring the folders/links pattern already used for saved
    links elsewhere in the app:
-     users/{uid}/flashcardSubjects/{subjectId}          { name, createdAt }
+     users/{uid}/flashcardSubjects/{subjectId}          { name, createdAt, completedOnce? }
      users/{uid}/flashcardFolders/{folderId}             { subjectId, name, createdAt }
-     users/{uid}/flashcards/{cardId}                     { subjectId, folderId, term, definition, createdAt }
+     users/{uid}/flashcards/{cardId}                     { subjectId, folderId, term, definition, createdAt, reviewed? }
+
+   `reviewed` is set when a card is graded (correct or wrong) in a study
+   session. `completedOnce` is set on the subject when all its cards have
+   been reviewed; the analytics page uses both (see analytics.js).
 
    Firestore security rules (Firebase console) must restrict all
    three collections to request.auth.uid == uid, the same way
@@ -22,8 +26,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, db, showToast, setDynamicTranslationHook, currentLang } from "./shared.js";
-// For Analytics page 
-import { incrementFlashcardSessions } from "./analytics.js";  // flashcards.js
+// For Analytics page
+import { incrementFlashcardSessions, recordFlashcardReview } from "./analytics.js";
 
 /* ============================================================
    CONSTANTS
@@ -82,9 +86,9 @@ let unsubSubjects = null;
 let unsubFolders = null;
 let unsubCards = null;
 
-let subjects = [];   // { id, name }
+let subjects = [];   // { id, name, completedOnce? }
 let folders = [];    // { id, subjectId, name }
-let allCards = [];   // { id, subjectId, folderId, term, definition }
+let allCards = [];   // { id, subjectId, folderId, term, definition, reviewed? }
 
 let selectedSubjectId = '';
 let selectedFolderId = '';
@@ -324,23 +328,25 @@ function readCardFields(){
 }
 
 /**
- * Saves a flashcard under the given subject/folder.
+ * Saves a flashcard under the given subject/folder. New cards start
+ * unreviewed (no `reviewed` field), which is what turns a finished
+ * subject's check mark gray again on the analytics page.
  * @param {string} subjectId
  * @param {string} folderId
  * @param {string} term
  * @param {string} definition
- * @returns {Promise<boolean>} true on success.
+ * @returns {Promise<string|null>} The new card's id, or null on failure.
  */
 async function saveFlashcard(subjectId, folderId, term, definition){
   try{
-    await addDoc(collection(db, 'users', currentUser.uid, FLASHCARDS_COLLECTION), {
+    const ref = await addDoc(collection(db, 'users', currentUser.uid, FLASHCARDS_COLLECTION), {
       subjectId, folderId, term, definition, createdAt: serverTimestamp()
     });
-    return true;
+    return ref.id;
   }catch(err){
     console.error('Failed to save flashcard:', err);
     showToast(ft('genericError'));
-    return false;
+    return null;
   }
 }
 
@@ -360,8 +366,8 @@ async function handleDoneClick(){
   const folderId = await resolveFolderId(subjectId);
   if(!folderId) return;
 
-  const saved = await saveFlashcard(subjectId, folderId, fields.term, fields.definition);
-  if(!saved) return;
+  const savedCardId = await saveFlashcard(subjectId, folderId, fields.term, fields.definition);
+  if(!savedCardId) return;
 
   // Quick-add loop: clear just the card fields, keep the same subject/folder
   // selected, so the user can add several cards in a row without re-picking.
@@ -392,15 +398,15 @@ async function handleStartPlayingClick(){
 
   let pendingCard = null;
   if(fields.term && fields.definition){
-    const saved = await saveFlashcard(subjectId, folderId, fields.term, fields.definition);
-    if(!saved) return;
-    pendingCard = fields;
+    const savedCardId = await saveFlashcard(subjectId, folderId, fields.term, fields.definition);
+    if(!savedCardId) return;
+    pendingCard = { id: savedCardId, subjectId, folderId, ...fields };
   }
 
   const cardsForSession = allCards.filter(c => c.subjectId === subjectId && c.folderId === folderId);
   // The realtime listener may not have caught up with the card just saved
   // above yet — include it explicitly so the session always has it.
-  if(pendingCard && !cardsForSession.some(c => c.term === pendingCard.term && c.definition === pendingCard.definition)){
+  if(pendingCard && !cardsForSession.some(c => c.id === pendingCard.id)){
     cardsForSession.push(pendingCard);
   }
 
@@ -500,6 +506,19 @@ function revealAnswer(){
   document.getElementById('wrongBtn').disabled = false;
 }
 
+/**
+ * Saves that the current card was reviewed (graded correct or wrong) and,
+ * if that finishes its whole subject, marks the subject as completed.
+ * Fire-and-forget: failures are logged inside recordFlashcardReview().
+ */
+function saveCurrentCardReview(){
+  const card = studyCards[studyIndex];
+  if(!currentUser || !card) return;
+  const subjectCards = allCards.filter(c => c.subjectId === card.subjectId);
+  const subject = subjects.find(s => s.id === card.subjectId);
+  recordFlashcardReview(currentUser.uid, card, subjectCards, subject);
+}
+
 /** Advances past the current card, or shows results if it was the last one. */
 function advanceOrFinish(){
   if(studyIndex >= studyCards.length - 1){
@@ -514,12 +533,14 @@ function markCorrect(){
   if(!isAnswerRevealed) return;
   correctCount++;
   document.getElementById('correctCount').textContent = String(correctCount);
+  saveCurrentCardReview();
   advanceOrFinish();
 }
 function markWrong(){
   if(!isAnswerRevealed) return;
   wrongCount++;
   document.getElementById('wrongCount').textContent = String(wrongCount);
+  saveCurrentCardReview();
   advanceOrFinish();
 }
 

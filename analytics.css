@@ -49,6 +49,57 @@
   color: var(--on-surface-variant); font-variant-numeric: tabular-nums; min-width: 44px; text-align: end;
 }
 
+/* Streak card: weekday strip (Saturday → Friday). Spans the full row so 7 day names fit. */
+.streak-card{ grid-column: 1 / -1; }
+.week-strip{
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--outline-variant);
+}
+.week-day{ display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
+.week-day-label{
+  font-size: 12px; color: var(--on-surface-variant); white-space: nowrap;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.week-day.is-today .week-day-label{ font-weight: 800; color: var(--on-surface); }
+.week-day-dot{
+  width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-container); color: var(--on-surface-variant);
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.week-day-dot svg{ width: 18px; height: 18px; }
+.week-day-dot.is-visited{ background: var(--primary); color: var(--on-primary); }
+.week-day-dot.is-today{
+  background: var(--secondary-container); color: var(--primary);
+  box-shadow: 0 0 0 3px var(--outline-variant);
+}
+.week-message{ margin-top: 6px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--primary); }
+
+/* Per-folder watched-videos card */
+.folder-progress-card{ margin-bottom: 20px; }
+.folder-progress-list{ list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.folder-progress-item{
+  display: flex; flex-direction: column; gap: 10px; padding: 16px 18px;
+  border: 1px solid var(--outline-variant); border-radius: var(--r-lg); background: var(--surface-low);
+}
+.folder-progress-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.folder-progress-name{ font-family: var(--font-display); font-weight: 700; font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
+.folder-progress-percent{ font-family: var(--font-label); font-weight: 800; font-size: 13px; color: var(--primary); font-variant-numeric: tabular-nums; }
+.folder-progress-foot{ display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--on-surface-variant); }
+
+/* Flashcard card: finished subjects with a green / gray check mark */
+.completed-subjects{ list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.completed-subject{ display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+.completed-subject-name{ min-width: 0; overflow-wrap: anywhere; }
+.subject-check{ flex: none; display: inline-flex; color: var(--outline); }
+.subject-check svg{ width: 18px; height: 18px; }
+.subject-check.is-complete{ color: #2f8a5f; }
+[data-theme="dark"] .subject-check.is-complete{ color: #6bd1a8; }
+
+@media (max-width: 480px){
+  .week-day-label{ font-size: 10.5px; }
+  .week-day-dot{ width: 30px; height: 30px; font-size: 12px; }
+}
+
 .stat-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
 
 @media (max-width: 768px){
