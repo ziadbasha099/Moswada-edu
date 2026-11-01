@@ -50,7 +50,7 @@
 }
 
 /* Streak card: weekday strip (Saturday → Friday). Spans the full row so 7 day names fit. */
-.streak-card{ grid-column: 1 / -1; }
+.streak-card{ margin-bottom: 20px; }
 .week-strip{
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
   margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--outline-variant);
@@ -75,16 +75,19 @@
 .week-message{ margin-top: 6px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--primary); }
 
 /* Per-folder watched-videos card */
-.folder-progress-card{ margin-bottom: 20px; }
-.folder-progress-list{ list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.folder-progress-card{ margin-top: 20px; }
+.folder-progress-list{
+  list-style: none; margin-top: 4px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px;
+}
 .folder-progress-item{
-  display: flex; flex-direction: column; gap: 10px; padding: 16px 18px;
-  border: 1px solid var(--outline-variant); border-radius: var(--r-lg); background: var(--surface-low);
+  display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; min-width: 0;
+  border: 1px solid var(--outline-variant); border-radius: var(--r-md); background: var(--surface-low);
 }
 .folder-progress-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.folder-progress-name{ font-family: var(--font-display); font-weight: 700; font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
+.folder-progress-name{ font-family: var(--font-display); font-weight: 700; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
 .folder-progress-percent{ font-family: var(--font-label); font-weight: 800; font-size: 13px; color: var(--primary); font-variant-numeric: tabular-nums; }
-.folder-progress-foot{ display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--on-surface-variant); }
+.folder-progress-foot{ display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--on-surface-variant); }
 
 /* Flashcard card: finished subjects with a green / gray check mark */
 .completed-subjects{ list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
