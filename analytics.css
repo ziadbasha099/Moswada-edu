@@ -84,6 +84,8 @@
   display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; min-width: 0;
   border: 1px solid var(--outline-variant); border-radius: var(--r-md); background: var(--surface-low);
 }
+/* Inside a column tile the track must keep a fixed height (flex:1 is only for the horizontal row in the videos card) */
+.folder-progress-item .progress-track{ flex: none; height: 8px; }
 .folder-progress-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .folder-progress-name{ font-family: var(--font-display); font-weight: 700; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
 .folder-progress-percent{ font-family: var(--font-label); font-weight: 800; font-size: 13px; color: var(--primary); font-variant-numeric: tabular-nums; }
