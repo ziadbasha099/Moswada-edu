@@ -558,13 +558,288 @@ async function initAnalytics(user) {
 /** Route guard: only verified, signed-in users may view the page. */
 function startPage() {
   const page = document.getElementById('analyticsPage');
-  setDynamicTranslationHook(renderStats);
+  setDynamicTranslationHook(() => { renderStats(); renderPomodoroCard(); });
   onAuthStateChanged(getAuth(), (user) => {
     if (!user) { window.location.replace(LOGIN_PAGE); return; }
     if (!user.emailVerified) { window.location.replace(APP_PAGE); return; }
     page?.classList.remove('hidden');
+    initPomodoroCard();
+    startPomodoroNotifier();
     initAnalytics(user);
   });
+}
+
+/* ==================================================================
+   POMODORO — timer that keeps running across pages
+   The session is stored as an absolute end timestamp in localStorage
+   and the remaining time is always derived from Date.now(), so it
+   survives navigation and reloads. Pausing stores the remaining ms.
+   ================================================================== */
+
+// <pomodoro-core>
+const POMODORO_DURATIONS_MINUTES = Object.freeze([10, 15, 20, 25, 60]);
+const DEFAULT_DURATION_MINUTES = 25;
+const POMODORO_STORAGE_KEY = 'moswada.pomodoro.v2';
+const MS_PER_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
+const MS_PER_MINUTE = MS_PER_SECOND * SECONDS_PER_MINUTE;
+const POMODORO_TICK_MS = 500;
+const POMODORO_WATCH_MS = 1000;
+const POMODORO_PHASE = Object.freeze({ IDLE: 'idle', RUNNING: 'running', PAUSED: 'paused', FINISHED: 'finished' });
+
+/**
+ * @typedef {Object} PomodoroState
+ * @property {number} durationMinutes     Selected focus length.
+ * @property {number | null} endTimestamp Epoch ms when the running session ends.
+ * @property {number | null} remainingMs  Time left while paused.
+ * @property {boolean} finished           A session ended and was not reset yet.
+ * @property {boolean} notified           The completion toast was already shown.
+ */
+
+/** @param {number} [durationMinutes] @returns {PomodoroState} Fresh idle state. */
+function createPomodoroState(durationMinutes = DEFAULT_DURATION_MINUTES) {
+  return { durationMinutes, endTimestamp: null, remainingMs: null, finished: false, notified: false };
+}
+
+/** @param {unknown} value @returns {boolean} */
+function isValidDuration(value) {
+  return POMODORO_DURATIONS_MINUTES.includes(value);
+}
+
+/** @param {unknown} value @returns {number | null} Positive finite number or null. */
+function positiveNumberOrNull(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+/**
+ * Coerces untrusted stored data into a valid state (never throws).
+ * @param {unknown} raw
+ * @returns {PomodoroState}
+ */
+function sanitizePomodoroState(raw) {
+  if (!raw || typeof raw !== 'object') return createPomodoroState();
+  const candidate = /** @type {Record<string, unknown>} */ (raw);
+  const state = createPomodoroState(isValidDuration(candidate.durationMinutes) ? candidate.durationMinutes : DEFAULT_DURATION_MINUTES);
+  state.endTimestamp = positiveNumberOrNull(candidate.endTimestamp);
+  state.remainingMs = state.endTimestamp === null ? positiveNumberOrNull(candidate.remainingMs) : null;
+  state.finished = candidate.finished === true;
+  state.notified = candidate.notified === true;
+  return state;
+}
+
+/** @param {PomodoroState} state @param {number} [now] @returns {string} One of POMODORO_PHASE. */
+function getPomodoroPhase(state, now = Date.now()) {
+  if (state.endTimestamp !== null) return now >= state.endTimestamp ? POMODORO_PHASE.FINISHED : POMODORO_PHASE.RUNNING;
+  if (state.remainingMs !== null) return POMODORO_PHASE.PAUSED;
+  return state.finished ? POMODORO_PHASE.FINISHED : POMODORO_PHASE.IDLE;
+}
+
+/** @param {PomodoroState} state @param {number} [now] @returns {number} Whole seconds to display. */
+function getRemainingSeconds(state, now = Date.now()) {
+  switch (getPomodoroPhase(state, now)) {
+    case POMODORO_PHASE.RUNNING: return Math.ceil((state.endTimestamp - now) / MS_PER_SECOND);
+    case POMODORO_PHASE.PAUSED: return Math.ceil(state.remainingMs / MS_PER_SECOND);
+    case POMODORO_PHASE.FINISHED: return 0;
+    default: return state.durationMinutes * SECONDS_PER_MINUTE;
+  }
+}
+
+/** @param {number} totalSeconds @returns {string} "MM:SS". */
+function formatClock(totalSeconds) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safeSeconds / SECONDS_PER_MINUTE);
+  return `${String(minutes).padStart(2, '0')}:${String(safeSeconds % SECONDS_PER_MINUTE).padStart(2, '0')}`;
+}
+
+/** Picks a duration; ignored while running/paused or for invalid values. @returns {PomodoroState} */
+function selectDuration(state, minutes, now = Date.now()) {
+  const phase = getPomodoroPhase(state, now);
+  if (!isValidDuration(minutes) || phase === POMODORO_PHASE.RUNNING || phase === POMODORO_PHASE.PAUSED) return state;
+  return createPomodoroState(minutes);
+}
+
+/** Starts a new session, or resumes a paused one. @returns {PomodoroState} */
+function startSession(state, now = Date.now()) {
+  const phase = getPomodoroPhase(state, now);
+  if (phase === POMODORO_PHASE.RUNNING) return state;
+  const durationMs = phase === POMODORO_PHASE.PAUSED ? state.remainingMs : state.durationMinutes * MS_PER_MINUTE;
+  return { ...createPomodoroState(state.durationMinutes), endTimestamp: now + durationMs };
+}
+
+/** Freezes the remaining time; only affects a running session. @returns {PomodoroState} */
+function pauseSession(state, now = Date.now()) {
+  if (getPomodoroPhase(state, now) !== POMODORO_PHASE.RUNNING) return state;
+  return { ...createPomodoroState(state.durationMinutes), remainingMs: state.endTimestamp - now };
+}
+
+/** Back to idle, keeping the chosen duration. @returns {PomodoroState} */
+function resetSession(state) {
+  return createPomodoroState(state.durationMinutes);
+}
+
+/** Moves an expired running session to the finished state. @returns {PomodoroState} */
+function settleExpired(state, now = Date.now()) {
+  if (state.endTimestamp === null || now < state.endTimestamp) return state;
+  return { ...state, endTimestamp: null, finished: true };
+}
+
+/** @returns {PomodoroState} Stored state, or defaults if missing/corrupt/unavailable. */
+function loadPomodoroState() {
+  try {
+    const stored = window.localStorage.getItem(POMODORO_STORAGE_KEY);
+    return stored ? sanitizePomodoroState(JSON.parse(stored)) : createPomodoroState();
+  } catch (error) {
+    console.error('Pomodoro: could not read saved state:', error);
+    return createPomodoroState();
+  }
+}
+
+/** @param {PomodoroState} state */
+function savePomodoroState(state) {
+  try {
+    window.localStorage.setItem(POMODORO_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Pomodoro: could not save state:', error);
+  }
+}
+// </pomodoro-core>
+
+/* ---------- Completion notifier (runs on dashboard + analytics) ---------- */
+
+const POMODORO_FINISHED_TOAST = Object.freeze({
+  ar: 'انتهت جلسة التركيز — أحسنت! خذ استراحة قصيرة.',
+  en: 'Focus session complete — well done! Take a short break.'
+});
+let pomodoroNotifierId = null;
+
+/** Shows the completion toast once per finished session. */
+function checkPomodoroFinished() {
+  const settled = settleExpired(loadPomodoroState());
+  if (!settled.finished || settled.notified) return;
+  savePomodoroState({ ...settled, notified: true });
+  showToast(POMODORO_FINISHED_TOAST[currentLang] ?? POMODORO_FINISHED_TOAST.en);
+}
+
+/** Starts the completion watcher once per page; safe to call repeatedly. */
+export function startPomodoroNotifier() {
+  if (pomodoroNotifierId !== null) return;
+  checkPomodoroFinished();
+  pomodoroNotifierId = window.setInterval(checkPomodoroFinished, POMODORO_WATCH_MS);
+}
+
+/* ---------- Pomodoro card UI (analytics page) ---------- */
+
+const POMODORO_I18N = {
+  ar: {
+    minuteShort: 'د',
+    statusIdle: 'جاهز لجلسة تركيز هادئة',
+    statusRunning: 'جلسة التركيز جارية… ابقَ هادئًا',
+    statusPaused: 'الجلسة متوقفة مؤقتًا',
+    statusFinished: 'أحسنت! انتهت جلسة التركيز',
+    hint: (minutes) => `${minutes} دقيقة تركيز متواصل`,
+    start: 'ابدأ التركيز',
+    pause: 'إيقاف مؤقت',
+    resume: 'متابعة'
+  },
+  en: {
+    minuteShort: 'm',
+    statusIdle: 'Ready for a calm focus session',
+    statusRunning: 'Focus session in progress… stay calm',
+    statusPaused: 'Session paused',
+    statusFinished: 'Well done! Focus session complete',
+    hint: (minutes) => `${minutes} minutes of uninterrupted focus`,
+    start: 'Start focus',
+    pause: 'Pause',
+    resume: 'Resume'
+  }
+};
+
+const POMODORO_ICON_PLAY = 'M8 5v14l11-7z';
+const POMODORO_ICON_PAUSE = 'M7 5h3v14H7zM14 5h3v14h-3z';
+
+/** @param {string} key @returns {any} */
+const pomodoroText = (key) => POMODORO_I18N[currentLang][key];
+const pomodoroEl = (id) => document.getElementById(id);
+
+let pomodoroState = null;
+let pomodoroTickId = null;
+
+/** Persists a new state and redraws. @param {PomodoroState} next */
+function commitPomodoro(next) {
+  pomodoroState = next;
+  savePomodoroState(next);
+  renderPomodoroCard();
+}
+
+/** Primary button action depends on the phase: start / pause / resume. */
+function handlePomodoroPrimary() {
+  const latest = loadPomodoroState();
+  const isRunning = getPomodoroPhase(latest) === POMODORO_PHASE.RUNNING;
+  commitPomodoro(isRunning ? pauseSession(latest) : startSession(latest));
+}
+
+/** Builds the duration chips once (static data only). */
+function buildPomodoroChips() {
+  const chips = POMODORO_DURATIONS_MINUTES.map((minutes) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'pomodoro-chip';
+    chip.dataset.minutes = String(minutes);
+    chip.addEventListener('click', () => commitPomodoro(selectDuration(loadPomodoroState(), minutes)));
+    return chip;
+  });
+  pomodoroEl('pomodoroChips').replaceChildren(...chips);
+}
+
+/** Updates chip labels, selection and disabled state. */
+function renderPomodoroChips(isLocked) {
+  pomodoroEl('pomodoroChips').querySelectorAll('.pomodoro-chip').forEach((chip) => {
+    const selected = Number(chip.dataset.minutes) === pomodoroState.durationMinutes;
+    chip.textContent = `${chip.dataset.minutes} ${pomodoroText('minuteShort')}`;
+    chip.classList.toggle('is-selected', selected);
+    chip.setAttribute('aria-pressed', String(selected));
+    chip.disabled = isLocked;
+  });
+}
+
+/** @param {string} phase @returns {{label: string, icon: string}} Primary button label + icon. */
+function getPrimaryButtonView(phase) {
+  if (phase === POMODORO_PHASE.RUNNING) return { label: pomodoroText('pause'), icon: POMODORO_ICON_PAUSE };
+  if (phase === POMODORO_PHASE.PAUSED) return { label: pomodoroText('resume'), icon: POMODORO_ICON_PLAY };
+  return { label: pomodoroText('start'), icon: POMODORO_ICON_PLAY };
+}
+
+/** Redraws the whole card from the current state. */
+export function renderPomodoroCard() {
+  if (!pomodoroState || !pomodoroEl('pomodoroClock')) return;
+  const phase = getPomodoroPhase(pomodoroState);
+  const isLocked = phase === POMODORO_PHASE.RUNNING || phase === POMODORO_PHASE.PAUSED;
+  const statusKey = `status${phase[0].toUpperCase()}${phase.slice(1)}`;
+  const primary = getPrimaryButtonView(phase);
+  renderPomodoroChips(isLocked);
+  pomodoroEl('pomodoroClock').textContent = formatClock(getRemainingSeconds(pomodoroState));
+  pomodoroEl('pomodoroStatus').textContent = pomodoroText(statusKey);
+  pomodoroEl('pomodoroHint').textContent = pomodoroText('hint')(pomodoroState.durationMinutes);
+  pomodoroEl('pomodoroStartLabel').textContent = primary.label;
+  pomodoroEl('pomodoroStartIcon').setAttribute('d', primary.icon);
+  pomodoroEl('pomodoroClock').closest('.pomodoro-panel').classList.toggle('is-running', phase === POMODORO_PHASE.RUNNING);
+}
+
+/** Once per tick: pick up changes from other tabs and settle expiry. */
+function tickPomodoro() {
+  pomodoroState = settleExpired(loadPomodoroState());
+  renderPomodoroCard();
+}
+
+/** Wires the card; safe to call when the card is absent or already wired. */
+function initPomodoroCard() {
+  if (!pomodoroEl('pomodoroClock') || pomodoroTickId !== null) return;
+  pomodoroState = loadPomodoroState();
+  buildPomodoroChips();
+  pomodoroEl('pomodoroStart').addEventListener('click', handlePomodoroPrimary);
+  pomodoroEl('pomodoroReset').addEventListener('click', () => commitPomodoro(resetSession(loadPomodoroState())));
+  renderPomodoroCard();
+  pomodoroTickId = window.setInterval(tickPomodoro, POMODORO_TICK_MS);
 }
 
 // Only run on the analytics page (dashboard/flashcards import the helpers above)

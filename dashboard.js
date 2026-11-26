@@ -30,7 +30,7 @@ import {
 import { auth, db, SESSION_FLAG_KEY, t, showToast, escapeHtml, escapeAttr, setDynamicTranslationHook, getStoredTheme, setTheme } from "./shared.js";
 import { SHARED_FOLDERS_COLLECTION } from "./firebase-config.js";
 // For Analytics page 
-import { recordDailyVisit } from "./analytics.js";     // dashboard.js
+import { recordDailyVisit, startPomodoroNotifier } from "./analytics.js";     // dashboard.js
 
 // الحد الأقصى لعدد الروابط لكل حساب — يجب أن يطابق القيمة (200) المكتوبة
 // في firestore.rules، لأن هذا الرقم هنا مجرد تحقّق سريع للواجهة فقط.
@@ -236,6 +236,7 @@ onAuthStateChanged(auth, async (user) => {
     updateTopbarTitle();
     enforceNotBanned(user); // في الخلفية بدون await
     recordDailyVisit(user.uid); // analytics: daily visit streak
+    startPomodoroNotifier(); // Pomodoro: completion toast even outside the analytics page
     if(!hasEnteredOnce){
       hasEnteredOnce = true;
       document.getElementById('app').classList.remove('hidden');

@@ -81,6 +81,29 @@
       </section>
     </div>
 
+    <section class="stat-card pomodoro-card" aria-labelledby="pomodoroLabel">
+      <div class="stat-card-head">
+        <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2h5M12 2v3"/></svg></span>
+        <div class="pomodoro-heading">
+          <span class="stat-label" id="pomodoroLabel" data-en="Pomodoro technique" data-ar="تقنية بومودورو">تقنية بومودورو</span>
+          <span class="stat-hint" data-en="Pick the focus length that suits you and start a calm session." data-ar="اختر مدة التركيز المناسبة لك وابدأ جلسة هادئة.">اختر مدة التركيز المناسبة لك وابدأ جلسة هادئة.</span>
+        </div>
+      </div>
+      <div class="pomodoro-chips" id="pomodoroChips" role="group" aria-labelledby="pomodoroLabel"></div>
+      <div class="pomodoro-panel">
+        <span class="pomodoro-clock" id="pomodoroClock" role="timer" aria-live="off">25:00</span>
+        <span class="pomodoro-status" id="pomodoroStatus" aria-live="polite"></span>
+        <span class="stat-hint" id="pomodoroHint"></span>
+      </div>
+      <div class="pomodoro-actions">
+        <button type="button" class="pomodoro-btn pomodoro-btn-primary" id="pomodoroStart">
+          <span id="pomodoroStartLabel"></span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path id="pomodoroStartIcon" fill="currentColor" d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button type="button" class="pomodoro-btn pomodoro-btn-secondary" id="pomodoroReset" data-en="Reset" data-ar="إعادة">إعادة</button>
+      </div>
+    </section>
+
     <section class="stat-card folder-progress-card" aria-labelledby="folderProgressLabel">
       <div class="stat-card-head">
         <span class="stat-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></span>

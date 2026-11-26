@@ -100,7 +100,41 @@
 .subject-check.is-complete{ color: #2f8a5f; }
 [data-theme="dark"] .subject-check.is-complete{ color: #6bd1a8; }
 
+/* Pomodoro card (second-to-last) */
+.pomodoro-card{ margin-top: 20px; }
+.pomodoro-heading{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pomodoro-chips{ display: flex; flex-wrap: wrap; gap: 8px; }
+.pomodoro-chip{
+  border: 1px solid var(--outline-variant); background: var(--surface-low); color: var(--on-surface);
+  border-radius: var(--r-full); padding: 8px 18px; cursor: pointer;
+  font-family: var(--font-label); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums;
+  transition: background 150ms ease, color 150ms ease;
+}
+.pomodoro-chip.is-selected{ background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.pomodoro-chip:disabled{ cursor: not-allowed; opacity: .6; }
+.pomodoro-panel{
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px;
+  border-radius: var(--r-lg); background: var(--secondary-container);
+}
+.pomodoro-clock{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700;
+  font-size: 64px; line-height: 1.1; letter-spacing: .02em; color: var(--primary);
+  font-variant-numeric: tabular-nums; direction: ltr;
+}
+.pomodoro-status{ font-family: var(--font-label); font-weight: 700; font-size: 15px; color: var(--on-surface); text-align: center; }
+.pomodoro-actions{ display: flex; flex-wrap: wrap; gap: 12px; }
+.pomodoro-btn{
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
+  border-radius: var(--r-full); padding: 14px 28px; font-family: var(--font-label); font-weight: 700; font-size: 15px;
+}
+.pomodoro-btn .icon{ width: 18px; height: 18px; }
+.pomodoro-btn-primary{ flex: 1 1 200px; background: var(--primary); color: var(--on-primary); }
+.pomodoro-btn-primary:disabled{ opacity: .7; cursor: default; }
+.pomodoro-btn-secondary{ background: var(--secondary-container); color: var(--primary); }
+.pomodoro-chip:focus-visible, .pomodoro-btn:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+
 @media (max-width: 480px){
+  .pomodoro-clock{ font-size: 48px; }
   .week-day-label{ font-size: 10.5px; }
   .week-day-dot{ width: 30px; height: 30px; font-size: 12px; }
 }
